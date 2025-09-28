@@ -9,23 +9,28 @@ export interface Unidade {
   campus: string | null;
 }
 
-export interface Usuario {
+export interface User {
   id: number;
   username: string;
   nome_completo: string;
   role: 'admin' | 'gerente' | 'tecnico';
+  telefone?: string | null; // <-- CORREÇÃO: Assegura que o tipo está correto
+  email?: string | null;   // Adicionado
   unidade_id: number | null;
-  // Propriedade opcional para quando incluímos dados da unidade
   unidades_organizacionais?: {
     nome: string;
-  } | null;
+  };
 }
+
+export type UserCreateData = Omit<User, 'id' | 'unidades_organizacionais'> & { password?: string };
+export type UserUpdateData = Omit<User, 'id' | 'username' | 'unidades_organizacionais' | 'password'>;
+
 
 export interface Item {
   id: number;
+  descricao: string;
   codigo_sipac: string | null;
   pregao: string | null;
-  descricao: string;
   tipo: string | null;
   unidade_medida: string;
   localizacao: string | null;
@@ -38,7 +43,13 @@ export interface Solicitacao {
   id: number;
   data_solicitacao: string; // O backend envia como string ISO
   status: 'Pendente' | 'Em atendimento' | 'Concluída' | 'Cancelada';
-  tecnico_responsavel: string; // Simplificado pelo backend
+  tecnico_responsavel: string; // Nome completo do responsável
+  setor_equipamento: string | null;
+  numero_glpi: string | null;
+  patrimonio: string | null;
+  usuario_id: number; // ID do solicitante
+  responsavel_usuario_id: number; // ID do técnico
+  unidade_id: number;
 }
 
 
@@ -50,9 +61,6 @@ export type UnidadeUpdateData = Omit<Unidade, 'id'>;
 export type ItemCreateData = Omit<Item, 'id'>;
 export type ItemUpdateData = Omit<Item, 'id' | 'unidade_id'>;
 
-export type UsuarioCreateData = Omit<Usuario, 'id' | 'unidades_organizacionais'> & { password?: string };
-export type UsuarioUpdateData = Omit<Usuario, 'id' | 'unidades_organizacionais' | 'username'>;
-
 export interface SolicitacaoCreateItem {
   id: number;
   quantidade: number;
@@ -60,13 +68,25 @@ export interface SolicitacaoCreateItem {
 
 export interface SolicitacaoCreateData {
   responsavel_usuario_id: number;
-  setor_equipamento?: string;
-  numero_glpi?: string;
-  patrimonio?: string;
+  setor_equipamento: string;
+  numero_glpi: string;
+  patrimonio: string;
   unidade_id: number;
   itens: SolicitacaoCreateItem[];
 }
 
+export interface SolicitacaoDetalhada extends Solicitacao {
+  solicitacao_itens: {
+    id: number;
+    quantidade_solicitada: number;
+    status_entrega: 'Pendente' | 'Entregue';
+    data_entrega: string | null;
+    itens: {
+      id: number;
+      descricao: string;
+    };
+  }[];
+}
 
 // --- TIPOS PARA RESPOSTAS DE API DE RELATÓRIOS ---
 
@@ -87,21 +107,15 @@ export interface GlobalStats {
   solicitacoes_pendentes: number;
 }
 
-export interface SolicitacaoDetalhada extends Solicitacao {
-    solicitacao_itens: {
-        id: number;
-        quantidade_solicitada: number;
-        status_entrega: 'Pendente' | 'Entregue';
-        itens: {
-            id: number;
-            descricao: string;
-        }
-    }[];
-}
-
 export interface RelatorioDetalhadoParams {
     tecnicoId: number;
     dataInicio: string;
     dataFim: string;
 }
 
+export interface SolicitacaoRecente {
+  id: number;
+  data_solicitacao: string;
+  status: string;
+  tecnico_responsavel: string;
+}

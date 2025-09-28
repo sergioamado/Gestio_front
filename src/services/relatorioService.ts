@@ -1,6 +1,6 @@
 // src/services/relatorioService.ts
 import api from './api';
-import type { SolicitacoesPorTecnico, TopItens, GlobalStats, RelatorioDetalhadoParams } from '../types';
+import type { SolicitacoesPorTecnico, TopItens, GlobalStats, RelatorioDetalhadoParams, SolicitacaoRecente } from '../types';
 
 export const getSolicitacoesPorTecnico = async (): Promise<SolicitacoesPorTecnico[]> => {
   const response = await api.get('/relatorios/solicitacoes-por-tecnico');
@@ -21,3 +21,8 @@ export const getRelatorioDetalhadoPorTecnico = async (params: RelatorioDetalhado
     const response = await api.get('/relatorios/detalhado-por-tecnico', { params });
     return response.data;
 }
+
+export const getLatestSolicitacoes = async (): Promise<SolicitacaoRecente[]> => {
+  const response = await api.get('/solicitacoes/latest');
+  return response.data;
+};

@@ -1,42 +1,103 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* src/index.css */
+:root {
+  --ufs-blue: #034EA2;
+  --ufs-blue-darker: #023b7e;
+  --ufs-blue-light: #7db9f4; /* Azul claro para o header */
+  --main-bg-color: #3176de;   /* Fundo cinza claro para o conteúdo */
+  --sidebar-width: 280px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Reset básico e configuração do layout principal */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--main-bg-color); /* Aplica o fundo cinza ao body */
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Garante que o app ocupe toda a altura da tela */
+html, body, #root {
+  height: 100%;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Estilos do Bootstrap sobrescritos */
+.btn-primary {
+  background-color: var(--ufs-blue);
+  border-color: var(--ufs-blue);
 }
 
-.card {
-  padding: 2em;
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--ufs-blue-darker) !important;
+  border-color: var(--ufs-blue-darker) !important;
+  box-shadow: 0 0 0 0.25rem rgba(3, 78, 162, 0.5) !important;
 }
 
-.read-the-docs {
-  color: #888;
+a {
+  color: var(--ufs-blue);
+  text-decoration: none;
+}
+
+/*
+  Componente flutuante: bordas arredondadas, sem borda visível e uma sombra suave
+  para criar o efeito de "flutuação".
+*/
+.floating-card {
+  border-radius: 0.75rem !important;
+  border: none !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.app-header {
+    background-color: var(--ufs-blue-light) !important; /* Fundo azul claro */
+    border-bottom: 1px solid #dce8f7;
+    padding: 1rem 1.5rem;
+}
+
+.floating-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Layout principal da aplicação */
+.app-layout {
+  display: flex;
+}
+
+.sidebar-wrapper {
+  width: var(--sidebar-width);
+  flex-shrink: 0; /* Impede que a sidebar encolha */
+}
+
+.main-content {
+  flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
+  height: 100vh;
+  overflow-y: auto; /* Permite scroll apenas na área de conteúdo */
+}
+
+/* Classe para o layout de autenticação */
+.auth-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  background-color: var(--ufs-blue);
+  padding: 1rem;
+}
+
+.welcome-card {
+  background-color: var(--ufs-blue) !important;
+  color: #ffffff !important;
+}
+
+.welcome-card h3 {
+  color: #ffffff;
+}
+
+.welcome-card p {
+  color: rgba(255, 255, 255, 0.85) !important;
 }

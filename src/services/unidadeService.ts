@@ -20,3 +20,5 @@ export const updateUnidade = async (id: number, data: UnidadeUpdateData): Promis
 export const deleteUnidade = async (id: number): Promise<void> => {
   await api.delete(`/unidades/${id}`);
 };
+
+

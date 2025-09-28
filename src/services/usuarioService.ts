@@ -1,31 +1,31 @@
 // src/services/usuarioService.ts
 import api from './api';
-import type { Usuario, UsuarioCreateData, UsuarioUpdateData } from '../types';
+import type { User, UserCreateData, UserUpdateData } from '../types';
 
-export const getAllUsuarios = async (): Promise<Usuario[]> => {
-  const response = await api.get('/usuarios');
+export const getAllUsers = async (): Promise<User[]> => {
+  const response = await api.get('/users');
   return response.data;
 };
 
-export const createUsuario = async (data: UsuarioCreateData): Promise<Usuario> => {
-  const response = await api.post('/usuarios', data);
+export const createUser = async (data: UserCreateData): Promise<User> => {
+  const response = await api.post('/users', data);
   return response.data;
 };
 
-export const updateUsuario = async (id: number, data: UsuarioUpdateData): Promise<Usuario> => {
-  const response = await api.put(`/usuarios/${id}`, data);
+export const updateUser = async (id: number, data: UserUpdateData): Promise<User> => {
+  const response = await api.put(`/users/${id}`, data);
   return response.data;
 };
 
-export const deleteUsuario = async (id: number): Promise<void> => {
-  await api.delete(`/usuarios/${id}`);
+export const deleteUser = async (id: number): Promise<void> => {
+  await api.delete(`/users/${id}`);
 };
 
 export const resetPasswordByAdmin = async (username: string, newPassword: string):Promise<void> => {
-  await api.put('/usuarios/reset-password', { username, newPassword });
+  await api.put('/users/reset-password', { username, newPassword });
 }
 
-export const getTecnicos = async (): Promise<Usuario[]> => {
+export const getTecnicos = async (): Promise<User[]> => {
   const response = await api.get('/usuarios', { params: { role: 'tecnico' } });
   return response.data;
 };

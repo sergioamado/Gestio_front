@@ -1,20 +1,18 @@
-// src/routes/ProtectedRoute.tsx
-import React from 'react';
+// src/components/ProtectedRoute.tsx
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const ProtectedRoute = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (!isAuthenticated) {
-    // Se não estiver autenticado, redireciona para a página de login.
-    // O 'replace' evita que o usuário volte para a página anterior no histórico.
-    return <Navigate to="/login" replace />;
+  // Enquanto verifica o estado de autenticação, não renderiza nada
+  if (isLoading) {
+    return null; // Ou um componente de spinner global
   }
 
-  // Se estiver autenticado, renderiza a rota filha (Dashboard, Itens, etc.).
-  // O <Outlet /> é o marcador de onde as rotas aninhadas serão renderizadas.
-  return <Outlet />;
+  // Se estiver autenticado, permite o acesso à rota filha (Outlet)
+  // Caso contrário, redireciona para a página de login
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
 };
 
 export default ProtectedRoute;

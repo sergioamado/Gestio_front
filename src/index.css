@@ -1,68 +1,113 @@
+/* src/index.css */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --ufs-blue: #034EA2;
+  --ufs-blue-darker: #023b7e;
+  --ufs-blue-light: #e6f0fa; /* Azul claro para o header */
+  --main-bg-color: #f0f2f5;   /* Fundo cinza claro para o conteúdo */
+  --sidebar-width: 280px;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
+/* Reset básico e configuração do layout principal */
 body {
   margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--main-bg-color); /* Aplica o fundo cinza ao body */
+}
+
+/* Estilos do Bootstrap sobrescritos */
+.btn-primary, .bg-primary {
+  background-color: var(--ufs-blue) !important; /* !important garante a anulação */
+  border-color: var(--ufs-blue) !important;
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--ufs-blue-darker) !important;
+  border-color: var(--ufs-blue-darker) !important;
+  box-shadow: 0 0 0 0.25rem rgba(3, 78, 162, 0.5) !important;
+}
+
+
+a {
+  color: var(--ufs-blue);
+  text-decoration: none;
+}
+
+/*
+  Componente flutuante: bordas arredondadas, sem borda visível e uma sombra suave
+  para criar o efeito de "flutuação".
+*/
+.floating-card {
+  border-radius: 0.75rem !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.floating-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+.app-header {
+    background-color: var(--ufs-blue-light) !important;
+    border-bottom: 1px solid #dce8f7;
+    padding: 1rem 1.5rem;
+}
+
+.main-content {
+  flex-grow: 1;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.auth-layout {
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  background-color: var(--ufs-blue);
+  padding: 1rem;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Layout principal da aplicação */
+.app-layout {
+  display: flex;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.sidebar-wrapper {
+  width: var(--sidebar-width);
+  flex-shrink: 0; /* Impede que a sidebar encolha */
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.main-content {
+  flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
+  height: 100vh;
+  overflow-y: auto; /* Permite scroll apenas na área de conteúdo */
+}
+
+.sidebar-nav-link {
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.2s ease-in-out; /* Animação suave */
+}
+
+.sidebar-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem; /* Espaço entre o ícone e o texto */
+  transition: all 0.2s ease-in-out;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px); /* Efeito de elevação */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }

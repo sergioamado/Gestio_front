@@ -1,40 +1,37 @@
 // src/App.tsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import Login from './pages/Login';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './routes/ProtectedRoute';
-import Home from './pages/Home'; 
-import GerenciarItens from './pages/GerenciarItens';
-import GerenciarUsuarios from './pages/GerenciarUsuarios';
-import GerenciarUnidades from './pages/GerenciarUnidades'; 
-import NovaSolicitacao from './pages/NovaSolicitacao';
-import Dashboard from './pages/Dashboard';
-import GerenciarSolicitacoes from './pages/GerenciarSolicitacoes';
-import AlterarSenha from './pages/AlterarSenha'; 
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import UnidadesPage from './pages/UnidadesPage';
+import UsuariosPage from './pages/UsuariosPage'; 
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
+    <AuthProvider>
+      <Router>
         <Routes>
-          {/* Rota pública de Login */}
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<LoginPage />} />
 
-          {/* Container para todas as rotas que exigem login */}
+          {/* Rotas Protegidas */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/itens" element={<GerenciarItens />} />
-            <Route path="/usuarios" element={<GerenciarUsuarios />} />
-            <Route path="/unidades" element={<GerenciarUnidades />} />
-            <Route path="/solicitacoes/nova" element={<NovaSolicitacao />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/solicitacoes" element={<GerenciarSolicitacoes />} />
-            <Route path="/alterar-senha" element={<AlterarSenha />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/unidades" element={<UnidadesPage />} /> 
+            <Route path="/usuarios" element={<UsuariosPage />} />
             {/* Adicione outras rotas protegidas aqui */}
           </Route>
+
+          {/* Rota padrão: redireciona para o dashboard se logado, senão para o login */}
+          <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
-      </AuthProvider>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
 
