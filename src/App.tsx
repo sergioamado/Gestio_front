@@ -10,7 +10,8 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UnidadesPage from './pages/UnidadesPage';
-import UsuariosPage from './pages/UsuariosPage'; 
+import UsuariosPage from './pages/UsuariosPage';
+import AlterarSenhaPage from './pages/AlterarSenhaPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/unidades" element={<UnidadesPage />} /> 
             <Route path="/usuarios" element={<UsuariosPage />} />
+            <Route path="/alterar-senha" element={<AlterarSenhaPage />} />
             {/* Adicione outras rotas protegidas aqui */}
           </Route>
 

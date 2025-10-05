@@ -3,7 +3,7 @@ import { Nav } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ufsLogo from '../assets/ufs-logo.svg';
-import { HouseDoorFill, PeopleFill, BoxSeam, BuildingFill } from 'react-bootstrap-icons';
+import { HouseDoorFill, PeopleFill, BoxSeam, BuildingFill, KeyFill } from 'react-bootstrap-icons';
 import PrimaryButton from './PrimaryButton';
 
 const sidebarStyle: React.CSSProperties = {
@@ -72,7 +72,15 @@ function Sidebar() {
             </Nav.Link>
           </>
         )}
-      </Nav> {/* <-- A TAG DE FECHAMENTO FOI ADICIONADA AQUI */}
+      </Nav> 
+
+      <Nav.Link
+          onClick={() => navigate('/alterar-senha')}
+          style={navLinkBaseStyle}
+          className="sidebar-nav-link mt-auto" 
+        >
+          <KeyFill size={20} className="me-3" /> Alterar Senha
+      </Nav.Link>
 
       <div className="mt-auto">
         <div className="d-grid">

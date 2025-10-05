@@ -31,9 +31,13 @@ function UsuariosPage() {
     ]).then(([usersData, unidadesData]) => {
       setUsuarios(usersData);
       setUnidades(unidadesData);
-    }).catch(() => {
-      setError('Falha ao carregar dados da página.');
-    }).finally(() => {
+    })
+    // CORRIGIDO: Agora extraímos a mensagem de texto do objeto de erro.
+    .catch((err: any) => {
+      const errorMessage = err.response?.data?.message || 'Falha ao carregar dados. Verifique a consola do backend e se o URL da API está correto.';
+      setError(errorMessage);
+    })
+    .finally(() => {
       setLoading(false);
     });
   };
@@ -42,6 +46,8 @@ function UsuariosPage() {
     fetchData();
   }, []);
 
+  // O resto do ficheiro pode permanecer igual, mas colei abaixo para garantir.
+  
   const handleShowCreateModal = () => {
     setEditingUser(null);
     setShowModal(true);
@@ -56,7 +62,6 @@ function UsuariosPage() {
     setIsSubmitting(true);
     setError(null);
     
-    // Converte unidade_id para número ou nulo, pois o form envia como string
     const processedData = {
         ...data,
         unidade_id: data.unidade_id ? Number(data.unidade_id) : null,
@@ -64,7 +69,6 @@ function UsuariosPage() {
 
     try {
       if (editingUser) {
-        // Para edição, removemos campos que o backend não espera na atualização
         const { username, password, ...updateData } = processedData as UserUpdateData & { username: string, password?: string };
         await usuarioService.updateUser(editingUser.id, updateData);
       } else {
@@ -73,7 +77,7 @@ function UsuariosPage() {
       setShowModal(false);
       fetchData();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.details || 'Erro ao salvar usuário. O nome de usuário ou email pode já existir.';
+      const errorMessage = err.response?.data?.details || 'Erro ao guardar utilizador. O nome de utilizador ou email pode já existir.';
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -82,31 +86,31 @@ function UsuariosPage() {
   };
 
   const handleDelete = async (user: User) => {
-    if (window.confirm(`Tem certeza que deseja excluir o usuário "${user.username}"?`)) {
+    if (window.confirm(`Tem a certeza de que deseja excluir o utilizador "${user.username}"?`)) {
       try {
         await usuarioService.deleteUser(user.id);
         fetchData();
       } catch (err) {
-        setError('Não foi possível excluir. O usuário pode estar associado a solicitações.');
+        setError('Não foi possível excluir. O utilizador pode estar associado a solicitações.');
       }
     }
   };
 
   return (
-    <MainLayout pageTitle="👥 Gerenciar Usuários">
+    <MainLayout pageTitle="👥 Gerir Utilizadores">
       {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
       
       <Card className="floating-card">
         <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5>Usuários Cadastrados</h5>
+          <h5>Utilizadores Registados</h5>
           <PrimaryButton onClick={handleShowCreateModal}>
-            + Novo Usuário
+            + Novo Utilizador
           </PrimaryButton>
         </Card.Header>
         <Card.Body>
           {loading ? (
             <div className="text-center"><Spinner animation="border" /></div>
-          ) : (
+          ) : !error && ( // Adicionado: Não renderizar a tabela se houver um erro de carregamento
             <UsuariosTable usuarios={usuarios} onEdit={handleShowEditModal} onDelete={handleDelete} />
           )}
         </Card.Body>
@@ -115,7 +119,7 @@ function UsuariosPage() {
       <ModalForm 
         show={showModal} 
         onHide={() => setShowModal(false)}
-        title={editingUser ? 'Editar Usuário' : 'Cadastrar Novo Usuário'}
+        title={editingUser ? 'Editar Utilizador' : 'Registar Novo Utilizador'}
       >
         <UsuarioForm 
             usuario={editingUser}

@@ -21,6 +21,10 @@ export interface User {
     nome: string;
   };
 }
+export interface AdminResetPasswordFormProps {
+  users: User[];
+  onSuccess: (message: string) => void;
+}
 
 export type UserCreateData = Omit<User, 'id' | 'unidades_organizacionais'> & { password?: string };
 export type UserUpdateData = Omit<User, 'id' | 'username' | 'unidades_organizacionais' | 'password'>;

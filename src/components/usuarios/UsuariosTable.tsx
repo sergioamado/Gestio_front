@@ -1,7 +1,7 @@
 // src/components/usuarios/UsuariosTable.tsx
 import { Table, Button, Stack, Badge } from 'react-bootstrap';
 import { PencilSquare, Trash3Fill } from 'react-bootstrap-icons';
-import type { User } from '../../types/index'; 
+import type { User, Role } from '../../types/index'; 
 import { useAuth } from '../../hooks/useAuth';
 
 interface UsuariosTableProps {
@@ -10,22 +10,16 @@ interface UsuariosTableProps {
   onDelete: (usuario: User) => void;
 }
 
-// Corrigido: Definimos um tipo para as chaves do objeto de variantes.
-type Role = 'admin' | 'gerente' | 'tecnico';
-
 function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps) {
   const { user: currentUser } = useAuth();
-
   const usersToDisplay = usuarios.filter(u => u.id !== currentUser?.id);
 
-  // Corrigido: A função agora espera um tipo 'Role' em vez de uma 'string' genérica.
-  const getRoleBadge = (role: Role) => {
+  const getRoleBadge = (role: Role) => { // <-- CORREÇÃO: Usa o tipo específico 'Role'
     const variants: Record<Role, string> = {
       admin: 'danger',
       gerente: 'primary',
       tecnico: 'secondary',
     };
-    // Agora o TypeScript sabe que 'role' será sempre uma chave válida de 'variants'.
     const variant = variants[role] || 'light';
     return <Badge bg={variant}>{role.charAt(0).toUpperCase() + role.slice(1)}</Badge>;
   }
@@ -34,7 +28,7 @@ function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps) {
     <Table striped hover responsive className="align-middle">
       <thead className="table-light">
         <tr>
-          <th>Usuário (Login)</th>
+          <th>Utilizador (Login)</th>
           <th>Nome Completo</th>
           <th>Perfil</th>
           <th>Unidade Organizacional</th>

@@ -62,3 +62,11 @@ export const getCurrentUser = (): User | null => {
   }
   return null;
 };
+
+export const changeOwnPassword = async (currentPassword : string, newPassword : string): Promise<{ message: string }> => {
+  const response = await api.put('/auth/change-password', {
+    currentPassword,
+    newPassword,
+  });
+  return response.data;
+};

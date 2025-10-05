@@ -15,7 +15,7 @@ const renderDashboardByRole = (role?: string) => {
     case 'tecnico':
       return <TecnicoDashboard />;
     default:
-      return <p>O seu perfil não tem um painel de controlo definido.</p>;
+      return <p>O seu perfil não tem um painel de controle definido.</p>;
   }
 };
 
@@ -23,7 +23,7 @@ function DashboardPage() {
   const { user } = useAuth();
 
   return (
-    <MainLayout pageTitle="🏢 Painel de Controlo">
+    <MainLayout pageTitle="🏢 Painel de Controle">
       {/* ATUALIZADO: 
         - Removida a classe 'welcome-card'.
         - Adicionadas as classes 'bg-primary' e 'text-white' do Bootstrap.
