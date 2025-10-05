@@ -32,7 +32,6 @@ function UsuariosPage() {
       setUsuarios(usersData);
       setUnidades(unidadesData);
     })
-    // CORRIGIDO: Agora extraímos a mensagem de texto do objeto de erro.
     .catch((err: any) => {
       const errorMessage = err.response?.data?.message || 'Falha ao carregar dados. Verifique a consola do backend e se o URL da API está correto.';
       setError(errorMessage);
@@ -77,11 +76,10 @@ function UsuariosPage() {
       setShowModal(false);
       fetchData();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.details || 'Erro ao guardar utilizador. O nome de utilizador ou email pode já existir.';
+      const errorMessage = err.response?.data?.message || 'Ocorreu um erro inesperado ao guardar o utilizador.';
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
-      setEditingUser(null);
     }
   };
 

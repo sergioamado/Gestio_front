@@ -1,33 +1,23 @@
 // src/contexts/AuthContext.tsx
-import { createContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import { createContext, useState, useEffect, type ReactNode } from 'react';
 import * as authService from '../services/authService';
 import api from '../services/api';
-
-// Tipos
-interface User {
-  id: number;
-  nome_completo: string;
-  role: string;
-}
+import type { User } from '../types'; 
 
 interface AuthContextType {
-  user: User | null;
+  user: User | null; 
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username : string, password : string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-// 1. Cria o Contexto
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 2. Cria o Provedor (Componente)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Para verificar o estado inicial
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Efeito para verificar se já existe um usuário logado no localStorage
   useEffect(() => {
     const checkLoggedInUser = () => {
       const storedUser = authService.getCurrentUser();
@@ -35,7 +25,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (storedUser && token) {
         setUser(storedUser);
-        // Reconfigura o cabeçalho do Axios caso a página seja recarregada
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       }
       setIsLoading(false);
@@ -44,7 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkLoggedInUser();
   }, []);
 
-  const login = async (username : string, password : string) => {
+  const login = async (username: string, password: string) => {
     const loggedInUser = await authService.login(username, password);
     setUser(loggedInUser);
   };
@@ -62,7 +51,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
   };
 
-  // Renderiza um loader enquanto verifica a autenticação, depois renderiza os filhos
   return (
     <AuthContext.Provider value={value}>
       {!isLoading && children}

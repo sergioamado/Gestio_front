@@ -41,6 +41,9 @@ export interface Item {
   quantidade: number;
   preco_unitario: number;
   unidade_id: number;
+  unidades_organizacionais?: {
+    nome: string;
+  };
 }
 
 export interface Solicitacao {
@@ -128,4 +131,11 @@ export interface LoginResponse {
   message: string;
   token: string;
   user: User;
+}
+
+export interface CartItem {
+  id: number;
+  descricao: string;
+  quantidade: number;
+  quantidade_estoque: number;
 }

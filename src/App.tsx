@@ -12,6 +12,8 @@ import DashboardPage from './pages/DashboardPage';
 import UnidadesPage from './pages/UnidadesPage';
 import UsuariosPage from './pages/UsuariosPage';
 import AlterarSenhaPage from './pages/AlterarSenhaPage';
+import ItensPage from './pages/ItensPage';
+import NovaSolicitacaoPage from './pages/NovaSolicitacaoPage';
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
             <Route path="/unidades" element={<UnidadesPage />} /> 
             <Route path="/usuarios" element={<UsuariosPage />} />
             <Route path="/alterar-senha" element={<AlterarSenhaPage />} />
+            <Route path="/itens" element={<ItensPage />} />
+            <Route path="/nova-solicitacao" element={<NovaSolicitacaoPage />} /> 
             {/* Adicione outras rotas protegidas aqui */}
           </Route>
 

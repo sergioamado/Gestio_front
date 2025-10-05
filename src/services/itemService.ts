@@ -2,8 +2,9 @@
 import api from './api';
 import type { Item, ItemCreateData, ItemUpdateData } from '../types/index';
 
-export const getAllItems = async (): Promise<Item[]> => {
-  const response = await api.get('/itens');
+export const getAllItems = async (unidadeId?: number | null): Promise<Item[]> => {
+  const params = unidadeId ? { unidadeId } : {};
+  const response = await api.get('/itens', { params });
   return response.data;
 };
 

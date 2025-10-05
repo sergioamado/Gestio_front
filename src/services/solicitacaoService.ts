@@ -36,3 +36,8 @@ export const updateSolicitacaoStatus = async (id: number, status: string): Promi
 export const updateSolicitacaoItemStatus = async (itemId: number, status_entrega: 'Pendente' | 'Entregue'): Promise<void> => {
     await api.patch(`/solicitacoes/item/${itemId}/status`, { status_entrega });
 }
+
+export const createSolicitacao = async (data: SolicitacaoCreateData): Promise<Solicitacao> => {
+  const response = await api.post('/solicitacoes', data);
+  return response.data;
+};

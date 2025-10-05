@@ -41,3 +41,8 @@ export const resetPasswordByAdminUsers = async (username: string, newPassword: s
   });
   return response.data;
 };
+
+export const getTecnicosByUnidade = async (unidadeId: number): Promise<User[]> => {
+  const response = await api.get('/usuarios', { params: { role: 'tecnico', unidade_id: unidadeId } });
+  return response.data;
+};
