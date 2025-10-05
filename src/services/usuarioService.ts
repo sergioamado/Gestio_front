@@ -21,9 +21,13 @@ export const deleteUser = async (id: number): Promise<void> => {
   await api.delete(`/usuarios/${id}`);
 };
 
-export const resetPasswordByAdmin = async (username: string, newPassword: string):Promise<void> => {
-  await api.put('/usuarios/reset-password', { username, newPassword });
-}
+export const resetPasswordByAdmin = async (username: string, newPassword: string): Promise<{ message: string }> => {
+  const response = await api.put('/usuarios/reset-password', {
+    username,
+    newPassword,
+  });
+  return response.data;
+};
 
 export const getTecnicos = async (): Promise<User[]> => {
   const response = await api.get('/usuarios', { params: { role: 'tecnico' } });

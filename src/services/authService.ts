@@ -1,18 +1,7 @@
 // src/services/authService.ts
 import api from './api';
-
-// Tipos para os dados do usuário e da resposta da API
-interface User {
-  id: number;
-  nome_completo: string;
-  role: string;
-}
-
-interface LoginResponse {
-  message: string;
-  token: string;
-  user: User;
-}
+import type { User } from '../types';
+import type {LoginResponse} from '../types';
 
 /**
  * Realiza o login do usuário, armazena o token e os dados do usuário.

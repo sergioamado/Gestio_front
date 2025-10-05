@@ -14,8 +14,8 @@ export interface User {
   username: string;
   nome_completo: string;
   role: 'admin' | 'gerente' | 'tecnico';
-  telefone?: string | null; // <-- CORREÇÃO: Assegura que o tipo está correto
-  email?: string | null;   // Adicionado
+  telefone?: string | null;
+  email?: string | null;   
   unidade_id: number | null;
   unidades_organizacionais?: {
     nome: string;
@@ -122,4 +122,10 @@ export interface SolicitacaoRecente {
   data_solicitacao: string;
   status: string;
   tecnico_responsavel: string;
+}
+
+export interface LoginResponse {
+  message: string;
+  token: string;
+  user: User;
 }
