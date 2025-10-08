@@ -22,7 +22,8 @@ function TecnicoDashboard() {
 
   return (
     <>
-      <h4 className="mb-4">Suas Últimas 5 Solicitações Criadas</h4>
+      {/* ALTERADO: Título atualizado */}
+      <h4 className="mb-4">Suas Últimas 15 Solicitações Criadas</h4>
       <SolicitacoesRecentesTable 
         solicitacoes={solicitacoes}
         emptyMessage="Você ainda não criou nenhuma solicitação."

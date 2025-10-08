@@ -1,11 +1,11 @@
 // src/contexts/AuthContext.tsx
-import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useState, useEffect,type ReactNode } from 'react';
 import * as authService from '../services/authService';
 import api from '../services/api';
 import type { User } from '../types'; 
 
 interface AuthContextType {
-  user: User | null; 
+  user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
@@ -22,14 +22,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkLoggedInUser = () => {
       const storedUser = authService.getCurrentUser();
       const token = localStorage.getItem('authToken');
-
       if (storedUser && token) {
         setUser(storedUser);
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       }
       setIsLoading(false);
     };
-
     checkLoggedInUser();
   }, []);
 
@@ -43,13 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   };
 
-  const value = {
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    login,
-    logout,
-  };
+  const value = { user, isAuthenticated: !!user, isLoading, login, logout };
 
   return (
     <AuthContext.Provider value={value}>

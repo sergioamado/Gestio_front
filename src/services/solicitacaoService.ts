@@ -1,24 +1,9 @@
 // src/services/solicitacaoService.ts
 import api from './api';
-import type { Solicitacao, SolicitacaoDetalhada} from '../types/index';
+// CORRIGIDO: A função agora retorna o tipo SolicitacaoDetalhada
+import type { Solicitacao, SolicitacaoDetalhada, SolicitacaoCreateData } from '../types/index';
 
-import type { SolicitacaoCreateData } from '../types';
-
-export async function criarSolicitacao(data: SolicitacaoCreateData) {
-  const response = await fetch('/api/solicitacoes', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    throw new Error('Erro ao criar solicitação');
-  }
-
-  return response.json();
-}
-
-export const getAllSolicitacoes = async (params?: any): Promise<Solicitacao[]> => {
+export const getAllSolicitacoes = async (params?: any): Promise<SolicitacaoDetalhada[]> => {
     const response = await api.get('/solicitacoes', { params });
     return response.data;
 }

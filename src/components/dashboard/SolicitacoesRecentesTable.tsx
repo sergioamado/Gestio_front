@@ -31,6 +31,7 @@ function SolicitacoesRecentesTable({ solicitacoes, emptyMessage }: TableProps) {
           <th>Data</th>
           <th>Status</th>
           <th>Técnico Responsável</th>
+          <th>Nº GLPI</th> {/* ALTERADO: Nova coluna */}
         </tr>
       </thead>
       <tbody>
@@ -40,6 +41,7 @@ function SolicitacoesRecentesTable({ solicitacoes, emptyMessage }: TableProps) {
             <td>{formatDate(s.data_solicitacao)}</td>
             <td>{s.status}</td>
             <td>{s.tecnico_responsavel}</td>
+            <td>{s.numero_glpi || 'N/A'}</td> {/* ALTERADO: Exibindo o número do GLPI */}
           </tr>
         ))}
       </tbody>

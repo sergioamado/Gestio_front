@@ -101,3 +101,105 @@ a {
 .welcome-card p {
   color: rgba(255, 255, 255, 0.85) !important;
 }
+
+.status-badge {
+  padding: 0.4em 0.7em;
+  border-radius: 15px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  font-size: 0.85em;
+}
+
+.status-pendente {
+  background-color: #ffc107; /* Amarelo */
+}
+
+.status-atendimento {
+  background-color: #0d6efd; /* Azul */
+}
+
+.status-concluida {
+  background-color: #198754; /* Verde */
+}
+
+.status-cancelada {
+  background-color: #dc3545; /* Vermelho */
+}
+
+.status-badge {
+  padding: 0.4em 0.7em;
+  border-radius: 15px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  font-size: 0.85em;
+  min-width: 120px;
+  display: inline-block;
+}
+
+.status-pendente { background-color: #ffc107; color: #000; }
+.status-em-atendimento { background-color: #0d6efd; }
+.status-concluida { background-color: #198754; }
+.status-cancelada { background-color: #dc3545; }
+
+/* Zebrado UFS */
+.accordion-item-striped:nth-of-type(odd) .accordion-button {
+  background-color: #f8f9fa; /* Cinza claro para itens ímpares */
+}
+.accordion-item-striped:nth-of-type(even) .accordion-button {
+  background-color: var(--ufs-blue-light); /* Azul UFS claro para itens pares */
+}
+
+/* Cards de Informação Coloridos */
+.info-card {
+  color: white;
+  border: none;
+}
+.info-card-glpi { background-color: #0d6efd; }
+.info-card-patrimonio { background-color: #198754; }
+.info-card-setor { background-color: #6c757d; }
+
+/* Ações e Botão Copiar */
+.actions-toolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+
+.status-badge {
+  padding: 0.4em 0.7em;
+  border-radius: 15px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  font-size: 0.85em;
+  min-width: 120px;
+  display: inline-block;
+}
+
+.status-pendente { background-color: #ffc107; color: #000; }
+.status-em-atendimento { background-color: #0d6efd; }
+.status-concluida { background-color: #198754; }
+.status-cancelada { background-color: #dc3545; }
+
+.accordion-item:nth-of-type(even) .accordion-button {
+  background-color: var(--ufs-blue-light);
+}
+
+.info-card {
+  color: white !important;
+  border: none !important;
+}
+.card.info-card-glpi { background-color: #0d6efd !important; }
+.card.info-card-patrimonio { background-color: #198754 !important; }
+.card.info-card-setor { background-color: #6c757d !important; }
+
+
+/* Ações e Botão Copiar */
+.actions-toolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}

@@ -3,7 +3,7 @@ import { Nav } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ufsLogo from '../assets/ufs-logo.svg';
-import { HouseDoorFill, PeopleFill, BoxSeam, BuildingFill, KeyFill, BoxArrowRight, PencilSquare } from 'react-bootstrap-icons';
+import { HouseDoorFill, PeopleFill, BoxSeam, BuildingFill, KeyFill, BoxArrowRight, PencilSquare, ListCheck } from 'react-bootstrap-icons';
 import PrimaryButton from './PrimaryButton';
 
 const sidebarStyle: React.CSSProperties = {
@@ -62,6 +62,12 @@ function Sidebar() {
         >
           <PencilSquare size={24} className="me-3" /> Nova Solicitação
         </Nav.Link>
+
+         {(user?.role === 'admin' || user?.role === 'gerente') && (
+          <Nav.Link onClick={() => navigate('/gerenciar-solicitacoes')} style={navLinkBaseStyle} className="sidebar-nav-link">
+            <ListCheck size={24} className="me-3" /> Gerenciar Solicitações
+          </Nav.Link>
+        )}
 
         <Nav.Link 
           onClick={() => navigate('/itens')}

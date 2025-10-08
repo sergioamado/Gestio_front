@@ -1,6 +1,7 @@
 // src/types/index.ts
 
 // --- TIPOS DE ENTIDADES BASE (ESPELHAM O BANCO DE DADOS) ---
+export type StatusSolicitacao = 'Pendente' | 'Em atendimento' | 'Concluída' | 'Cancelada';
 
 export interface Unidade {
   id: number;
@@ -48,7 +49,7 @@ export interface Item {
 
 export interface Solicitacao {
   id: number;
-  data_solicitacao: string; // O backend envia como string ISO
+  data_solicitacao: string; 
   status: 'Pendente' | 'Em atendimento' | 'Concluída' | 'Cancelada';
   tecnico_responsavel: string; // Nome completo do responsável
   setor_equipamento: string | null;
@@ -83,6 +84,9 @@ export interface SolicitacaoCreateData {
 }
 
 export interface SolicitacaoDetalhada extends Solicitacao {
+  responsavel?: { 
+    nome_completo: string;
+  };
   solicitacao_itens: {
     id: number;
     quantidade_solicitada: number;
@@ -125,6 +129,7 @@ export interface SolicitacaoRecente {
   data_solicitacao: string;
   status: string;
   tecnico_responsavel: string;
+  numero_glpi: string | null;
 }
 
 export interface LoginResponse {

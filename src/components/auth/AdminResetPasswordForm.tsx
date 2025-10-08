@@ -3,7 +3,7 @@ import { Form, Alert } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import PrimaryButton from '../PrimaryButton';
-import { resetPasswordByAdminUsers  } from '../../services/usuarioService';
+import { resetPasswordByAdmin  } from '../../services/usuarioService';
 import type { AdminResetPasswordFormProps } from '../../types';
 
 
@@ -17,7 +17,7 @@ function AdminResetPasswordForm({ users, onSuccess }: AdminResetPasswordFormProp
     setIsSubmitting(true);
     setApiError(null);
     try {
-      const response = await resetPasswordByAdminUsers(data.username, data.newPassword);
+      const response = await resetPasswordByAdmin(data.username, data.newPassword);
       onSuccess(response.message);
       reset();
     } catch (err: any) {

@@ -30,26 +30,28 @@ function NovaSolicitacaoPage() {
 
   const methods = useForm();
 
-  useEffect(() => {
+   useEffect(() => {
     if (user) { 
-      if (!user.unidade_id) {
-        setError("Utilizador não associado a uma unidade. Não é possível criar solicitações.");
+      if (user.role === 'admin' && !user.unidade_id) {
+        setError("Administradores sem unidade associada não podem criar solicitações. Por favor, associe uma unidade ao seu perfil.");
         setLoading(false);
         return;
       }
 
-      setLoading(true);
-      Promise.all([
-        itemService.getAllItems(user.unidade_id),
-        usuarioService.getTecnicosByUnidade(user.unidade_id), 
-      ]).then(([itemsData, tecnicosData]) => {
-        setItens(itemsData.filter(item => item.quantidade > 0));
-        setTecnicos(tecnicosData);
-      }).catch(() => {
-        setError('Falha ao carregar os dados necessários para a solicitação.');
-      }).finally(() => {
-        setLoading(false);
-      });
+      if (user.unidade_id) {
+          setLoading(true);
+          Promise.all([
+            itemService.getAllItems(user.unidade_id),
+            usuarioService.getTecnicosByUnidade(user.unidade_id), 
+          ]).then(([itemsData, tecnicosData]) => {
+            setItens(itemsData.filter(item => item.quantidade > 0));
+            setTecnicos(tecnicosData);
+          }).catch((err) => {
+            setError(err.response?.data?.message || 'Falha ao carregar os dados da página.');
+          }).finally(() => {
+            setLoading(false);
+          });
+      }
     }
   }, [user]);
 
