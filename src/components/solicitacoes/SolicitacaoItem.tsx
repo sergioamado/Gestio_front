@@ -10,13 +10,12 @@ import DeleteConfirmationModal from '../DeleteConfirmationModal';
 
 interface SolicitacaoItemProps {
   solicitacao: SolicitacaoDetalhada;
-  onUpdate: () => void; // Função para recarregar a lista principal
+  onUpdate: () => void;
 }
 
 function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusGeral, setStatusGeral] = useState<StatusSolicitacao>(solicitacao.status);
-
   const [itemStatus, setItemStatus] = useState<Record<number, boolean>>(() =>
     solicitacao.solicitacao_itens.reduce((acc, item) => {
       acc[item.id] = item.status_entrega === 'Entregue';
@@ -26,7 +25,6 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
   
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<StatusSolicitacao | null>(null);
-
 
   const hasChanges = useMemo(() => {
     if (statusGeral !== solicitacao.status) return true;
@@ -87,7 +85,6 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
 
   return (
     <>
-      {/* CORRIGIDO: Adicionada a classe para o zebrado */}
       <Accordion.Item eventKey={String(solicitacao.id)} className="floating-card mb-3 accordion-item-striped">
         <Accordion.Header>
           <Stack direction="horizontal" gap={3} className="w-100 me-2">
@@ -147,6 +144,8 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
         title="Confirmar Alteração de Status"
         body={`Tem certeza que deseja alterar o status da solicitação #${solicitacao.id} para "${pendingStatusChange}"?`}
         isDeleting={isSubmitting}
+        confirmButtonText="Confirmar Mudança"
+        confirmButtonVariant="primary"
       />
     </>
   );

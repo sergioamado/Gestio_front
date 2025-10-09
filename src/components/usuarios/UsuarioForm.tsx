@@ -67,6 +67,8 @@ function UsuarioForm({ usuario, unidades, onSubmit, isLoading }: UsuarioFormProp
             <Form.Label>Perfil</Form.Label>
             <Form.Select {...register("role", { required: "O perfil é obrigatório" })} isInvalid={!!errors.role}>
               <option value="tecnico">Técnico</option>
+              <option value="tecnico_impressora">Técnico de Impressora</option>
+              <option value="tecnico_eletronica">Técnico de Eletrónica</option>
               <option value="gerente">Gerente</option>
               <option value="admin">Admin</option>
             </Form.Select>

@@ -1,7 +1,7 @@
 // src/layouts/AuthLayout.tsx
 import React from 'react';
 import { Container } from 'react-bootstrap';
-import Footer from '../components/Footer';
+import Footer from '../components/Footer'; 
 
 const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -9,7 +9,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
       <Container as="main" className="flex-grow-1 d-flex align-items-center justify-content-center">
         {children}
       </Container>
-      <Footer />
+      <Footer theme="light" />
     </div>
   );
 };

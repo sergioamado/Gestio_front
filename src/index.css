@@ -1,13 +1,27 @@
 /* src/index.css */
 :root {
-  --ufs-blue: #034EA2;
-  --ufs-blue-darker: #023b7e;
-  --ufs-blue-light: #e6f0fa; /* Azul claro para o header */
-  --main-bg-color: #f0f2f5;   /* Fundo cinza claro para o conteúdo */
+  /* Cores Principais */
+  --cor-azul-ufs: #034EA2;
+  --cor-azul-ufs-darker: #023b7e;
+  --cor-azul-ufs-light: #e6f0fa;
+  --cor-verde-header: #709a68;
+
+  /* Cores de Ação */
+  --cor-laranja-detalhes: #fd7e14;
+  --cor-vermelho-cancelar: #dc3545;
+
+  /* Cores dos Cards do Dashboard */
+  --cor-azul-claro-card: #0dcaf0;
+  --cor-verde-claro-card: #198754;
+  --cor-amarelo-card: #ffc107;
+  --cor-vermelho-card: #dc3545;
+
+  /* Cores de Fundo e Layout */
+  --main-bg-color: #f0f2f5;
   --sidebar-width: 280px;
 }
 
-/* Reset básico e configuração do layout principal */
+/* Reset básico */
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -15,99 +29,147 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--main-bg-color); /* Aplica o fundo cinza ao body */
+  background-color: var(--main-bg-color);
 }
 
-/* Estilos do Bootstrap sobrescritos */
-.btn-primary, .bg-primary {
-  background-color: var(--ufs-blue) !important; /* !important garante a anulação */
-  border-color: var(--ufs-blue) !important;
-}
-
-.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-  background-color: var(--ufs-blue-darker) !important;
-  border-color: var(--ufs-blue-darker) !important;
-  box-shadow: 0 0 0 0.25rem rgba(3, 78, 162, 0.5) !important;
-}
-
-
-a {
-  color: var(--ufs-blue);
-  text-decoration: none;
-}
-
-/*
-  Componente flutuante: bordas arredondadas, sem borda visível e uma sombra suave
-  para criar o efeito de "flutuação".
-*/
-.floating-card {
-  border-radius: 0.75rem !important;
-  border: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-  transition: all 0.2s ease-in-out;
-}
-
-.floating-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
-}
-
-.app-header {
-    background-color: var(--ufs-blue-light) !important;
-    border-bottom: 1px solid #dce8f7;
-    padding: 1rem 1.5rem;
-}
-
-.main-content {
-  flex-grow: 1;
-  height: 100vh;
-  overflow-y: auto;
-}
-
+/* Layout Principal */
+.app-layout { display: flex; }
+.sidebar-wrapper { width: var(--sidebar-width); flex-shrink: 0; }
+.main-content { flex-grow: 1; height: 100vh; overflow-y: auto; }
 .auth-layout {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100%;
-  background-color: var(--ufs-blue);
+  background-color: var(--cor-azul-ufs);
   padding: 1rem;
 }
 
-/* Layout principal da aplicação */
-.app-layout {
-  display: flex;
-}
-
-.sidebar-wrapper {
-  width: var(--sidebar-width);
-  flex-shrink: 0; /* Impede que a sidebar encolha */
-}
-
-.main-content {
-  flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
+.sidebar-container {
+  background-color: var(--cor-azul-ufs);
+  color: #ffffff;
   height: 100vh;
-  overflow-y: auto; /* Permite scroll apenas na área de conteúdo */
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  position: fixed;
+  width: var(--sidebar-width);
 }
 
+/* Barra Superior (Header) */
+.app-header {
+  background-color: var(--cor-verde-header) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1rem 1.5rem;
+  color: white;
+}
+.app-header h4 {
+  color: white;
+}
+.app-header .text-muted {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Botões */
+.btn-primary {
+  background-color: var(--cor-azul-ufs) !important;
+  border-color: var(--cor-azul-ufs) !important;
+}
+.btn-primary:hover {
+  background-color: var(--cor-azul-ufs-darker) !important;
+  border-color: var(--cor-azul-ufs-darker) !important;
+}
+.btn-warning {
+  background-color: var(--cor-laranja-detalhes) !important;
+  border-color: var(--cor-laranja-detalhes) !important;
+  color: white !important;
+}
+.btn-danger {
+  background-color: var(--cor-vermelho-cancelar) !important;
+  border-color: var(--cor-vermelho-cancelar) !important;
+}
+
+/* Cards com Borda Azul */
+.floating-card {
+  border-radius: 0.75rem !important;
+  border: 1px solid #dee2e6 !important;
+  border-top: 4px solid var(--cor-azul-ufs) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.2s ease-in-out;
+}
+.floating-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Cards Coloridos do Dashboard */
+.stat-card.card {
+  border-top: none !important;
+  color: white !important;
+}
+.stat-card-unidades { background-color: var(--cor-azul-claro-card) !important; }
+.stat-card-usuarios { background-color: var(--cor-verde-claro-card) !important; }
+.stat-card-itens { background-color: var(--cor-amarelo-card) !important; color: #000 !important; }
+.stat-card-pendentes { background-color: var(--cor-vermelho-card) !important; }
+
+.stat-card.card .card-title {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+.stat-card-itens.card .card-title,
+.stat-card-itens.card .card-text {
+  color: #000 !important;
+}
+
+/* Links */
+a { color: var(--cor-azul-ufs); text-decoration: none; }
+
+/* Barra Lateral Links */
 .sidebar-nav-link {
   color: rgba(255, 255, 255, 0.8) !important;
-  transition: all 0.2s ease-in-out; /* Animação suave */
+  transition: all 0.2s ease-in-out;
 }
-
 .sidebar-nav-link:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
 }
 
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem; /* Espaço entre o ícone e o texto */
-  transition: all 0.2s ease-in-out;
+/* Estilos de Gerenciar Solicitações */
+.status-badge {
+  padding: 0.4em 0.7em;
+  border-radius: 15px;
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.85em;
+  min-width: 120px;
+  display: inline-block;
 }
 
-.action-btn:hover {
-  transform: translateY(-2px); /* Efeito de elevação */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+/* --- CORREÇÃO APLICADA AQUI --- */
+.status-pendente { background-color: #ffc107; color: #000 !important; }
+.status-em-atendimento { background-color: #0d6efd; color: #fff !important; }
+.status-concluida { background-color: #198754; color: #fff !important; }
+.status-cancelada { background-color: #dc3545; color: #fff !important; }
+
+
+.accordion-item:nth-of-type(even) .accordion-button {
+  background-color: var(--cor-azul-ufs-light);
+}
+
+.info-card {
+  color: white !important;
+  border: none !important;
+}
+.card.info-card-glpi { background-color: #0d6efd !important; }
+.card.info-card-patrimonio { background-color: #198754 !important; }
+.card.info-card-setor { background-color: #6c757d !important; }
+
+.actions-toolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.table-striped-ufs tbody tr:nth-of-type(odd) > * {
+  background-color: var(--cor-azul-ufs-light);
 }

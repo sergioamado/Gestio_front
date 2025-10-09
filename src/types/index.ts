@@ -3,6 +3,8 @@
 // --- TIPOS DE ENTIDADES BASE (ESPELHAM O BANCO DE DADOS) ---
 export type StatusSolicitacao = 'Pendente' | 'Em atendimento' | 'Concluída' | 'Cancelada';
 
+export type Role = 'admin' | 'gerente' | 'tecnico' | 'tecnico_impressora' | 'tecnico_eletronica';
+
 export interface Unidade {
   id: number;
   nome: string;

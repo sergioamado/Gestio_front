@@ -1,17 +1,15 @@
 // src/components/dashboard/SolicitacoesRecentesTable.tsx
-import { Table, Alert } from 'react-bootstrap';
+import { Table, Alert, Card } from 'react-bootstrap';
 import type { SolicitacaoRecente } from '../../types/index';
+import StatusBadge from '../solicitacoes/StatusBadge'; // Usando o StatusBadge para consistência
 
 interface TableProps {
   solicitacoes: SolicitacaoRecente[];
+  title: string;
   emptyMessage: string;
 }
 
-function SolicitacoesRecentesTable({ solicitacoes, emptyMessage }: TableProps) {
-  if (solicitacoes.length === 0) {
-    return <Alert variant="info">{emptyMessage}</Alert>;
-  }
-  
+function SolicitacoesRecentesTable({ solicitacoes, title, emptyMessage }: TableProps) {
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('pt-BR', {
       day: '2-digit',
@@ -22,30 +20,40 @@ function SolicitacoesRecentesTable({ solicitacoes, emptyMessage }: TableProps) {
     }).format(new Date(dateString));
   };
 
-
   return (
-    <Table striped bordered hover responsive>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Data</th>
-          <th>Status</th>
-          <th>Técnico Responsável</th>
-          <th>Nº GLPI</th> {/* ALTERADO: Nova coluna */}
-        </tr>
-      </thead>
-      <tbody>
-        {solicitacoes.map((s) => (
-          <tr key={s.id}>
-            <td>{s.id}</td>
-            <td>{formatDate(s.data_solicitacao)}</td>
-            <td>{s.status}</td>
-            <td>{s.tecnico_responsavel}</td>
-            <td>{s.numero_glpi || 'N/A'}</td> {/* ALTERADO: Exibindo o número do GLPI */}
-          </tr>
-        ))}
-      </tbody>
-    </Table>
+    <Card className="floating-card">
+      <Card.Header as="h5">{title}</Card.Header>
+      <Card.Body>
+        {solicitacoes.length === 0 ? (
+          <Alert variant="info" className="mb-0">{emptyMessage}</Alert>
+        ) : (
+          <Table striped hover responsive className="align-middle table-striped-ufs">
+            <thead className="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Data</th>
+                <th>Técnico Responsável</th>
+                <th>Nº GLPI</th>
+                <th className="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {solicitacoes.map((s) => (
+                <tr key={s.id}>
+                  <td>#{s.id}</td>
+                  <td>{formatDate(s.data_solicitacao)}</td>
+                  <td>{s.tecnico_responsavel}</td>
+                  <td>{s.numero_glpi || 'N/A'}</td>
+                  <td className="text-center">
+                    <StatusBadge status={s.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card.Body>
+    </Card>
   );
 }
 

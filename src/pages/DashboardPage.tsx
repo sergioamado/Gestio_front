@@ -13,6 +13,8 @@ const renderDashboardByRole = (role?: string) => {
     case 'gerente':
       return <GerenteDashboard />;
     case 'tecnico':
+    case 'tecnico_impressora':
+    case 'tecnico_eletronica':
       return <TecnicoDashboard />;
     default:
       return <p>O seu perfil não tem um painel de controle definido.</p>;
@@ -23,11 +25,7 @@ function DashboardPage() {
   const { user } = useAuth();
 
   return (
-    <MainLayout pageTitle="🏢 Painel de Controle">
-      {/* ATUALIZADO: 
-        - Removida a classe 'welcome-card'.
-        - Adicionadas as classes 'bg-primary' e 'text-white' do Bootstrap.
-      */}
+    <MainLayout pageTitle="🏢 Painel de Controle">     
       <Card className="p-4 mb-4 floating-card bg-primary text-white">
         <h3>Bem-vindo(a), {user?.nome_completo}!</h3>
         <p className="mb-0" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>

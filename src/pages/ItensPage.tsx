@@ -33,6 +33,9 @@ function ItensPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingItem, setViewingItem] = useState<Item | null>(null);
 
+  // CORRIGIDO: Variável para controlar a visibilidade das ações
+  const canManageItems = user?.role === 'admin' || user?.role === 'gerente';
+
   const fetchData = () => {
     setLoading(true);
     setError(null);
@@ -127,9 +130,12 @@ function ItensPage() {
       <Card className="floating-card">
         <Card.Header className="d-flex justify-content-between align-items-center">
           <h5>Itens em Estoque</h5>
-          <PrimaryButton onClick={handleShowCreateModal}>
-            + Novo Item
-          </PrimaryButton>
+          {/* CORRIGIDO: Botão "Novo Item" só aparece para quem pode gerir */}
+          {canManageItems && (
+            <PrimaryButton onClick={handleShowCreateModal}>
+              + Novo Item
+            </PrimaryButton>
+          )}
         </Card.Header>
         <Card.Body>
           {loading ? (
@@ -145,27 +151,32 @@ function ItensPage() {
         </Card.Body>
       </Card>
 
-      <ModalForm 
-        show={showFormModal} 
-        onHide={() => setShowFormModal(false)}
-        title={editingItem ? 'Editar Item' : 'Cadastrar Novo Item'}
-      >
-        <ItemForm 
-            item={editingItem}
-            unidades={unidades}
-            onSubmit={handleFormSubmit}
-            isLoading={isSubmitting}
-        />
-      </ModalForm>
+      {canManageItems && (
+        <>
+          <ModalForm 
+            show={showFormModal} 
+            onHide={() => setShowFormModal(false)}
+            title={editingItem ? 'Editar Item' : 'Cadastrar Novo Item'}
+          >
+            <ItemForm 
+                item={editingItem}
+                unidades={unidades}
+                onSubmit={handleFormSubmit}
+                isLoading={isSubmitting}
+            />
+          </ModalForm>
 
-      <DeleteConfirmationModal 
-        show={showDeleteModal}
-        onHide={() => setShowDeleteModal(false)}
-        onConfirm={handleConfirmDelete}
-        title="Confirmar Exclusão"
-        body={`Tem a certeza de que deseja excluir o item com a especificação "${deletingItem?.descricao}"? Esta ação não pode ser desfeita.`}
-        isDeleting={isDeleting}
-      />
+          <DeleteConfirmationModal 
+            show={showDeleteModal}
+            onHide={() => setShowDeleteModal(false)}
+            onConfirm={handleConfirmDelete}
+            title="Confirmar Exclusão"
+            body={`Tem a certeza de que deseja excluir o item com a especificação "${deletingItem?.descricao}"? Esta ação não pode ser desfeita.`}
+            isDeleting={isDeleting}
+          />
+        </>
+      )}
+
        <ItemDetailsModal 
         show={showDetailsModal}
         onHide={() => setShowDetailsModal(false)}

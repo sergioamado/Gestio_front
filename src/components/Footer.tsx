@@ -8,17 +8,16 @@ const footerStyle: React.CSSProperties = {
   marginTop: 'auto',
 };
 
-// Estilos condicionais baseados na classe do elemento pai
 const lightTextFooterStyle: React.CSSProperties = {
   ...footerStyle,
-  color: '#f8f9fa', // Cor clara para fundos escuros
+  color: '#f8f9fa', 
 };
 
 const darkTextFooterStyle: React.CSSProperties = {
   ...footerStyle,
-  color: '#6c757d', // Cor escura para fundos claros
-  backgroundColor: '#f8f9fa',
-  borderTop: '1px solid #e7e7e7',
+  color: '#6c757d', 
+  backgroundColor: '#f8f9fa', 
+  borderTop: '1px solid #e7e7e7', 
 };
 
 const linkLightStyle: React.CSSProperties = {
@@ -33,7 +32,6 @@ const linkDarkStyle: React.CSSProperties = {
   fontWeight: 500,
 };
 
-// O componente agora aceita uma prop para alternar o tema
 const Footer = ({ theme = 'dark' }: { theme?: 'light' | 'dark' }) => {
   const currentYear = new Date().getFullYear();
   const isDark = theme === 'dark';

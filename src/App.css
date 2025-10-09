@@ -1,13 +1,27 @@
 /* src/index.css */
 :root {
-  --ufs-blue: #034EA2;
-  --ufs-blue-darker: #023b7e;
-  --ufs-blue-light: #7db9f4; /* Azul claro para o header */
-  --main-bg-color: #3176de;   /* Fundo cinza claro para o conteúdo */
+  /* Cores Principais */
+  --cor-azul-ufs: #034EA2;
+  --cor-azul-ufs-darker: #023b7e;
+  --cor-azul-ufs-light: #e6f0fa;
+  --cor-verde-header: #709a68;
+
+  /* Cores de Ação */
+  --cor-laranja-detalhes: #fd7e14;
+  --cor-vermelho-cancelar: #dc3545;
+
+  /* Cores dos Cards do Dashboard */
+  --cor-azul-claro-card: #0dcaf0;
+  --cor-verde-claro-card: #198754;
+  --cor-amarelo-card: #ffc107;
+  --cor-vermelho-card: #dc3545;
+
+  /* Cores de Fundo e Layout */
+  --main-bg-color: #f0f2f5;
   --sidebar-width: 280px;
 }
 
-/* Reset básico e configuração do layout principal */
+/* Reset básico */
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -15,191 +29,99 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--main-bg-color); /* Aplica o fundo cinza ao body */
+  background-color: var(--main-bg-color);
 }
 
-/* Garante que o app ocupe toda a altura da tela */
-html, body, #root {
-  height: 100%;
-}
-
-/* Estilos do Bootstrap sobrescritos */
-.btn-primary {
-  background-color: var(--ufs-blue);
-  border-color: var(--ufs-blue);
-}
-
-.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-  background-color: var(--ufs-blue-darker) !important;
-  border-color: var(--ufs-blue-darker) !important;
-  box-shadow: 0 0 0 0.25rem rgba(3, 78, 162, 0.5) !important;
-}
-
-a {
-  color: var(--ufs-blue);
-  text-decoration: none;
-}
-
-/*
-  Componente flutuante: bordas arredondadas, sem borda visível e uma sombra suave
-  para criar o efeito de "flutuação".
-*/
-.floating-card {
-  border-radius: 0.75rem !important;
-  border: none !important;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.2s ease-in-out;
-}
-
-.app-header {
-    background-color: var(--ufs-blue-light) !important; /* Fundo azul claro */
-    border-bottom: 1px solid #dce8f7;
-    padding: 1rem 1.5rem;
-}
-
-.floating-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Layout principal da aplicação */
-.app-layout {
-  display: flex;
-}
-
-.sidebar-wrapper {
-  width: var(--sidebar-width);
-  flex-shrink: 0; /* Impede que a sidebar encolha */
-}
-
-.main-content {
-  flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
-  height: 100vh;
-  overflow-y: auto; /* Permite scroll apenas na área de conteúdo */
-}
-
-/* Classe para o layout de autenticação */
+/* Layout Principal */
+.app-layout { display: flex; }
+.sidebar-wrapper { width: var(--sidebar-width); flex-shrink: 0; }
+.main-content { flex-grow: 1; height: 100vh; overflow-y: auto; }
 .auth-layout {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100%;
-  background-color: var(--ufs-blue);
+  background-color: var(--cor-azul-ufs);
   padding: 1rem;
 }
 
-.welcome-card {
-  background-color: var(--ufs-blue) !important;
-  color: #ffffff !important;
-}
+/* --- NOVOS ESTILOS GLOBAIS --- */
 
-.welcome-card h3 {
-  color: #ffffff;
+/* Barra Superior (Header) */
+.app-header {
+  background-color: var(--cor-verde-header) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1rem 1.5rem;
+  color: white; /* Cor do texto no header */
 }
-
-.welcome-card p {
-  color: rgba(255, 255, 255, 0.85) !important;
+.app-header h4 {
+  color: white; /* Título no header */
 }
-
-.status-badge {
-  padding: 0.4em 0.7em;
-  border-radius: 15px;
-  font-weight: 600;
-  color: #fff;
-  text-align: center;
-  font-size: 0.85em;
-}
-
-.status-pendente {
-  background-color: #ffc107; /* Amarelo */
-}
-
-.status-atendimento {
-  background-color: #0d6efd; /* Azul */
-}
-
-.status-concluida {
-  background-color: #198754; /* Verde */
-}
-
-.status-cancelada {
-  background-color: #dc3545; /* Vermelho */
-}
-
-.status-badge {
-  padding: 0.4em 0.7em;
-  border-radius: 15px;
-  font-weight: 600;
-  color: #fff;
-  text-align: center;
-  font-size: 0.85em;
-  min-width: 120px;
-  display: inline-block;
-}
-
-.status-pendente { background-color: #ffc107; color: #000; }
-.status-em-atendimento { background-color: #0d6efd; }
-.status-concluida { background-color: #198754; }
-.status-cancelada { background-color: #dc3545; }
-
-/* Zebrado UFS */
-.accordion-item-striped:nth-of-type(odd) .accordion-button {
-  background-color: #f8f9fa; /* Cinza claro para itens ímpares */
-}
-.accordion-item-striped:nth-of-type(even) .accordion-button {
-  background-color: var(--ufs-blue-light); /* Azul UFS claro para itens pares */
-}
-
-/* Cards de Informação Coloridos */
-.info-card {
-  color: white;
-  border: none;
-}
-.info-card-glpi { background-color: #0d6efd; }
-.info-card-patrimonio { background-color: #198754; }
-.info-card-setor { background-color: #6c757d; }
-
-/* Ações e Botão Copiar */
-.actions-toolbar {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+.app-header .text-muted {
+  color: rgba(255, 255, 255, 0.8) !important; /* Texto secundário no header */
 }
 
 
-.status-badge {
-  padding: 0.4em 0.7em;
-  border-radius: 15px;
-  font-weight: 600;
-  color: #fff;
-  text-align: center;
-  font-size: 0.85em;
-  min-width: 120px;
-  display: inline-block;
+/* Botões */
+.btn-primary {
+  background-color: var(--cor-azul-ufs) !important;
+  border-color: var(--cor-azul-ufs) !important;
 }
-
-.status-pendente { background-color: #ffc107; color: #000; }
-.status-em-atendimento { background-color: #0d6efd; }
-.status-concluida { background-color: #198754; }
-.status-cancelada { background-color: #dc3545; }
-
-.accordion-item:nth-of-type(even) .accordion-button {
-  background-color: var(--ufs-blue-light);
+.btn-primary:hover {
+  background-color: var(--cor-azul-ufs-darker) !important;
+  border-color: var(--cor-azul-ufs-darker) !important;
 }
-
-.info-card {
+.btn-warning { /* Botão Laranja para Detalhes */
+  background-color: var(--cor-laranja-detalhes) !important;
+  border-color: var(--cor-laranja-detalhes) !important;
   color: white !important;
-  border: none !important;
 }
-.card.info-card-glpi { background-color: #0d6efd !important; }
-.card.info-card-patrimonio { background-color: #198754 !important; }
-.card.info-card-setor { background-color: #6c757d !important; }
+.btn-danger { /* Botão Vermelho */
+  background-color: var(--cor-vermelho-cancelar) !important;
+  border-color: var(--cor-vermelho-cancelar) !important;
+}
 
+/* Cards com Borda Azul */
+.floating-card {
+  border-radius: 0.75rem !important;
+  border: 1px solid #dee2e6 !important;
+  border-top: 4px solid var(--cor-azul-ufs) !important; /* Borda Azul UFS */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.2s ease-in-out;
+}
+.floating-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+}
 
-/* Ações e Botão Copiar */
-.actions-toolbar {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+/* Cards Coloridos do Dashboard */
+.stat-card.card {
+  border-top: none !important; 
+  color: white;
+}
+.stat-card-unidades { background-color: var(--cor-azul-claro-card); }
+.stat-card-usuarios { background-color: var(--cor-verde-claro-card); }
+.stat-card-itens { background-color: var(--cor-amarelo-card); color: #000; }
+.stat-card-pendentes { background-color: var(--cor-vermelho-card); }
+
+.stat-card.card .card-title {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+.stat-card-itens.card .card-title,
+.stat-card-itens.card .card-text {
+  color: #000 !important;
+}
+
+/* Links */
+a { color: var(--cor-azul-ufs); text-decoration: none; }
+
+/* Barra Lateral */
+.sidebar-nav-link {
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.2s ease-in-out;
+}
+.sidebar-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
 }

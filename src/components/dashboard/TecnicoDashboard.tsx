@@ -1,7 +1,7 @@
 // src/components/dashboard/TecnicoDashboard.tsx
 import { useState, useEffect } from 'react';
 import { Spinner, Alert } from 'react-bootstrap';
-import { getLatestSolicitacoes} from '../../services/relatorioService';
+import { getLatestSolicitacoes } from '../../services/relatorioService';
 import type { SolicitacaoRecente } from '../../types/index';
 import SolicitacoesRecentesTable from './SolicitacoesRecentesTable';
 
@@ -13,7 +13,7 @@ function TecnicoDashboard() {
   useEffect(() => {
     getLatestSolicitacoes()
       .then(setSolicitacoes)
-      .catch(() => setError('Não foi possível carregar as solicitações.'))
+      .catch(() => setError('Não foi possível carregar as suas solicitações.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -21,14 +21,11 @@ function TecnicoDashboard() {
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
-    <>
-      {/* ALTERADO: Título atualizado */}
-      <h4 className="mb-4">Suas Últimas 15 Solicitações Criadas</h4>
-      <SolicitacoesRecentesTable 
-        solicitacoes={solicitacoes}
-        emptyMessage="Você ainda não criou nenhuma solicitação."
-      />
-    </>
+    <SolicitacoesRecentesTable 
+      solicitacoes={solicitacoes}
+      title="Minhas Solicitações"
+      emptyMessage="Você ainda não é responsável por nenhuma solicitação."
+    />
   );
 }
 

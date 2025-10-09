@@ -21,13 +21,11 @@ function GerenteDashboard() {
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
-    <>
-      <h4 className="mb-4">Últimas 5 Solicitações da Unidade</h4>
-      <SolicitacoesRecentesTable 
-        solicitacoes={solicitacoes}
-        emptyMessage="Nenhuma solicitação recente foi criada para a sua unidade."
-      />
-    </>
+    <SolicitacoesRecentesTable 
+      solicitacoes={solicitacoes}
+      title="Solicitações Pendentes da Unidade"
+      emptyMessage="Nenhuma solicitação pendente para a sua unidade no momento."
+    />
   );
 }
 

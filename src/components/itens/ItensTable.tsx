@@ -1,16 +1,20 @@
 // src/components/itens/ItensTable.tsx
 import { Table, Button, Stack } from 'react-bootstrap';
-import { PencilSquare, Trash3Fill, InfoCircleFill } from 'react-bootstrap-icons'; // Adicionar InfoCircleFill
+import { PencilSquare, Trash3Fill, InfoCircleFill } from 'react-bootstrap-icons';
 import type { Item } from '../../types';
+import { useAuth } from '../../hooks/useAuth';
 
 interface ItensTableProps {
   itens: Item[];
   onEdit: (item: Item) => void;
   onDelete: (item: Item) => void;
-  onDetails: (item: Item) => void; // Adicionar nova prop
+  onDetails: (item: Item) => void;
 }
 
 function ItensTable({ itens, onEdit, onDelete, onDetails }: ItensTableProps) {
+  const { user } = useAuth();
+  const canManageItems = user?.role === 'admin' || user?.role === 'gerente';
+
   return (
     <Table striped hover responsive className="align-middle">
       <thead className="table-light">
@@ -29,16 +33,20 @@ function ItensTable({ itens, onEdit, onDelete, onDetails }: ItensTableProps) {
             <td className="text-center">{item.quantidade}</td>
             <td className="text-center">
               <Stack direction="horizontal" gap={2} className="justify-content-center">
-                {/* NOVO BOTÃO DE DETALHES */}
-                <Button variant="outline-secondary" size="sm" onClick={() => onDetails(item)}>
+                <Button variant="warning" size="sm" onClick={() => onDetails(item)}>
                   <InfoCircleFill /> Detalhes
                 </Button>
-                <Button variant="primary" size="sm" onClick={() => onEdit(item)} className="action-btn">
-                  <PencilSquare /> Editar
-                </Button>
-                <Button variant="danger" size="sm" onClick={() => onDelete(item)} className="action-btn">
-                  <Trash3Fill /> Excluir
-                </Button>
+                {/* CORRIGIDO: Botões só aparecem para quem pode gerir */}
+                {canManageItems && (
+                  <>
+                    <Button variant="primary" size="sm" onClick={() => onEdit(item)}>
+                      <PencilSquare /> Editar
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => onDelete(item)}>
+                      <Trash3Fill /> Excluir
+                    </Button>
+                  </>
+                )}
               </Stack>
             </td>
           </tr>

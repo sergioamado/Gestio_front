@@ -1,7 +1,7 @@
 // src/components/dashboard/AdminDashboard.tsx
 import { useState, useEffect } from 'react';
 import { Row, Col, Spinner, Alert } from 'react-bootstrap';
-import { getStatsGlobal} from '../../services/relatorioService';
+import { getStatsGlobal } from '../../services/relatorioService';
 import type { GlobalStats } from '../../types/index';
 import StatCard from './StatCard';
 
@@ -25,16 +25,16 @@ function AdminDashboard() {
       <h4 className="mb-4">Visão Geral do Sistema</h4>
       <Row>
         <Col md={6} lg={3} className="mb-3">
-          <StatCard title="Unidades Organizacionais" value={stats?.total_unidades ?? 0} />
+          <StatCard title="Unidades Organizacionais" value={stats?.total_unidades ?? 0} variant="unidades" />
         </Col>
         <Col md={6} lg={3} className="mb-3">
-          <StatCard title="Usuários Cadastrados" value={stats?.total_usuarios ?? 0} />
+          <StatCard title="Usuários Cadastrados" value={stats?.total_usuarios ?? 0} variant="usuarios" />
         </Col>
         <Col md={6} lg={3} className="mb-3">
-          <StatCard title="Itens Totais em Estoque" value={stats?.total_itens ?? 0} />
+          <StatCard title="Itens Totais em Estoque" value={stats?.total_itens ?? 0} variant="itens" />
         </Col>
         <Col md={6} lg={3} className="mb-3">
-          <StatCard title="Solicitações Pendentes" value={stats?.solicitacoes_pendentes ?? 0} />
+          <StatCard title="Solicitações Pendentes" value={stats?.solicitacoes_pendentes ?? 0} variant="pendentes" />
         </Col>
       </Row>
     </>
