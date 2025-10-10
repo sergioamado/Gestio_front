@@ -8,7 +8,7 @@ import ModalForm from '../components/ModalForm';
 import UsuarioForm from '../components/usuarios/UsuarioForm';
 
 import * as usuarioService from '../services/usuarioService';
-import type { User, UserCreateData, UserUpdateData } from '../types/index';
+import type { User, UserCreateData, UserUpdateData, Role } from '../types/index';
 import * as unidadeService from '../services/unidadeService';
 import type { Unidade } from '../types/index';
 
@@ -44,8 +44,6 @@ function UsuariosPage() {
   useEffect(() => {
     fetchData();
   }, []);
-
-  // O resto do ficheiro pode permanecer igual, mas colei abaixo para garantir.
   
   const handleShowCreateModal = () => {
     setEditingUser(null);
@@ -63,12 +61,14 @@ function UsuariosPage() {
     
     const processedData = {
         ...data,
-        unidade_id: data.unidade_id ? Number(data.unidade_id) : null,
+        unidade_id: (data as { role: Role }).role === 'admin' 
+          ? null 
+          : (data.unidade_id ? Number(data.unidade_id) : null),
     };
 
     try {
       if (editingUser) {
-        const { username, password, ...updateData } = processedData as UserUpdateData & { username: string, password?: string };
+        const { username, password, ...updateData } = processedData as any;
         await usuarioService.updateUser(editingUser.id, updateData);
       } else {
         await usuarioService.createUser(processedData as UserCreateData);
@@ -76,7 +76,8 @@ function UsuariosPage() {
       setShowModal(false);
       fetchData();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Ocorreu um erro inesperado ao guardar o utilizador.';
+      // CORRIGIDO: Lógica simplificada para garantir que apenas texto seja exibido
+      const errorMessage = err.response?.data?.message || 'Ocorreu um erro ao guardar o utilizador.';
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -108,7 +109,7 @@ function UsuariosPage() {
         <Card.Body>
           {loading ? (
             <div className="text-center"><Spinner animation="border" /></div>
-          ) : !error && ( // Adicionado: Não renderizar a tabela se houver um erro de carregamento
+          ) : (
             <UsuariosTable usuarios={usuarios} onEdit={handleShowEditModal} onDelete={handleDelete} />
           )}
         </Card.Body>

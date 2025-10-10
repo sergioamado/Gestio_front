@@ -15,6 +15,7 @@ import AlterarSenhaPage from './pages/AlterarSenhaPage';
 import ItensPage from './pages/ItensPage';
 import NovaSolicitacaoPage from './pages/NovaSolicitacaoPage';
 import GerenciarSolicitacoesPage from './pages/GerenciarSolicitacoesPage';
+import ManutencaoEletronicaPage from './pages/ManutencaoEletronicaPage';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/itens" element={<ItensPage />} />
             <Route path="/nova-solicitacao" element={<NovaSolicitacaoPage />} /> 
             <Route path="/gerenciar-solicitacoes" element={<GerenciarSolicitacoesPage />} />
+            <Route path="/fila-manutencao-eletronica" element={<ManutencaoEletronicaPage />} />
             {/* Adicione outras rotas protegidas aqui */}
           </Route>
 

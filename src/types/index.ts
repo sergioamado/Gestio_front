@@ -1,10 +1,9 @@
 // src/types/index.ts
 
-// --- TIPOS DE ENTIDADES BASE (ESPELHAM O BANCO DE DADOS) ---
+
 export type StatusSolicitacao = 'Pendente' | 'Em atendimento' | 'Concluída' | 'Cancelada';
 
 export type Role = 'admin' | 'gerente' | 'tecnico' | 'tecnico_impressora' | 'tecnico_eletronica';
-
 export interface Unidade {
   id: number;
   nome: string;
@@ -16,7 +15,7 @@ export interface User {
   id: number;
   username: string;
   nome_completo: string;
-  role: 'admin' | 'gerente' | 'tecnico';
+  role: Role;
   telefone?: string | null;
   email?: string | null;   
   unidade_id: number | null;
@@ -53,12 +52,12 @@ export interface Solicitacao {
   id: number;
   data_solicitacao: string; 
   status: 'Pendente' | 'Em atendimento' | 'Concluída' | 'Cancelada';
-  tecnico_responsavel: string; // Nome completo do responsável
+  tecnico_responsavel: string; 
   setor_equipamento: string | null;
   numero_glpi: string | null;
   patrimonio: string | null;
-  usuario_id: number; // ID do solicitante
-  responsavel_usuario_id: number; // ID do técnico
+  usuario_id: number; 
+  responsavel_usuario_id: number; 
   unidade_id: number;
 }
 
@@ -146,3 +145,23 @@ export interface CartItem {
   quantidade: number;
   quantidade_estoque: number;
 }
+
+export type StatusManutencao = 'Pendente' | 'Em_manutencao' | 'Concluido';
+
+export interface ManutencaoEletronica {
+  id: number;
+  glpi: string | null;
+  tecnico_responsavel_id: number | null; 
+  equipamento: string;
+  descricao_problema: string;
+  laudo_tecnico: string | null; 
+  data_entrada: string;
+  status: StatusManutencao;
+  tecnico_responsavel: { 
+    nome_completo: string;
+  } | null;
+}
+
+export type ManutencaoEletronicaCreateData = Omit<ManutencaoEletronica, 'id' | 'data_entrada' | 'status' | 'tecnico_responsavel' | 'laudo_tecnico' | 'tecnico_responsavel_id'> & {
+  tecnico_responsavel_id: number; // No formulário de criação, o técnico é obrigatório
+};

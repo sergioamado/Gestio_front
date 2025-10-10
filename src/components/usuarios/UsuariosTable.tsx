@@ -14,14 +14,22 @@ function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps) {
   const { user: currentUser } = useAuth();
   const usersToDisplay = usuarios.filter(u => u.id !== currentUser?.id);
 
-  const getRoleBadge = (role: Role) => { // <-- CORREÇÃO: Usa o tipo específico 'Role'
-    const variants: Record<Role, string> = {
+  const getRoleBadge = (role: Role) => {
+    const variants: Partial<Record<Role, string>> = {
       admin: 'danger',
       gerente: 'primary',
       tecnico: 'secondary',
+      tecnico_impressora: 'info',
+      tecnico_eletronica: 'dark',
     };
+    
     const variant = variants[role] || 'light';
-    return <Badge bg={variant}>{role.charAt(0).toUpperCase() + role.slice(1)}</Badge>;
+    
+    const formattedRole = role
+      .replace('_', ' ')
+      .replace(/\b\w/g, char => char.toUpperCase());
+
+    return <Badge bg={variant}>{formattedRole}</Badge>;
   }
 
   return (

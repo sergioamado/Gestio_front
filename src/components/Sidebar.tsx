@@ -2,8 +2,8 @@
 import { Nav } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import ufsLogo from '../assets/ufs-logo.svg';
-import { HouseDoorFill, PeopleFill, BoxSeam, BuildingFill, KeyFill, BoxArrowRight, PencilSquare, ListCheck } from 'react-bootstrap-icons';
+import ufsLogo from '../assets/ufs_principal_negativa.png';
+import { HouseDoorFill, PeopleFill, BoxSeam, BuildingFill, KeyFill, BoxArrowRight, PencilSquare, ListCheck, Tools } from 'react-bootstrap-icons';
 import PrimaryButton from './PrimaryButton';
 
 const navLinkBaseStyle: React.CSSProperties = {
@@ -38,11 +38,17 @@ function Sidebar() {
           <HouseDoorFill size={24} className="me-3" /> Painel
         </Nav.Link>
         
-        {/* CORRIGIDO: Gerentes não veem mais este link */}
+        
         {user?.role !== 'gerente' && (
          <Nav.Link onClick={() => navigate('/nova-solicitacao')} style={navLinkBaseStyle} className="sidebar-nav-link">
           <PencilSquare size={24} className="me-3" /> Nova Solicitação
          </Nav.Link>
+        )}
+
+        {(user?.role === 'admin' || user?.role.startsWith('tecnico')) && (
+          <Nav.Link onClick={() => navigate('/fila-manutencao-eletronica')} style={navLinkBaseStyle} className="sidebar-nav-link">
+            <Tools size={24} className="me-3" /> Man. Eletrônica
+          </Nav.Link>
         )}
 
         {(user?.role === 'admin' || user?.role === 'gerente') && (

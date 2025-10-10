@@ -145,7 +145,7 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
   display: inline-block;
 }
 
-/* --- CORREÇÃO APLICADA AQUI --- */
+
 .status-pendente { background-color: #ffc107; color: #000 !important; }
 .status-em-atendimento { background-color: #0d6efd; color: #fff !important; }
 .status-concluida { background-color: #198754; color: #fff !important; }
@@ -172,4 +172,54 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
 
 .table-striped-ufs tbody tr:nth-of-type(odd) > * {
   background-color: var(--cor-azul-ufs-light);
+}
+
+.card-manutencao-vencido-grave {
+  background-color: rgba(102, 0, 0, 0.1) !important;
+  border-left: 5px solid #660000 !important;
+}
+.card-manutencao-vencido {
+  background-color: rgba(220, 53, 69, 0.1) !important;
+  border-left: 5px solid #dc3545 !important;
+}
+.card-manutencao-alerta {
+  background-color: rgba(253, 126, 20, 0.1) !important;
+  border-left: 5px solid #fd7e14 !important;
+}
+.card-manutencao-normal {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+  border-left: 5px solid #198754 !important;
+}
+
+/* Em src/index.css, substitua as definições existentes por estas */
+
+.auth-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Garante que o layout ocupe toda a altura da tela */
+  background-color: var(--cor-azul-ufs);
+}
+
+.auth-content {
+  flex-grow: 1; /* Faz o conteúdo principal crescer e empurrar o rodapé para baixo */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Estilo para o footer de faixa branca */
+.footer-light {
+  background-color: #f8f9fa;
+  border-top: 1px solid #e7e7e7;
+  padding: 1rem 0;
+  text-align: center;
+  width: 100%;
+  color: #6c757d;
+}
+
+.footer-light a {
+  color: var(--cor-azul-ufs);
+  font-weight: 500;
+  text-decoration: none;
 }
