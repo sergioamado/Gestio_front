@@ -3,7 +3,7 @@ import { Nav } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ufsLogo from '../assets/ufs_principal_negativa.png';
-import { HouseDoorFill, PeopleFill, BoxSeam, BuildingFill, KeyFill, BoxArrowRight, PencilSquare, ListCheck, Tools } from 'react-bootstrap-icons';
+import { HouseDoorFill, PeopleFill, BoxSeam, BuildingFill, KeyFill, BoxArrowRight, PencilSquare, ListCheck, Tools, PrinterFill, InboxesFill, ArchiveFill } from 'react-bootstrap-icons';
 import PrimaryButton from './PrimaryButton';
 
 const navLinkBaseStyle: React.CSSProperties = {
@@ -60,6 +60,29 @@ function Sidebar() {
         <Nav.Link onClick={() => navigate('/itens')} style={navLinkBaseStyle} className="sidebar-nav-link">
           <BoxSeam size={24} className="me-3" /> Itens
         </Nav.Link>
+
+        <Nav.Link 
+          onClick={() => navigate('/impressoras')}
+          style={navLinkBaseStyle} 
+          className="sidebar-nav-link"
+        >
+          <PrinterFill size={24} className="me-3" /> Impressoras
+        </Nav.Link>
+
+        <Nav.Link 
+         onClick={() => navigate('/suprimentos')}
+         style={navLinkBaseStyle} 
+         className="sidebar-nav-link"
+        >
+         <InboxesFill size={24} className="me-3" /> Controle de Suprimentos
+        </Nav.Link>
+        <Nav.Link
+              onClick={() => navigate('/estoque-suprimentos')}
+              style={navLinkBaseStyle}
+              className="sidebar-nav-link"
+            >
+              <ArchiveFill size={24} className="me-3" /> Gerir Estoque de Suprimentos
+            </Nav.Link>
         
         {user?.role === 'admin' && (
           <>

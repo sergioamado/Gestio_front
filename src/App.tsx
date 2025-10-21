@@ -16,6 +16,9 @@ import ItensPage from './pages/ItensPage';
 import NovaSolicitacaoPage from './pages/NovaSolicitacaoPage';
 import GerenciarSolicitacoesPage from './pages/GerenciarSolicitacoesPage';
 import ManutencaoEletronicaPage from './pages/ManutencaoEletronicaPage';
+import ImpressorasPage from './pages/ImpressorasPage';
+import ControleSuprimentosPage from './pages/ControleSuprimentosPage';
+import EstoqueSuprimentosPage from './pages/EstoqueSuprimentosPage';
 
 function App() {
   return (
@@ -34,6 +37,9 @@ function App() {
             <Route path="/nova-solicitacao" element={<NovaSolicitacaoPage />} /> 
             <Route path="/gerenciar-solicitacoes" element={<GerenciarSolicitacoesPage />} />
             <Route path="/fila-manutencao-eletronica" element={<ManutencaoEletronicaPage />} />
+            <Route path="/impressoras" element={<ImpressorasPage />} />
+            <Route path="/suprimentos" element={<ControleSuprimentosPage />} />
+            <Route path="/estoque-suprimentos" element={<EstoqueSuprimentosPage />} />
             {/* Adicione outras rotas protegidas aqui */}
           </Route>
 

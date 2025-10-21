@@ -165,3 +165,63 @@ export interface ManutencaoEletronica {
 export type ManutencaoEletronicaCreateData = Omit<ManutencaoEletronica, 'id' | 'data_entrada' | 'status' | 'tecnico_responsavel' | 'laudo_tecnico' | 'tecnico_responsavel_id'> & {
   tecnico_responsavel_id: number; // No formulário de criação, o técnico é obrigatório
 };
+
+export interface Impressora {
+  id: number;
+  nome: string;
+  modelo: string;
+  numero_serie: string;
+  ip?: string;
+  localizacao: string;
+  servidor?: string;
+  politicas_aplicadas: boolean;
+  status_verificacao: string;
+  unidade_id: number;
+  is_colorida: boolean;
+  unidades_organizacionais?: {
+    nome: string;
+  };
+}
+
+export type ImpressoraCreateData = Omit<Impressora, 'id' | 'unidades_organizacionais'>;
+
+export type ImpressoraUpdateData = Omit<ImpressoraCreateData, 'unidade_id'>;
+
+export interface ImpressoraFiltros {
+  ip?: string;
+  numero_serie?: string;
+  unidade_id_filtro?: string;
+  politicas_aplicadas?: string;
+}
+
+export interface ControleSuprimentos {
+    id: number;
+    data: string;
+    numero_glpi?: string | null;
+    unidade_imagem_solicitadas: number;
+    toner_preto_solicitados: number;
+    toner_ciano_solicitados: number;
+    toner_magenta_solicitados: number;
+    toner_amarelo_solicitados: number;
+    tecnico_id: number;
+    impressora_id: number;
+    tecnico?: {
+      nome_completo: string;
+    };
+    impressora?: {
+        nome: string;
+        modelo: string;
+    };
+}
+
+export type ControleSuprimentosCreateData = Omit<ControleSuprimentos, 'id' | 'data' | 'tecnico_id' | 'tecnico' | 'impressora'>;
+
+export interface EstoqueSuprimentos {
+  id: number;
+  unidade_imagem_total: number;
+  toner_preto_total: number;
+  toner_ciano_total: number;
+  toner_magenta_total: number;
+  toner_amarelo_total: number;
+  data_ultima_atualizacao: string;
+}
