@@ -1,6 +1,6 @@
 // src/pages/EstoqueSuprimentosPage.tsx
 import { useState, useEffect, useCallback } from 'react';
-import { Alert } from 'react-bootstrap';
+import { Alert, Spinner } from 'react-bootstrap';
 import MainLayout from '../layouts/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import * as suprimentosService from '../services/suprimentosService';
@@ -9,11 +9,15 @@ import EstoqueAtualCard from '../components/estoque/EstoqueAtualCard';
 import AdicionarEstoqueForm from '../components/estoque/AdicionarEstoqueForm';
 
 function EstoqueSuprimentosPage() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [estoque, setEstoque] = useState<EstoqueSuprimentos | null>(null);
+  
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const canManageImpressoras = user?.role === 'admin' || user?.role === 'tecnico_impressora';
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -24,10 +28,13 @@ function EstoqueSuprimentosPage() {
   }, []);
 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (!isAuthLoading && canManageImpressoras) {
       fetchData();
     }
-  }, [user, fetchData]);
+    if (!isAuthLoading && !canManageImpressoras) {
+      setLoading(false);
+    }
+  }, [canManageImpressoras, fetchData, isAuthLoading]);
 
   const handleAddEstoque = async (data: Partial<EstoqueSuprimentos>) => {
     setIsSubmitting(true);
@@ -42,13 +49,28 @@ function EstoqueSuprimentosPage() {
     }
   };
 
-  // Proteção de Rota
-  if (user?.role !== 'admin') {
+  if (isAuthLoading) {
     return (
-      <MainLayout pageTitle="Acesso Negado">
-        <Alert variant="danger">Apenas administradores podem aceder a esta página.</Alert>
+      <MainLayout pageTitle="📦 Gerir estoque de Suprimentos">
+        <div className="text-center"><Spinner animation="border" /></div>
       </MainLayout>
     );
+  }
+
+  if (!canManageImpressoras) {
+    return (
+      <MainLayout pageTitle="Acesso Negado">
+        <Alert variant="danger">Apenas administradores e técnicos de impressora podem aceder a esta página.</Alert>
+      </MainLayout>
+    );
+  }
+
+  if (loading) {
+      return (
+          <MainLayout pageTitle="📦 Gerir estoque de Suprimentos">
+              <div className="text-center"><Spinner animation="border" /></div>
+          </MainLayout>
+      );
   }
 
   return (

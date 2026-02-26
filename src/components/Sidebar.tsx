@@ -30,13 +30,18 @@ function Sidebar() {
     <div className="sidebar-container">
       <div className="text-center mb-5">
         <img src={ufsLogo} alt="Logo UFS" style={{ width: '80px' }} />
-        <h4 className="mt-2">Gestio</h4>
+        <h4 className="mt-2 cosup-plus-logo-sidebar">COSUP<span>+</span></h4>
       </div>
 
-      <Nav className="flex-column flex-grow-1">
-        <Nav.Link onClick={() => navigate('/dashboard')} style={navLinkBaseStyle} className="sidebar-nav-link">
-          <HouseDoorFill size={24} className="me-3" /> Painel
-        </Nav.Link>
+      <div className="invisible-scrollbar" style={{ flexGrow: 1, overflowY: 'auto', paddingRight: '10px' }}>
+        <Nav className="flex-column">
+          <Nav.Link
+            onClick={() => navigate('/dashboard')}
+            style={navLinkBaseStyle}
+            className="sidebar-nav-link"
+          >
+            <HouseDoorFill size={24} className="me-3" /> Painel
+          </Nav.Link>
         
         
         {user?.role !== 'gerente' && (
@@ -61,28 +66,34 @@ function Sidebar() {
           <BoxSeam size={24} className="me-3" /> Itens
         </Nav.Link>
 
-        <Nav.Link 
-          onClick={() => navigate('/impressoras')}
-          style={navLinkBaseStyle} 
-          className="sidebar-nav-link"
-        >
-          <PrinterFill size={24} className="me-3" /> Impressoras
-        </Nav.Link>
 
-        <Nav.Link 
-         onClick={() => navigate('/suprimentos')}
-         style={navLinkBaseStyle} 
-         className="sidebar-nav-link"
-        >
-         <InboxesFill size={24} className="me-3" /> Controle de Suprimentos
-        </Nav.Link>
-        <Nav.Link
-              onClick={() => navigate('/estoque-suprimentos')}
-              style={navLinkBaseStyle}
-              className="sidebar-nav-link"
-            >
-              <ArchiveFill size={24} className="me-3" /> Gerir Estoque de Suprimentos
-            </Nav.Link>
+        {(user?.role === 'admin' || user?.role === 'tecnico_impressora') && (
+        <>
+          <Nav.Link 
+            onClick={() => navigate('/impressoras')}
+            style={navLinkBaseStyle} 
+            className="sidebar-nav-link"
+          >
+            <PrinterFill size={24} className="me-3" /> Impressoras
+          </Nav.Link>
+
+          <Nav.Link 
+            onClick={() => navigate('/suprimentos')}
+            style={navLinkBaseStyle} 
+            className="sidebar-nav-link"
+          >
+            <InboxesFill size={24} className="me-3" /> Controle de Suprimentos
+          </Nav.Link>
+
+          <Nav.Link
+            onClick={() => navigate('/estoque-suprimentos')}
+            style={navLinkBaseStyle}
+            className="sidebar-nav-link"
+          >
+            <ArchiveFill size={24} className="me-3" /> Gerir Estoque de Suprimentos
+          </Nav.Link>
+        </>
+      )}
         
         {user?.role === 'admin' && (
           <>
@@ -95,6 +106,7 @@ function Sidebar() {
           </>
         )}
       </Nav>
+    </div>
 
       <div className="mt-auto">
         <Nav className="flex-column">

@@ -66,7 +66,7 @@ function ManutencaoEletronicaPage() {
   if (!user || (!user.role.startsWith('tecnico') && user.role !== 'admin')) {
     return (
       <MainLayout pageTitle="Acesso Negado">
-        <Alert variant="danger">Você não tem permissão para aceder a esta página.</Alert>
+        <Alert variant="danger">Você não tem permissão para acessar esta página.</Alert>
       </MainLayout>
     );
   }
@@ -76,10 +76,10 @@ function ManutencaoEletronicaPage() {
       {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
       
       <Card className="floating-card mb-4">
-        <Card.Header as="h5">Filtros da Fila</Card.Header>
+        <Card.Header as="h5">Manutenção Eletronica Filtros</Card.Header>
         <Card.Body>
           <Row className="g-3">
-            <Col md={3}><Form.Group><Form.Label>Status</Form.Label><Form.Select name="status" value={filters.status} onChange={handleFilterChange}><option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em_manutencao">Em Manutenção</option><option value="Concluido">Concluído</option></Form.Select></Form.Group></Col>
+            <Col md={3}><Form.Group><Form.Label>Status</Form.Label><Form.Select name="status" value={filters.status} onChange={handleFilterChange}><option value="Pendente">Pendente</option><option value="">Todos</option><option value="Em_manutencao">Em Manutenção</option><option value="Concluido">Concluído</option></Form.Select></Form.Group></Col>
             <Col md={3}><Form.Group><Form.Label>Técnico</Form.Label><Form.Select name="tecnicoId" value={filters.tecnicoId} onChange={handleFilterChange}><option value="">Todos</option>{tecnicos.map(t => <option key={t.id} value={t.id}>{t.nome_completo}</option>)}</Form.Select></Form.Group></Col>
             <Col md={3}><Form.Group><Form.Label>Data Início</Form.Label><Form.Control type="date" name="dataInicio" value={filters.dataInicio} onChange={handleFilterChange} /></Form.Group></Col>
             <Col md={3}><Form.Group><Form.Label>Data Fim</Form.Label><Form.Control type="date" name="dataFim" value={filters.dataFim} onChange={handleFilterChange} /></Form.Group></Col>
@@ -106,7 +106,6 @@ function ManutencaoEletronicaPage() {
       )}
 
       <ModalForm show={showCreateModal} onHide={() => setShowCreateModal(false)} title="Novo Registo de Manutenção">
-        {/* CORRIGIDO: Removido o filtro que limitava a lista de técnicos */}
         <ManutencaoEletronicaForm 
           tecnicos={tecnicos}
           onSuccess={() => {
