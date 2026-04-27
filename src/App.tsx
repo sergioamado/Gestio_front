@@ -20,6 +20,7 @@ import ImpressorasPage from './pages/ImpressorasPage';
 import ControleSuprimentosPage from './pages/ControleSuprimentosPage';
 import EstoqueSuprimentosPage from './pages/EstoqueSuprimentosPage';
 import AtendimentosPage from './pages/AtendimentosPage';
+import LevantamentoPage from './pages/Patrimonio/LevantamentoPage';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
             <Route path="/suprimentos" element={<ControleSuprimentosPage />} />
             <Route path="/estoque-suprimentos" element={<EstoqueSuprimentosPage />} />
             <Route path="/atendimentos" element={<AtendimentosPage />} />
+            <Route path="/levantamento" element={<LevantamentoPage/>} />
             {/* Adicione outras rotas protegidas aqui */}
           </Route>
 

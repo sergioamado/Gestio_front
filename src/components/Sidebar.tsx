@@ -92,8 +92,26 @@ function Sidebar() {
           >
             <ArchiveFill size={24} className="me-3" /> Gerir Estoque de Suprimentos
           </Nav.Link>
+
+          <Nav.Link 
+            onClick={() => navigate('/atendimentos')}
+            style={navLinkBaseStyle} 
+            className="sidebar-nav-link"
+          >
+            <Tools size={24} className="me-3" /> Atendimentos Técnicos
+          </Nav.Link>
         </>
       )}
+
+      {(user?.role === 'admin' || user?.role === 'gerente') && (
+  <Nav.Link 
+    onClick={() => navigate('/levantamento')}
+    style={navLinkBaseStyle} 
+    className="sidebar-nav-link"
+  >
+    <BoxSeam size={24} className="me-3" /> Gestão de Patrimônio
+  </Nav.Link>
+)}
         
         {user?.role === 'admin' && (
           <>
