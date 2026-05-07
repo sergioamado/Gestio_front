@@ -17,7 +17,7 @@ const renderDashboardByRole = (role?: string) => {
     case 'tecnico_eletronica':
       return <TecnicoDashboard />;
     default:
-      return <p>O seu perfil não tem um painel de controle definido.</p>;
+      return <p className="text-muted mt-3">O seu perfil não tem um painel de controle definido.</p>;
   }
 };
 
@@ -25,14 +25,16 @@ function DashboardPage() {
   const { user } = useAuth();
 
   return (
-    <MainLayout pageTitle="🏢 Painel de Controle">     
-      <Card className="p-4 mb-4 floating-card bg-primary text-white">
-        <h3>Bem-vindo(a), {user?.nome_completo}!</h3>
-        <p className="mb-0" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>
-          Aqui está um resumo das atividades recentes com base no seu perfil de acesso.
+    <MainLayout pageTitle="Painel de Controle">     
+      {/* Cartão de Boas-Vindas Modernizado */}
+      <Card className="p-4 mb-4 card-welcome text-white">
+        <h3 className="fw-bold">Bem-vindo(a), {user?.nome_completo}! 👋</h3>
+        <p className="mb-0" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+          Aqui está o resumo das atividades e o panorama geral da sua unidade.
         </p>
       </Card>
 
+      {/* Renderiza os dados reais que vêm do Backend */}
       {renderDashboardByRole(user?.role)}
     </MainLayout>
   );

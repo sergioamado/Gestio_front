@@ -43,6 +43,8 @@ export interface Item {
   quantidade: number;
   preco_unitario: number;
   unidade_id: number;
+  is_permanente: boolean;
+  patrimonio_item?: string;
   unidades_organizacionais?: {
     nome: string;
   };

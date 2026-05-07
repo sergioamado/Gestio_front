@@ -125,3 +125,38 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
   background-color: rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
 }
+
+/* Cores Base Harmoniosas (Tons de Azul Corporativo e Cinza Neutro) */
+:root {
+  --bg-color: #f4f7fb; /* Fundo geral do sistema bem clarinho */
+  --text-main: #2c3e50; /* Texto principal mais suave que preto */
+  --card-bg: #ffffff;
+  --primary-gradient: linear-gradient(135deg, #0052d4, #4364f7, #6fb1fc);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Deixa os cartões mais elegantes */
+.floating-card {
+  border: none !important;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  background-color: var(--card-bg);
+  transition: transform 0.2s ease-in-out;
+}
+
+.floating-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Gradiente para o cartão de boas-vindas */
+.card-welcome {
+  background: var(--primary-gradient);
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(67, 100, 247, 0.25);
+}
