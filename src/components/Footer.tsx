@@ -1,52 +1,37 @@
 // src/components/Footer.tsx
 import React from 'react';
 
-const footerStyle: React.CSSProperties = {
-  padding: '1rem 0',
-  textAlign: 'center',
-  width: '100%',
-  marginTop: 'auto',
-};
+interface FooterProps {
+  theme?: 'light' | 'dark';
+}
 
-const lightTextFooterStyle: React.CSSProperties = {
-  ...footerStyle,
-  color: '#f8f9fa', 
-};
-
-const darkTextFooterStyle: React.CSSProperties = {
-  ...footerStyle,
-  color: '#6c757d', 
-  backgroundColor: '#f8f9fa', 
-  borderTop: '1px solid #e7e7e7', 
-};
-
-const linkLightStyle: React.CSSProperties = {
-  textDecoration: 'none',
-  color: '#ffffff',
-  fontWeight: 500,
-};
-
-const linkDarkStyle: React.CSSProperties = {
-  textDecoration: 'none',
-  color: '#034EA2',
-  fontWeight: 500,
-};
-
-const Footer = ({ theme = 'dark' }: { theme?: 'light' | 'dark' }) => {
+const Footer: React.FC<FooterProps> = ({ theme = 'light' }) => {
   const currentYear = new Date().getFullYear();
   const isDark = theme === 'dark';
 
   return (
-    <footer style={isDark ? lightTextFooterStyle : darkTextFooterStyle}>
-      © {currentYear} - Desenvolvido por{' '}
-      <a
-        href="https://www.linkedin.com/in/sergio-santana-dos-santos-7a8b052b/"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={isDark ? linkLightStyle : linkDarkStyle}
-      >
-        Sergio Amado Santana
-      </a>
+    <footer 
+      className={`w-100 py-4 mt-auto text-center ${isDark ? 'text-white-50' : 'text-secondary'}`}
+      style={{ fontSize: '0.85rem', letterSpacing: '0.5px', backgroundColor: 'transparent' }}
+    >
+      <span className="fw-medium">&copy; {currentYear} COSUP / UFS</span>
+      
+      <span className="mx-2 opacity-25">|</span>
+      
+      <span>
+        Desenvolvido por{' '}
+        <a
+          href="https://www.linkedin.com/in/sergio-santana-dos-santos-7a8b052b/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`fw-bold text-decoration-none ${isDark ? 'text-light' : 'text-primary'}`}
+          style={{ transition: 'opacity 0.2s ease-in-out' }}
+          onMouseOver={(e) => (e.currentTarget.style.opacity = '0.7')}
+          onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
+        >
+          Sergio Amado Santana
+        </a>
+      </span>
     </footer>
   );
 };

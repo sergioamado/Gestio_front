@@ -1,162 +1,169 @@
 /* src/index.css */
+
+/* 1. IMPORTAÇÃO DE FONTES (SaaS Moderno) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* 2. VARIÁVEIS GLOBAIS (O DNA do Design) */
 :root {
-  /* Cores Principais */
-  --cor-azul-ufs: #034EA2;
-  --cor-azul-ufs-darker: #023b7e;
-  --cor-azul-ufs-light: #e6f0fa;
-  --cor-verde-header: #d0981f;
+  /* Cores de Marca (Azul) */
+  --brand-blue: #034EA2;
+  --brand-blue-hover: #023670;
+  --brand-blue-light: #eef2f6;
 
-  /* Cores de Ação */
-  --cor-laranja-detalhes: #fd7e14;
-  --cor-vermelho-cancelar: #dc3545;
+  /* Cores Semânticas & Alertas (Padrão Internacional) */
+  --color-success: #10b981; /* Verde Esmeralda (Sucesso/Ativo) */
+  --color-danger:  #ef4444; /* Vermelho (Erro/Cancelar/Inservível) */
+  --color-warning: #f59e0b; /* Amarelo/Laranja (Atenção/Transferido) */
+  --color-info:    #3b82f6; /* Azul Claro (Informação) */
 
-  /* Cores dos Cards do Dashboard */
-  --cor-azul-claro-card: #0dcaf0;
-  --cor-verde-claro-card: #e2ad28;
-  --cor-amarelo-card: #ffc107;
-  --cor-vermelho-card: #dc3545;
+  /* Neutros (O seu "Preto e Branco" suavizado) */
+  --bg-body: #f4f7fb;       /* Fundo da tela (Gelo/Cinza Azulado) */
+  --bg-surface: #ffffff;    /* Fundo dos cartões (Branco Puro) */
+  --text-primary: #0f172a;  /* Texto Principal (Quase Preto / Ardósia) */
+  --text-muted: #64748b;    /* Texto Secundário (Cinza) */
+  --border-light: #e2e8f0;  /* Linhas e separadores sutis */
 
-  /* Cores de Fundo e Layout */
-  --main-bg-color: #f0f2f5;
-  --sidebar-width: 280px;
+  /* Gradients e Efeitos */
+  --primary-gradient: linear-gradient(135deg, #034EA2, #0a66c2, #438bf2);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
-/* Reset básico */
+/* 3. RESET E CORPO DA PÁGINA */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--main-bg-color);
+  background-color: var(--bg-body);
+  color: var(--text-primary);
 }
 
-/* Layout Principal */
-.app-layout { display: flex; }
-.sidebar-wrapper { width: var(--sidebar-width); flex-shrink: 0; }
-.main-content { flex-grow: 1; height: 100vh; overflow-y: auto; }
+/* Links globais */
+a { 
+  color: var(--brand-blue); 
+  text-decoration: none; 
+  transition: color 0.2s ease;
+}
+a:hover { 
+  color: var(--brand-blue-hover); 
+}
+
+/* 4. CUSTOMIZAÇÃO DO SCROLLBAR (Detalhe Premium) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Scrollbar invisível para a Sidebar */
+.invisible-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.invisible-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 5. LAYOUT BASE */
+.app-layout { 
+  display: flex; 
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content { 
+  flex-grow: 1; 
+  height: 100vh; 
+  overflow-y: auto; 
+  background-color: var(--bg-body);
+}
+
 .auth-layout {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100%;
-  background-color: var(--cor-azul-ufs);
+  min-height: 100vh;
+  background: var(--primary-gradient);
   padding: 1rem;
 }
 
-/* --- NOVOS ESTILOS GLOBAIS --- */
+/* 6. COMPONENTES VISUAIS */
 
-/* Barra Superior (Header) */
-.app-header {
-  background-color: var(--cor-verde-header) !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 1rem 1.5rem;
-  color: white; /* Cor do texto no header */
-}
-.app-header h4 {
-  color: white; /* Título no header */
-}
-.app-header .text-muted {
-  color: rgba(255, 255, 255, 0.8) !important; /* Texto secundário no header */
-}
-
-
-/* Botões */
-.btn-primary {
-  background-color: var(--cor-azul-ufs) !important;
-  border-color: var(--cor-azul-ufs) !important;
-}
-.btn-primary:hover {
-  background-color: var(--cor-azul-ufs-darker) !important;
-  border-color: var(--cor-azul-ufs-darker) !important;
-}
-.btn-warning { /* Botão Laranja para Detalhes */
-  background-color: var(--cor-laranja-detalhes) !important;
-  border-color: var(--cor-laranja-detalhes) !important;
-  color: white !important;
-}
-.btn-danger { /* Botão Vermelho */
-  background-color: var(--cor-vermelho-cancelar) !important;
-  border-color: var(--cor-vermelho-cancelar) !important;
-}
-
-/* Cards com Borda Azul */
+/* O Card Flutuante Padrão (Agora consolidado e limpo) */
 .floating-card {
-  border-radius: 0.75rem !important;
-  border: 1px solid #dee2e6 !important;
-  border-top: 4px solid var(--cor-azul-ufs) !important; /* Borda Azul UFS */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-  transition: all 0.2s ease-in-out;
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 1rem !important; /* Bordas um pouco mais redondas */
+  box-shadow: var(--shadow-sm) !important;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
+
 .floating-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--shadow-md) !important;
 }
 
-/* Cards Coloridos do Dashboard */
-.stat-card.card {
-  border-top: none !important; 
-  color: white;
-}
-.stat-card-unidades { background-color: var(--cor-azul-claro-card); }
-.stat-card-usuarios { background-color: var(--cor-verde-claro-card); }
-.stat-card-itens { background-color: var(--cor-amarelo-card); color: #000; }
-.stat-card-pendentes { background-color: var(--cor-vermelho-card); }
-
-.stat-card.card .card-title {
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-.stat-card-itens.card .card-title,
-.stat-card-itens.card .card-text {
-  color: #000 !important;
+/* O Card de Boas Vindas do Dashboard */
+.card-welcome {
+  background: var(--primary-gradient) !important;
+  border: none !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 8px 25px rgba(3, 78, 162, 0.25) !important;
 }
 
-/* Links */
-a { color: var(--cor-azul-ufs); text-decoration: none; }
-
-/* Barra Lateral */
-.sidebar-nav-link {
-  color: rgba(255, 255, 255, 0.8) !important;
-  transition: all 0.2s ease-in-out;
+/* 7. CUSTOMIZAÇÃO DO BOOTSTRAP (Botões) */
+.btn-primary {
+  background-color: var(--brand-blue) !important;
+  border-color: var(--brand-blue) !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease;
 }
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--brand-blue-hover) !important;
+  border-color: var(--brand-blue-hover) !important;
+  box-shadow: 0 4px 12px rgba(3, 78, 162, 0.3) !important;
+}
+
+/* Estilo para links da barra lateral quando passar o mouse */
 .sidebar-nav-link:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
+  transform: translateX(4px); /* Leve animação para a direita */
 }
 
-/* Cores Base Harmoniosas (Tons de Azul Corporativo e Cinza Neutro) */
-:root {
-  --bg-color: #f4f7fb; /* Fundo geral do sistema bem clarinho */
-  --text-main: #2c3e50; /* Texto principal mais suave que preto */
-  --card-bg: #ffffff;
-  --primary-gradient: linear-gradient(135deg, #0052d4, #4364f7, #6fb1fc);
+/* Ajuste de tabelas para o padrão da COSUP */
+.table {
+  color: var(--text-primary);
+}
+.table-light {
+  background-color: #f8fafc !important;
+}
+.table-light th {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
 }
 
-body {
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+/* Efeito de vidro para a logomarca Sidebar */
+.cosup-plus-logo-sidebar {
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffffff;
 }
-
-/* Deixa os cartões mais elegantes */
-.floating-card {
-  border: none !important;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  background-color: var(--card-bg);
-  transition: transform 0.2s ease-in-out;
-}
-
-.floating-card:hover {
-  transform: translateY(-2px);
-}
-
-/* Gradiente para o cartão de boas-vindas */
-.card-welcome {
-  background: var(--primary-gradient);
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(67, 100, 247, 0.25);
+.cosup-plus-logo-sidebar span {
+  color: var(--color-info);
 }

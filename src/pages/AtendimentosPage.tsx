@@ -28,13 +28,14 @@ function AtendimentosPage() {
 
   const fetchData = () => {
     setLoading(true);
+    setError(null);
     Promise.all([
       atendimentoService.getAllAtendimentos(),
       impressoraService.getAllImpressoras(),
     ]).then(([atendimentosData, impressorasData]) => {
       setAtendimentos(atendimentosData);
       setImpressoras(impressorasData);
-    }).catch(() => setError('Falha ao carregar dados.'))
+    }).catch(() => setError('Falha ao carregar os dados de atendimentos e impressoras.'))
       .finally(() => setLoading(false));
   };
 
@@ -68,7 +69,7 @@ function AtendimentosPage() {
         const createData = data as AtendimentoCreateData;
         const impressora = impressoras.find(p => p.id === createData.impressora_id);
         if (!impressora) throw new Error("A impressora selecionada não é válida.");
-        if (!user) throw new Error("Utilizador não autenticado.");
+        if (!user) throw new Error("Usuário não autenticado.");
 
         const finalData = { ...createData, unidade_id: impressora.unidade_id, tecnico_id: user.id };
         await atendimentoService.createAtendimento(finalData);
@@ -76,7 +77,7 @@ function AtendimentosPage() {
       setShowFormModal(false);
       fetchData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao salvar atendimento.');
+      setError(err.response?.data?.message || 'Erro ao salvar os dados do atendimento.');
     } finally {
       setIsSubmitting(false);
     }
@@ -84,22 +85,35 @@ function AtendimentosPage() {
 
   return (
     <MainLayout pageTitle="🔧 Atendimentos Técnicos de Impressoras">
-      {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
+      {error && (
+        <Alert variant="danger" className="shadow-sm border-0 mb-4" onClose={() => setError(null)} dismissible>
+          {error}
+        </Alert>
+      )}
       
-      <Card className="floating-card">
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5>Histórico de Atendimentos</h5>
+      <Card className="floating-card border-0 shadow-sm">
+        <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+          <h5 className="fw-bold text-dark mb-0">Histórico de Atendimentos</h5>
           <PrimaryButton onClick={handleShowCreateModal}>+ Novo Atendimento</PrimaryButton>
         </Card.Header>
         <Card.Body>
           {loading ? (
-            <div className="text-center"><Spinner animation="border" /></div>
-          ) : (
+            <div className="text-center my-5 py-5">
+              <Spinner animation="border" variant="primary" />
+              <div className="mt-2 text-muted fw-medium">Carregando histórico de atendimentos...</div>
+            </div>
+          ) : atendimentos.length > 0 ? (
              <AtendimentosTable 
                 atendimentos={atendimentos} 
-                onDetails={handleShowDetailsModal} // <<< CORREÇÃO: Passar a função para a prop
-                onEdit={handleShowEditModal}       // <<< CORREÇÃO: Passar a função para a prop
+                onDetails={handleShowDetailsModal}
+                onEdit={handleShowEditModal}
              />
+          ) : (
+            <div className="text-center text-muted p-5 bg-white rounded shadow-sm border mt-3">
+              <span className="fs-1 d-block mb-3">📭</span>
+              <h5 className="fw-bold text-dark">Nenhum atendimento registrado.</h5>
+              <p className="mb-0">Clique em "Novo Atendimento" para registrar a primeira visita técnica.</p>
+            </div>
           )}
         </Card.Body>
       </Card>
@@ -107,7 +121,7 @@ function AtendimentosPage() {
       <ModalForm 
         show={showFormModal} 
         onHide={() => setShowFormModal(false)}
-        title={editingAtendimento ? `Evoluir Atendimento #${editingAtendimento.id}` : 'Abrir Novo Atendimento'}
+        title={editingAtendimento ? `✏️ Evoluir Atendimento #${editingAtendimento.id}` : '🔧 Abrir Novo Atendimento'}
       >
         <AtendimentoForm
             atendimento={editingAtendimento}

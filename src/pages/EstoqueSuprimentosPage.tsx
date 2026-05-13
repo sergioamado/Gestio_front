@@ -12,7 +12,6 @@ function EstoqueSuprimentosPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [estoque, setEstoque] = useState<EstoqueSuprimentos | null>(null);
   
-  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,9 +20,13 @@ function EstoqueSuprimentosPage() {
 
   const fetchData = useCallback(() => {
     setLoading(true);
+    setError(null);
     suprimentosService.getEstoqueSuprimentos()
       .then(setEstoque)
-      .catch(() => setError('Falha ao carregar o estoque.'))
+      .catch((err: any) => {
+        const errorMessage = err.response?.data?.message || 'Falha ao carregar o estoque de suprimentos.';
+        setError(errorMessage);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -42,45 +45,64 @@ function EstoqueSuprimentosPage() {
     try {
       await suprimentosService.addEstoqueSuprimentos(data);
       fetchData();
-    } catch (err) {
-      setError('Erro ao adicionar estoque.');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Erro ao registrar nova entrada no estoque.';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 1. Loading inicial de Autenticação
   if (isAuthLoading) {
     return (
-      <MainLayout pageTitle="📦 Gerir estoque de Suprimentos">
-        <div className="text-center"><Spinner animation="border" /></div>
+      <MainLayout pageTitle="📦 Gerenciar Estoque de Suprimentos">
+        <div className="text-center my-5 py-5">
+          <Spinner animation="border" variant="primary" />
+          <div className="mt-2 text-muted fw-medium">Verificando permissões de acesso...</div>
+        </div>
       </MainLayout>
     );
   }
 
+  // 2. Trava de Segurança visualmente amigável
   if (!canManageImpressoras) {
     return (
-      <MainLayout pageTitle="Acesso Negado">
-        <Alert variant="danger">Apenas administradores e técnicos de impressora podem aceder a esta página.</Alert>
+      <MainLayout pageTitle="🚫 Acesso Negado">
+        <Alert variant="danger" className="shadow-sm border-0 mt-3 p-4">
+          <h5 className="fw-bold mb-2">Acesso Restrito</h5>
+          Apenas administradores e técnicos do setor de impressão podem acessar esta página para gerenciamento de estoque.
+        </Alert>
       </MainLayout>
     );
   }
 
+  // 3. Loading dos dados da API
   if (loading) {
       return (
-          <MainLayout pageTitle="📦 Gerir estoque de Suprimentos">
-              <div className="text-center"><Spinner animation="border" /></div>
+          <MainLayout pageTitle="📦 Gerenciar Estoque de Suprimentos">
+            <div className="text-center my-5 py-5">
+              <Spinner animation="border" variant="primary" />
+              <div className="mt-2 text-muted fw-medium">Carregando dados do estoque...</div>
+            </div>
           </MainLayout>
       );
   }
 
+  // 4. Renderização Principal
   return (
-    <MainLayout pageTitle="📦 Gerir estoque de Suprimentos">
-      {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
+    <MainLayout pageTitle="📦 Gerenciar Estoque de Suprimentos">
+      {error && (
+        <Alert variant="danger" className="shadow-sm border-0 mb-4" onClose={() => setError(null)} dismissible>
+          {error}
+        </Alert>
+      )}
       
       <EstoqueAtualCard estoque={estoque} loading={loading} />
 
-      <AdicionarEstoqueForm onSubmit={handleAddEstoque} isLoading={isSubmitting} />
-
+      <div className="mt-4">
+        <AdicionarEstoqueForm onSubmit={handleAddEstoque} isLoading={isSubmitting} />
+      </div>
     </MainLayout>
   );
 }

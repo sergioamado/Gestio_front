@@ -26,3 +26,13 @@ export const createSolicitacao = async (data: SolicitacaoCreateData): Promise<So
   const response = await api.post('/solicitacoes', data);
   return response.data;
 };
+
+export const cancelarItemSolicitacao = async (itemId: number) => {
+  const response = await api.put(`/solicitacoes/itens/${itemId}/cancelar`);
+  return response.data;
+};
+
+export const sinalizarDefeitoItem = async (itemId: number) => {
+  const response = await api.put(`/solicitacoes/itens/${itemId}/defeito`);
+  return response.data;
+};

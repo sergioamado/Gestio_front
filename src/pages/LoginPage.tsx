@@ -30,7 +30,7 @@ function LoginPage() {
       await login(username, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro inesperado.');
+      setError(err.message || 'Credenciais inválidas ou erro de conexão.');
     } finally {
       setIsSubmitting(false);
     }
@@ -40,24 +40,32 @@ function LoginPage() {
     <AuthLayout>
         <Row className="justify-content-center w-100">
             <Col md={6} lg={5} xl={4}>
-            <Card className="shadow-lg border-0">
+            <Card className="shadow-lg border-0" style={{ borderRadius: '1rem', overflow: 'hidden' }}>
                 <Card.Body className="p-4 p-sm-5">
-                <div className="text-center mb-4">
+                <div className="text-center mb-4 pb-3 border-bottom">
                     <img
                     src={ufsLogo}
                     alt="Logo UFS"
-                    style={{ height: '70px', marginBottom: '1rem' }}
+                    style={{ height: '70px', marginBottom: '1.5rem' }}
                     />
-                    {/* <<< ALTERADO AQUI >>> */}
-                    <h3 className="cosup-plus-logo">COSUP<span>+</span></h3>
-                    <h6 className="text-muted">Sistema de Gestão da Coordenadoria de Suporte</h6>
+                    <h3 className="cosup-plus-logo fw-bold mb-1">COSUP<span className="text-primary">+</span></h3>
+                    <h6 className="text-muted small text-uppercase fw-bold mt-2" style={{ letterSpacing: '1px' }}>Sistema de Gestão</h6>
                 </div>
+                
                 <Form onSubmit={handleSubmit}>
-                    {error && <Alert variant="danger">{error}</Alert>}
-                    <Form.Group className="mb-3" controlId="formUsername">
-                    <Form.Label>Usuário</Form.Label>
+                    {error && (
+                      <Alert variant="danger" className="shadow-sm border-0" onClose={() => setError(null)} dismissible>
+                        {error}
+                      </Alert>
+                    )}
+                    
+                    <Form.Group className="mb-4" controlId="formUsername">
+                    <Form.Label className="fw-bold text-secondary small text-uppercase">Usuário</Form.Label>
                     <Form.Control
                         type="text"
+                        size="lg"
+                        className="bg-light border-0 shadow-none"
+                        style={{ fontSize: '1rem' }}
                         placeholder="Digite seu usuário"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -65,10 +73,14 @@ function LoginPage() {
                         disabled={isSubmitting}
                     />
                     </Form.Group>
-                    <Form.Group className="mb-3" controlId="formPassword">
-                    <Form.Label>Senha</Form.Label>
+                    
+                    <Form.Group className="mb-4" controlId="formPassword">
+                    <Form.Label className="fw-bold text-secondary small text-uppercase">Senha</Form.Label>
                     <Form.Control
                         type="password"
+                        size="lg"
+                        className="bg-light border-0 shadow-none"
+                        style={{ fontSize: '1rem' }}
                         placeholder="Digite sua senha"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -76,18 +88,24 @@ function LoginPage() {
                         disabled={isSubmitting}
                     />
                     </Form.Group>
-                    <div className="d-grid mt-4">
+                    
+                    <div className="d-grid mt-4 pt-2">
                     <PrimaryButton
                         type="submit"
                         isLoading={isSubmitting}
                         size="lg"
+                        className="fw-bold shadow-sm"
+                        style={{ padding: '0.8rem' }}
                     >
-                        Entrar
+                        {isSubmitting ? 'Autenticando...' : 'Entrar no Sistema'}
                     </PrimaryButton>
                     </div>
                 </Form>
                 </Card.Body>
             </Card>
+            <div className="text-center mt-4 text-muted small fw-bold">
+              &copy; {new Date().getFullYear()} Coordenadoria de Suporte - UFS
+            </div>
             </Col>
         </Row>
     </AuthLayout>

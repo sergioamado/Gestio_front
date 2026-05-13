@@ -29,7 +29,7 @@ function GerenciarSolicitacoesPage() {
         const tecnicosData = await usuarioService.getTecnicosByUnidade(unidadeId as number);
         setTecnicos(tecnicosData);
       } catch {
-        setError('Falha ao carregar a lista de técnicos do STI.');
+        setError('Falha ao carregar a equipe técnica da unidade.');
       }
     }
   }, [user]);
@@ -47,7 +47,7 @@ function GerenciarSolicitacoesPage() {
     
     solicitacaoService.getAllSolicitacoes(params)
       .then(setSolicitacoes)
-      .catch(() => setError('Falha ao carregar as Ordens de Serviço.'))
+      .catch(() => setError('Falha ao buscar as Ordens de Serviço. Verifique a conexão.'))
       .finally(() => setLoading(false));
   }, [user, filters]);
 
@@ -66,42 +66,42 @@ function GerenciarSolicitacoesPage() {
   return (
     <MainLayout pageTitle="📋 Gerenciar Ordens de Serviço">
       {error && (
-        <Alert variant="danger" onClose={() => setError(null)} dismissible className="shadow-sm">
+        <Alert variant="danger" onClose={() => setError(null)} dismissible className="shadow-sm border-0">
           {error}
         </Alert>
       )}
 
       {/* Painel de Filtros Modernizado */}
-      <Card className="floating-card border-start border-primary border-4 mb-4 bg-white">
-        <Card.Body>
-          <Card.Title className="fw-bold mb-3 fs-5">🔍 Filtros de Busca</Card.Title>
+      <Card className="floating-card border-0 shadow-sm mb-4 bg-white border-start border-primary border-4">
+        <Card.Body className="p-4">
+          <Card.Title className="fw-bold mb-4 fs-5 text-dark">🔍 Filtros de Busca</Card.Title>
           <Row className="g-3">
             <Col md={4}>
               <Form.Group>
-                <Form.Label className="small fw-bold text-muted">Status do Atendimento</Form.Label>
+                <Form.Label className="small fw-bold text-secondary text-uppercase">Status da OS</Form.Label>
                 <Form.Select 
                   name="status" 
                   value={filters.status} 
                   onChange={handleFilterChange}
-                  className="bg-light"
+                  className="bg-light border-0 shadow-none"
                 >
                   <option value="">Todos os Status</option>
-                  <option value="PENDENTE">Pendente (Aprovação)</option>
-                  <option value="EM ATENDIMENTO">Em Atendimento</option>
-                  <option value="CONCLUIDA">Concluída</option>
-                  <option value="CANCELADA">Cancelada</option>
+                  <option value="PENDENTE">⏳ Pendente (Aprovação)</option>
+                  <option value="EM ATENDIMENTO">🛠️ Em Atendimento</option>
+                  <option value="CONCLUIDA">✅ Concluída</option>
+                  <option value="CANCELADA">❌ Cancelada</option>
                 </Form.Select>
               </Form.Group>
             </Col>
 
             <Col md={4}>
               <Form.Group>
-                <Form.Label className="small fw-bold text-muted">Técnico Responsável</Form.Label>
+                <Form.Label className="small fw-bold text-secondary text-uppercase">Técnico Responsável</Form.Label>
                 <Form.Select 
                   name="tecnico_id_filtro" 
                   value={filters.tecnico_id_filtro} 
                   onChange={handleFilterChange}
-                  className="bg-light"
+                  className="bg-light border-0 shadow-none"
                 >
                   <option value="">Toda a Equipe</option>
                   {tecnicos.map(t => (
@@ -113,16 +113,16 @@ function GerenciarSolicitacoesPage() {
 
             <Col md={4}>
                <Form.Group>
-                <Form.Label className="small fw-bold text-muted">Buscar por Nº GLPI</Form.Label>
-                <InputGroup>
-                  <InputGroup.Text className="bg-light">#</InputGroup.Text>
+                <Form.Label className="small fw-bold text-secondary text-uppercase">Buscar por Nº GLPI</Form.Label>
+                <InputGroup className="shadow-sm">
+                  <InputGroup.Text className="bg-light border-0 text-muted fw-bold">#</InputGroup.Text>
                   <Form.Control 
                     type="number" 
                     name="numero_glpi" 
                     value={filters.numero_glpi} 
                     onChange={handleFilterChange} 
-                    placeholder="Digite o chamado..." 
-                    className="bg-light"
+                    placeholder="Ex: 12345" 
+                    className="bg-light border-0 shadow-none"
                   />
                 </InputGroup>
               </Form.Group>
@@ -135,11 +135,11 @@ function GerenciarSolicitacoesPage() {
       {loading ? (
         <div className="text-center my-5 py-5">
             <Spinner animation="border" variant="primary" />
-            <div className="mt-2 text-muted">Buscando Ordens de Serviço...</div>
+            <div className="mt-2 text-muted fw-medium">Buscando Ordens de Serviço...</div>
         </div>
       ) : solicitacoes.length > 0 ? (
-        <Card className="floating-card border-0 shadow-sm p-3">
-            <Accordion alwaysOpen>
+        <Card className="floating-card border-0 shadow-sm p-3 bg-transparent">
+            <Accordion alwaysOpen className="custom-accordion">
             {solicitacoes.map(s => (
                 <SolicitacaoItem 
                 key={s.id} 
@@ -150,11 +150,11 @@ function GerenciarSolicitacoesPage() {
             </Accordion>
         </Card>
       ) : (
-        <Alert variant="secondary" className="text-center py-5 shadow-sm border-0">
-            <div className="fs-1 mb-3">📭</div>
-            <h5 className="fw-bold">Nenhuma Ordem de Serviço encontrada.</h5>
-            <p className="mb-0 text-muted">Tente ajustar os filtros acima ou aguarde a criação de novos chamados.</p>
-        </Alert>
+        <div className="text-center text-muted p-5 bg-white rounded shadow-sm border mt-4">
+            <span className="fs-1 d-block mb-3">📭</span>
+            <h5 className="fw-bold text-dark">Nenhuma Ordem de Serviço encontrada.</h5>
+            <p className="mb-0">Ajuste os filtros de busca acima ou aguarde a abertura de novos chamados.</p>
+        </div>
       )}
     </MainLayout>
   );

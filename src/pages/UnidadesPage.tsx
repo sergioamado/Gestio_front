@@ -8,7 +8,7 @@ import ModalForm from '../components/ModalForm';
 import UnidadeForm from '../components/unidades/UnidadeForm';
 
 import * as unidadeService from '../services/unidadeService';
-import  type { Unidade, UnidadeCreateData } from '../types/index';
+import type { Unidade, UnidadeCreateData } from '../types';
 
 function UnidadesPage() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
@@ -21,9 +21,13 @@ function UnidadesPage() {
 
   const fetchUnidades = () => {
     setLoading(true);
+    setError(null);
     unidadeService.getAllUnidades()
       .then(setUnidades)
-      .catch(() => setError('Falha ao carregar unidades.'))
+      .catch((err: any) => {
+        const errorMessage = err.response?.data?.message || 'Falha ao carregar as unidades organizacionais.';
+        setError(errorMessage);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -43,6 +47,7 @@ function UnidadesPage() {
 
   const handleFormSubmit = async (data: UnidadeCreateData) => {
     setIsSubmitting(true);
+    setError(null);
     try {
       if (editingUnidade) {
         await unidadeService.updateUnidade(editingUnidade.id, data);
@@ -50,42 +55,47 @@ function UnidadesPage() {
         await unidadeService.createUnidade(data);
       }
       setShowModal(false);
-      fetchUnidades(); // Recarrega a lista
-    } catch (err) {
-      // Idealmente, tratar o erro de forma mais específica
-      setError('Erro ao salvar unidade.');
+      fetchUnidades(); 
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Ocorreu um erro ao salvar a unidade.';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (unidade: Unidade) => {
-    // Adicionar um modal de confirmação aqui seria o ideal
     if (window.confirm(`Tem certeza que deseja excluir a unidade "${unidade.nome}"?`)) {
       try {
         await unidadeService.deleteUnidade(unidade.id);
-        fetchUnidades(); // Recarrega a lista
-      } catch (err) {
-        setError('Não foi possível excluir. A unidade pode estar em uso.');
+        fetchUnidades(); 
+      } catch (err: any) {
+        setError('Não foi possível excluir. Esta unidade pode estar vinculada a usuários, itens ou solicitações existentes.');
       }
     }
   };
 
-
   return (
     <MainLayout pageTitle="🏢 Unidades Organizacionais">
-      {error && <Alert variant="danger">{error}</Alert>}
+      {error && (
+        <Alert variant="danger" className="shadow-sm" onClose={() => setError(null)} dismissible>
+          {error}
+        </Alert>
+      )}
       
-      <Card className="floating-card">
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5>Unidades Cadastradas</h5>
+      <Card className="floating-card border-0 shadow-sm">
+        <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+          <h5 className="fw-bold text-dark mb-0">Unidades Cadastradas</h5>
           <PrimaryButton onClick={handleShowCreateModal}>
             + Nova Unidade
           </PrimaryButton>
         </Card.Header>
         <Card.Body>
           {loading ? (
-            <div className="text-center"><Spinner animation="border" /></div>
+            <div className="text-center my-5 py-5">
+              <Spinner animation="border" variant="primary" />
+              <div className="mt-2 text-muted">Carregando unidades...</div>
+            </div>
           ) : (
             <UnidadesTable unidades={unidades} onEdit={handleShowEditModal} onDelete={handleDelete} />
           )}
@@ -95,7 +105,7 @@ function UnidadesPage() {
       <ModalForm 
         show={showModal} 
         onHide={() => setShowModal(false)}
-        title={editingUnidade ? 'Editar Unidade' : 'Cadastrar Nova Unidade'}
+        title={editingUnidade ? '✏️ Editar Unidade' : '🏢 Cadastrar Nova Unidade'}
       >
         <UnidadeForm 
             unidade={editingUnidade}

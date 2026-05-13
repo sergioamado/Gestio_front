@@ -8,12 +8,12 @@ import ModalForm from '../components/ModalForm';
 import ItemForm from '../components/itens/ItemForm';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import { useAuth } from '../hooks/useAuth';
+import ItemDetailsModal from '../components/itens/ItemDetailsModal';
 
 import * as itemService from '../services/itemService';
-import type { Item, ItemCreateData } from '../types';
 import * as unidadeService from '../services/unidadeService';
-import type { Unidade } from '../types';
-import ItemDetailsModal from '../components/itens/ItemDetailsModal';
+// Importação limpa pelo nosso barril
+import type { Item, ItemCreateData, Unidade } from '../types';
 
 function ItensPage() {
   const { user } = useAuth();
@@ -33,7 +33,6 @@ function ItensPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingItem, setViewingItem] = useState<Item | null>(null);
 
-  // CORRIGIDO: Variável para controlar a visibilidade das ações
   const canManageItems = user?.role === 'admin' || user?.role === 'gerente';
 
   const fetchData = () => {
@@ -58,7 +57,10 @@ function ItensPage() {
           setUnidades(unidadesData as Unidade[]);
         }
       })
-      .catch(() => setError('Falha ao carregar dados da página.'))
+      .catch((err: any) => {
+        const errorMessage = err.response?.data?.message || 'Falha ao carregar o catálogo de itens.';
+        setError(errorMessage);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -95,8 +97,9 @@ function ItensPage() {
       }
       setShowFormModal(false);
       fetchData();
-    } catch (err) {
-      setError('Erro ao salvar o item.');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Ocorreu um erro ao salvar o item.';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -115,8 +118,8 @@ function ItensPage() {
       await itemService.deleteItem(deletingItem.id);
       setShowDeleteModal(false);
       fetchData();
-    } catch (err) {
-      setError('Não foi possível excluir. O item pode estar em uso numa solicitação.');
+    } catch (err: any) {
+      setError('Não foi possível excluir. O item provavelmente já está associado a uma Ordem de Serviço.');
       setShowDeleteModal(false);
     } finally {
       setIsDeleting(false);
@@ -124,13 +127,16 @@ function ItensPage() {
   };
 
   return (
-    <MainLayout pageTitle="📦 Gerir Itens">
-      {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
+    <MainLayout pageTitle="📦 Gerenciar Itens e Ferramentas">
+      {error && (
+        <Alert variant="danger" className="shadow-sm border-0" onClose={() => setError(null)} dismissible>
+          {error}
+        </Alert>
+      )}
       
-      <Card className="floating-card">
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5>Itens em Estoque</h5>
-          {/* CORRIGIDO: Botão "Novo Item" só aparece para quem pode gerir */}
+      <Card className="floating-card border-0 shadow-sm">
+        <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+          <h5 className="fw-bold text-dark mb-0">Catálogo de Estoque</h5>
           {canManageItems && (
             <PrimaryButton onClick={handleShowCreateModal}>
               + Novo Item
@@ -139,7 +145,10 @@ function ItensPage() {
         </Card.Header>
         <Card.Body>
           {loading ? (
-            <div className="text-center"><Spinner animation="border" /></div>
+            <div className="text-center my-5 py-5">
+              <Spinner animation="border" variant="primary" />
+              <div className="mt-2 text-muted">Carregando catálogo de itens...</div>
+            </div>
           ) : (
              <ItensTable 
               itens={itens} 
@@ -147,7 +156,7 @@ function ItensPage() {
               onDelete={handleShowDeleteModal}
               onDetails={handleShowDetailsModal} 
             />
-            )}
+          )}
         </Card.Body>
       </Card>
 
@@ -156,7 +165,7 @@ function ItensPage() {
           <ModalForm 
             show={showFormModal} 
             onHide={() => setShowFormModal(false)}
-            title={editingItem ? 'Editar Item' : 'Cadastrar Novo Item'}
+            title={editingItem ? '✏️ Editar Item do Catálogo' : '📦 Cadastrar Novo Item'}
           >
             <ItemForm 
                 item={editingItem}
@@ -171,8 +180,9 @@ function ItensPage() {
             onHide={() => setShowDeleteModal(false)}
             onConfirm={handleConfirmDelete}
             title="Confirmar Exclusão"
-            body={`Tem a certeza de que deseja excluir o item com a especificação "${deletingItem?.descricao}"? Esta ação não pode ser desfeita.`}
+            body={`Tem certeza que deseja excluir o item "${deletingItem?.descricao}"? Esta ação não pode ser desfeita.`}
             isDeleting={isDeleting}
+            confirmButtonText="Excluir Item"
           />
         </>
       )}

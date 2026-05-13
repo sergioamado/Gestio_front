@@ -20,7 +20,9 @@ import ImpressorasPage from './pages/ImpressorasPage';
 import ControleSuprimentosPage from './pages/ControleSuprimentosPage';
 import EstoqueSuprimentosPage from './pages/EstoqueSuprimentosPage';
 import AtendimentosPage from './pages/AtendimentosPage';
+import ListaBensPage from './pages/Patrimonio/ListaBensPage';
 import LevantamentoPage from './pages/Patrimonio/LevantamentoPage';
+import ImportarSipacPage from './pages/Patrimonio/ImportarSipacPage';
 
 function App() {
   return (
@@ -44,6 +46,8 @@ function App() {
             <Route path="/estoque-suprimentos" element={<EstoqueSuprimentosPage />} />
             <Route path="/atendimentos" element={<AtendimentosPage />} />
             <Route path="/levantamento" element={<LevantamentoPage/>} />
+            <Route path="/lista-bens" element={<ListaBensPage/>} />
+            <Route path="/importar-sipac" element={<ImportarSipacPage/>} />
             {/* Adicione outras rotas protegidas aqui */}
           </Route>
 

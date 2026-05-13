@@ -27,6 +27,7 @@ function ManutencaoEletronicaPage() {
 
   const fetchData = useCallback(() => {
     setLoading(true);
+    setError(null);
     Promise.all([
       manutencaoService.getAll(),
       usuarioService.getTecnicos(),
@@ -34,7 +35,7 @@ function ManutencaoEletronicaPage() {
       setFilaCompleta(manutencoes);
       setTecnicos(tecnicosData);
     }).catch((err) => {
-      setError(err.response?.data?.message || 'Falha ao carregar dados da fila.');
+      setError(err.response?.data?.message || 'Falha ao carregar dados da fila. Verifique a conexão com o servidor.');
     }).finally(() => {
       setLoading(false);
     });
@@ -66,46 +67,90 @@ function ManutencaoEletronicaPage() {
   if (!user || (!user.role.startsWith('tecnico') && user.role !== 'admin')) {
     return (
       <MainLayout pageTitle="Acesso Negado">
-        <Alert variant="danger">Você não tem permissão para acessar esta página.</Alert>
+        <Alert variant="danger" className="shadow-sm">Você não tem permissão para acessar esta página.</Alert>
       </MainLayout>
     );
   }
 
   return (
     <MainLayout pageTitle="🔧 Fila de Manutenção Eletrônica">
-      {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
+      {error && <Alert variant="danger" className="shadow-sm" onClose={() => setError(null)} dismissible>{error}</Alert>}
       
-      <Card className="floating-card mb-4">
-        <Card.Header as="h5">Manutenção Eletronica Filtros</Card.Header>
+      <Card className="floating-card border-0 shadow-sm mb-4">
+        <Card.Header className="bg-white border-bottom-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
+          <h5 className="fw-bold text-dark mb-0">Filtros de Pesquisa</h5>
+          <PrimaryButton onClick={() => setShowCreateModal(true)}>
+            + Novo Registro
+          </PrimaryButton>
+        </Card.Header>
         <Card.Body>
           <Row className="g-3">
-            <Col md={3}><Form.Group><Form.Label>Status</Form.Label><Form.Select name="status" value={filters.status} onChange={handleFilterChange}><option value="Pendente">Pendente</option><option value="">Todos</option><option value="Em_manutencao">Em Manutenção</option><option value="Concluido">Concluído</option></Form.Select></Form.Group></Col>
-            <Col md={3}><Form.Group><Form.Label>Técnico</Form.Label><Form.Select name="tecnicoId" value={filters.tecnicoId} onChange={handleFilterChange}><option value="">Todos</option>{tecnicos.map(t => <option key={t.id} value={t.id}>{t.nome_completo}</option>)}</Form.Select></Form.Group></Col>
-            <Col md={3}><Form.Group><Form.Label>Data Início</Form.Label><Form.Control type="date" name="dataInicio" value={filters.dataInicio} onChange={handleFilterChange} /></Form.Group></Col>
-            <Col md={3}><Form.Group><Form.Label>Data Fim</Form.Label><Form.Control type="date" name="dataFim" value={filters.dataFim} onChange={handleFilterChange} /></Form.Group></Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label className="fw-bold text-secondary small text-uppercase">Status</Form.Label>
+                <Form.Select name="status" className="bg-light" value={filters.status} onChange={handleFilterChange}>
+                  <option value="">Todos</option>
+                  <option value="Pendente">Pendente</option>
+                  <option value="Em_manutencao">Em Manutenção</option>
+                  <option value="Concluido">Concluído</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label className="fw-bold text-secondary small text-uppercase">Técnico</Form.Label>
+                <Form.Select name="tecnicoId" className="bg-light" value={filters.tecnicoId} onChange={handleFilterChange}>
+                  <option value="">Todos</option>
+                  {tecnicos.map(t => <option key={t.id} value={t.id}>{t.nome_completo}</option>)}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label className="fw-bold text-secondary small text-uppercase">Data Início</Form.Label>
+                <Form.Control type="date" name="dataInicio" className="bg-light" value={filters.dataInicio} onChange={handleFilterChange} />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label className="fw-bold text-secondary small text-uppercase">Data Fim</Form.Label>
+                <Form.Control type="date" name="dataFim" className="bg-light" value={filters.dataFim} onChange={handleFilterChange} />
+              </Form.Group>
+            </Col>
           </Row>
         </Card.Body>
       </Card>
-      
-      <div className="d-flex justify-content-end mb-3">
-        <PrimaryButton onClick={() => setShowCreateModal(true)}>
-          + Novo Registo na Fila
-        </PrimaryButton>
-      </div>
 
       {loading ? (
-        <div className="text-center"><Spinner animation="border" /></div>
+        <div className="text-center my-5 py-5">
+          <Spinner animation="border" variant="primary" />
+          <div className="mt-2 text-muted">Carregando fila de manutenção...</div>
+        </div>
       ) : (
-        <Row>
-          {filteredFila.length > 0 ? filteredFila.map(item => (
-            <Col key={item.id} md={6} lg={4} className="mb-4">
-              <ManutencaoCard manutencao={item} onDetailsClick={handleShowDetails} onUpdate={fetchData} />
+        <Row className="g-4">
+          {filteredFila.length > 0 ? (
+            filteredFila.map(item => (
+              <Col key={item.id} md={6} lg={4}>
+                <ManutencaoCard manutencao={item} onDetailsClick={handleShowDetails} onUpdate={fetchData} />
+              </Col>
+            ))
+          ) : (
+            <Col xs={12}>
+              <div className="text-center text-muted p-5 bg-white rounded shadow-sm border">
+                <span className="fs-1 d-block mb-3">📭</span>
+                <h5 className="fw-bold">Nenhum registro encontrado</h5>
+                <p className="mb-0">Tente ajustar os filtros ou adicione uma nova manutenção à fila.</p>
+              </div>
             </Col>
-          )) : <Alert variant="info">Nenhum registo encontrado com os filtros aplicados.</Alert>}
+          )}
         </Row>
       )}
 
-      <ModalForm show={showCreateModal} onHide={() => setShowCreateModal(false)} title="Novo Registo de Manutenção">
+      <ModalForm 
+        show={showCreateModal} 
+        onHide={() => setShowCreateModal(false)} 
+        title="🔧 Novo Registro de Manutenção"
+      >
         <ManutencaoEletronicaForm 
           tecnicos={tecnicos}
           onSuccess={() => {

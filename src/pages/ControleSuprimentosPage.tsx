@@ -5,7 +5,7 @@ import MainLayout from '../layouts/MainLayout';
 import PrimaryButton from '../components/PrimaryButton';
 import ModalForm from '../components/ModalForm';
 import { useAuth } from '../hooks/useAuth';
-import * as suprimentosService from '../services/suprimentosService'; // <<< CORREÇÃO: Importar o novo serviço
+import * as suprimentosService from '../services/suprimentosService';
 import * as impressoraService from '../services/impressoraService';
 import type { Impressora, ControleSuprimentos, ControleSuprimentosCreateData } from '../types';
 import SuprimentosTable from '../components/suprimentos/SuprimentosTable';
@@ -26,13 +26,12 @@ function ControleSuprimentosPage() {
     setError(null);
 
     Promise.all([
-      // CORREÇÃO: Chamar a função do serviço correto
       suprimentosService.getControleSuprimentos(),
       impressoraService.getAllImpressoras()
     ]).then(([registrosData, impressorasData]) => {
       setRegistros(registrosData);
       setImpressoras(impressorasData);
-    }).catch(() => setError('Falha ao carregar dados.'))
+    }).catch(() => setError('Falha ao carregar o histórico de suprimentos.'))
       .finally(() => setLoading(false));
   };
 
@@ -44,12 +43,11 @@ function ControleSuprimentosPage() {
     setIsSubmitting(true);
     setError(null);
     try {
-        // CORREÇÃO: Chamar a função do serviço correto
         await suprimentosService.createControleSuprimentos(data);
         setShowFormModal(false);
         fetchData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao registar a requisição de suprimento.');
+      setError(err.response?.data?.message || 'Erro ao registrar a requisição de suprimento.');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,20 +55,33 @@ function ControleSuprimentosPage() {
 
   return (
     <MainLayout pageTitle="🖨️ Requisição de Suprimentos">
-      {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
+      {error && (
+        <Alert variant="danger" className="shadow-sm border-0 mb-4" onClose={() => setError(null)} dismissible>
+          {error}
+        </Alert>
+      )}
       
-      <Card className="floating-card">
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5>Histórico de Requisições</h5>
+      <Card className="floating-card border-0 shadow-sm">
+        <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+          <h5 className="fw-bold text-dark mb-0">Histórico de Requisições</h5>
           <PrimaryButton onClick={() => setShowFormModal(true)}>
             + Nova Requisição
           </PrimaryButton>
         </Card.Header>
         <Card.Body>
           {loading ? (
-            <div className="text-center"><Spinner animation="border" /></div>
-          ) : (
+            <div className="text-center my-5 py-5">
+              <Spinner animation="border" variant="primary" />
+              <div className="mt-2 text-muted fw-medium">Carregando histórico...</div>
+            </div>
+          ) : registros.length > 0 ? (
              <SuprimentosTable registros={registros} />
+          ) : (
+            <div className="text-center text-muted p-5 bg-white rounded shadow-sm border mt-3">
+              <span className="fs-1 d-block mb-3">📭</span>
+              <h5 className="fw-bold text-dark">Nenhuma requisição registrada.</h5>
+              <p className="mb-0">Clique em "Nova Requisição" para registrar a primeira saída de suprimentos.</p>
+            </div>
           )}
         </Card.Body>
       </Card>
@@ -78,7 +89,7 @@ function ControleSuprimentosPage() {
       <ModalForm 
         show={showFormModal} 
         onHide={() => setShowFormModal(false)}
-        title="Registar Nova Requisição de Suprimento"
+        title="📦 Registrar Requisição de Suprimento"
       >
         <SuprimentoForm
             impressoras={impressoras}

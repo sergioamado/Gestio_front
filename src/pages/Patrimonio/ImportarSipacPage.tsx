@@ -25,12 +25,14 @@ function ImportarSipacPage() {
     if (!file || !selectedUnidade) return;
 
     setLoading(true);
+    setMessage(null);
     try {
       const data = await patrimonioService.processarSipac(Number(selectedUnidade), file);
       setBensPreview(data);
-      setMessage({ type: 'info', text: `${data.length} bens identificados. Verifique a lista abaixo.` });
+      setMessage({ type: 'info', text: `Análise concluída! ${data.length} bens foram identificados. Verifique a lista abaixo antes de salvar.` });
     } catch (err: any) {
-      setMessage({ type: 'danger', text: 'Erro ao processar PDF.' });
+      setMessage({ type: 'danger', text: 'Erro ao processar o arquivo PDF. Verifique se o documento é um relatório válido do SIPAC.' });
+      setBensPreview([]);
     } finally {
       setLoading(false);
     }
@@ -38,13 +40,15 @@ function ImportarSipacPage() {
 
   const handleConfirmar = async () => {
     setLoading(true);
+    setMessage(null);
     try {
       await patrimonioService.confirmarImportacao(Number(selectedUnidade), bensPreview);
-      setMessage({ type: 'success', text: 'Patrimônios importados com sucesso!' });
+      setMessage({ type: 'success', text: '✅ Patrimônios importados e registrados com sucesso no banco de dados!' });
       setBensPreview([]);
       setFile(null);
+      setSelectedUnidade('');
     } catch (err) {
-      setMessage({ type: 'danger', text: 'Erro ao salvar importação.' });
+      setMessage({ type: 'danger', text: 'Erro ao salvar a importação. Tente novamente.' });
     } finally {
       setLoading(false);
     }
@@ -52,29 +56,54 @@ function ImportarSipacPage() {
 
   return (
     <MainLayout pageTitle="📤 Importação Patrimonial SIPAC">
-      {message && <Alert variant={message.type}>{message.text}</Alert>}
+      {message && (
+        <Alert variant={message.type} className="shadow-sm border-0 mb-4" onClose={() => setMessage(null)} dismissible>
+          {message.text}
+        </Alert>
+      )}
 
-      <Card className="floating-card mb-4">
-        <Card.Body>
+      <Card className="floating-card border-0 shadow-sm mb-4 border-start border-primary border-4">
+        <Card.Body className="p-4">
+          <Card.Title className="fw-bold mb-4 fs-5 text-dark">📄 Upload de Relatório do SIPAC</Card.Title>
           <Form onSubmit={handleProcessar}>
-            <Row className="align-items-end">
+            <Row className="align-items-end g-3">
               <Col md={5}>
                 <Form.Group>
-                  <Form.Label>Unidade Destino</Form.Label>
-                  <Form.Select value={selectedUnidade} onChange={e => setSelectedUnidade(e.target.value)} required>
-                    <option value="">Selecione...</option>
+                  <Form.Label className="small fw-bold text-secondary text-uppercase">Unidade de Destino</Form.Label>
+                  <Form.Select 
+                    className="bg-light border-0 shadow-none"
+                    value={selectedUnidade} 
+                    onChange={e => setSelectedUnidade(e.target.value)} 
+                    required
+                    disabled={loading || bensPreview.length > 0}
+                  >
+                    <option value="">Selecione a unidade...</option>
                     {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
                   </Form.Select>
                 </Form.Group>
               </Col>
               <Col md={5}>
                 <Form.Group>
-                  <Form.Label>Arquivo PDF</Form.Label>
-                  <Form.Control type="file" accept=".pdf" onChange={e => setFile((e.target as any).files[0])} required />
+                  <Form.Label className="small fw-bold text-secondary text-uppercase">Arquivo de Relatório (.PDF)</Form.Label>
+                  <Form.Control 
+                    type="file" 
+                    accept=".pdf" 
+                    className="bg-light border-0 shadow-none"
+                    onChange={e => setFile((e.target as any).files[0])} 
+                    required 
+                    disabled={loading || bensPreview.length > 0}
+                  />
                 </Form.Group>
               </Col>
               <Col md={2}>
-                <PrimaryButton type="submit" isLoading={loading} className="w-100">Analisar</PrimaryButton>
+                <PrimaryButton 
+                  type="submit" 
+                  isLoading={loading && bensPreview.length === 0} 
+                  className="w-100 fw-bold"
+                  disabled={!file || !selectedUnidade || bensPreview.length > 0}
+                >
+                  🔍 Analisar
+                </PrimaryButton>
               </Col>
             </Row>
           </Form>
@@ -82,31 +111,52 @@ function ImportarSipacPage() {
       </Card>
 
       {bensPreview.length > 0 && (
-        <Card className="floating-card">
-          <Card.Header className="d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Dados Extraídos do PDF</h5>
-            <PrimaryButton variant="success" onClick={handleConfirmar} isLoading={loading}>
-              ✅ Aceitar e Salvar Tudo
-            </PrimaryButton>
+        <Card className="floating-card border-0 shadow-sm animate__animated animate__fadeInUp">
+          <Card.Header className="bg-white border-bottom-0 pt-4 pb-3 d-flex justify-content-between align-items-center">
+            <h5 className="fw-bold text-dark mb-0">Pré-visualização ({bensPreview.length} bens)</h5>
+            <div className="d-flex gap-2">
+              <PrimaryButton 
+                variant="outline-danger" 
+                onClick={() => { setBensPreview([]); setFile(null); setMessage(null); }}
+                disabled={loading}
+              >
+                Cancelar
+              </PrimaryButton>
+              <PrimaryButton 
+                variant="success" 
+                onClick={handleConfirmar} 
+                isLoading={loading}
+              >
+                💾 Confirmar e Salvar
+              </PrimaryButton>
+            </div>
           </Card.Header>
-          <Table responsive hover className="mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Tombamento</th>
-                <th>Descrição</th>
-                <th>Marca</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bensPreview.map((bem, idx) => (
-                <tr key={idx}>
-                  <td><code>{bem.tombamento}</code></td>
-                  <td>{bem.descricao}</td>
-                  <td>{bem.marca}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          <Card.Body className="p-0">
+            <div style={{ maxHeight: '500px', overflowY: 'auto' }} className="custom-scrollbar">
+              <Table responsive hover className="align-middle mb-0">
+                <thead className="bg-light text-secondary" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                  <tr>
+                    <th className="ps-4 border-0">Tombamento</th>
+                    <th className="border-0">Descrição do Equipamento</th>
+                    <th className="pe-4 border-0">Marca/Modelo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bensPreview.map((bem, idx) => (
+                    <tr key={idx}>
+                      <td className="ps-4">
+                        <span className="fw-bold text-primary bg-light px-2 py-1 rounded" style={{ letterSpacing: '0.5px' }}>
+                          {bem.tombamento}
+                        </span>
+                      </td>
+                      <td className="fw-medium text-dark">{bem.descricao}</td>
+                      <td className="pe-4 text-muted">{bem.marca || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          </Card.Body>
         </Card>
       )}
     </MainLayout>
