@@ -43,3 +43,15 @@ export interface SolicitacaoDetalhada extends Solicitacao {
     };
   }[];
 }
+
+export interface PaginacaoMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface SolicitacaoPaginada {
+  data: SolicitacaoDetalhada[];
+  meta: PaginacaoMeta;
+}

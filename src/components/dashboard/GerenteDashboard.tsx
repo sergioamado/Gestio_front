@@ -4,12 +4,28 @@ import { Row, Col, Card, Spinner, Alert, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import PrimaryButton from '../PrimaryButton';
+// Importações da biblioteca Recharts
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
+
+interface GraficoStatus {
+  name: string;
+  quantidade: number;
+}
 
 interface Estatisticas {
   os_pendentes: number;
   baixo_estoque: number;
   patrimonio_ativo: number;
+  grafico_status?: GraficoStatus[];
 }
+
+// Mapa de cores corporativas baseado no status
+const COLOR_MAP: Record<string, string> = {
+  'PENDENTE': '#f59e0b',       // Laranja (Atenção)
+  'EM ATENDIMENTO': '#3b82f6', // Azul (Em progresso)
+  'CONCLUIDA': '#10b981',      // Verde (Sucesso)
+  'CANCELADA': '#ef4444'       // Vermelho (Falha/Cancelado)
+};
 
 function GerenteDashboard() {
   const [stats, setStats] = useState<Estatisticas | null>(null);
@@ -26,8 +42,18 @@ function GerenteDashboard() {
       } catch (err: any) {
         console.error("Erro ao carregar dados do Gerente", err);
         setError("Não foi possível carregar os indicadores da unidade.");
-        // Mock de dados para visualização durante o desenvolvimento
-        setStats({ os_pendentes: 5, baixo_estoque: 2, patrimonio_ativo: 340 });
+        // Mock de dados para visualização durante falhas de rede
+        setStats({ 
+          os_pendentes: 5, 
+          baixo_estoque: 2, 
+          patrimonio_ativo: 340,
+          grafico_status: [
+            { name: 'PENDENTE', quantidade: 5 },
+            { name: 'EM ATENDIMENTO', quantidade: 2 },
+            { name: 'CONCLUIDA', quantidade: 15 },
+            { name: 'CANCELADA', quantidade: 1 }
+          ]
+        });
       } finally {
         setLoading(false);
       }
@@ -35,6 +61,19 @@ function GerenteDashboard() {
     
     fetchDados();
   }, []);
+
+  // Customizador do Tooltip (Balãozinho ao passar o mouse)
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border rounded shadow-sm">
+          <p className="fw-bold mb-0 text-dark">{payload[0].payload.name}</p>
+          <p className="mb-0 text-primary fw-medium">Total: {payload[0].value} OS</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   if (loading) {
     return (
@@ -103,35 +142,80 @@ function GerenteDashboard() {
         </Col>
       </Row>
 
-      <Row>
-        <Col md={12}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body className="p-4">
-              <Card.Title className="mb-4 fw-bold text-dark fs-5">Gestão de Demandas da Unidade</Card.Title>
-              <div className="d-grid gap-3 d-md-flex justify-content-md-start">
-                <PrimaryButton 
-                  onClick={() => navigate('/gerenciar-solicitacoes')}
-                  className="px-4 shadow-sm fw-bold"
-                >
-                  📋 Gerenciar Solicitações (OS)
-                </PrimaryButton>
-                
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => navigate('/itens')}
-                  className="px-4 shadow-sm fw-bold text-dark border"
-                >
-                  📦 Catálogo e Estoque Local
-                </Button>
-                
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => navigate('/lista-bens')}
-                  className="px-4 shadow-sm fw-bold text-dark border"
-                >
-                  🔍 Inventário Patrimonial
-                </Button>
-              </div>
+      <Row className="g-4">
+        {/* GRÁFICO RECHARTS DA UNIDADE */}
+        <Col md={8}>
+          <Card className="border-0 shadow-sm h-100">
+              <Card.Header className="bg-white border-bottom-0 pt-4 pb-0">
+                  <Card.Title className="fw-bold text-dark mb-0">Atendimentos da Unidade</Card.Title>
+                  <small className="text-muted">Desempenho e status dos chamados locais</small>
+              </Card.Header>
+              <Card.Body className="p-4">
+                  <div style={{ width: '100%', height: '300px' }}>
+                    {stats?.grafico_status && stats.grafico_status.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={stats.grafico_status} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                          <XAxis 
+                            dataKey="name" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 500 }} 
+                            dy={10}
+                          />
+                          <YAxis 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: '#6b7280', fontSize: 12 }} 
+                            allowDecimals={false}
+                          />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f3f4f6' }} />
+                          <Bar dataKey="quantidade" radius={[4, 4, 0, 0]} barSize={50} animationDuration={1500}>
+                            {stats.grafico_status.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLOR_MAP[entry.name] || '#94a3b8'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="d-flex h-100 align-items-center justify-content-center text-muted">
+                        Nenhum dado de OS registrado para esta unidade.
+                      </div>
+                    )}
+                  </div>
+              </Card.Body>
+          </Card>
+        </Col>
+
+        {/* MENU LATERAL RÁPIDO DO GERENTE */}
+        <Col md={4}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-white border-bottom-0 pt-4 pb-0">
+              <Card.Title className="fw-bold text-dark mb-0">Gestão Local</Card.Title>
+            </Card.Header>
+            <Card.Body className="p-4 d-flex flex-column gap-3">
+              <PrimaryButton 
+                onClick={() => navigate('/gerenciar-solicitacoes')}
+                className="text-start fw-bold p-3 w-100 shadow-sm"
+              >
+                📋 Gerenciar Solicitações (OS)
+              </PrimaryButton>
+              
+              <Button 
+                variant="outline-secondary" 
+                onClick={() => navigate('/itens')}
+                className="text-start fw-bold p-3 w-100 text-dark border shadow-sm"
+              >
+                📦 Catálogo e Estoque Local
+              </Button>
+              
+              <Button 
+                variant="outline-secondary" 
+                onClick={() => navigate('/lista-bens')}
+                className="text-start fw-bold p-3 w-100 text-dark border shadow-sm mt-auto"
+              >
+                🔍 Inventário Patrimonial
+              </Button>
             </Card.Body>
           </Card>
         </Col>

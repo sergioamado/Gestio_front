@@ -6,12 +6,13 @@ import * as usuarioService from '../../services/usuarioService';
 import * as unidadeService from '../../services/unidadeService';
 import type { BemPatrimonial, User, Unidade } from '../../types';
 import PrimaryButton from '../PrimaryButton';
+import api from '../../services/api'; // <--- IMPORTANTE: Adicione a importação da API aqui
 
 interface BemDetailsModalProps {
   show: boolean;
   onHide: () => void;
   bem: BemPatrimonial | null;
-  onUpdate: () => void; // Recarrega a lista após uma alteração
+  onUpdate: () => void;
 }
 
 function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) {
@@ -19,7 +20,6 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [loadingDados, setLoadingDados] = useState(false);
 
-  // Estados para as ações
   const [foto, setFoto] = useState<File | null>(null);
   const [tecnicoId, setTecnicoId] = useState('');
   const [unidadeDestinoId, setUnidadeDestinoId] = useState('');
@@ -45,16 +45,33 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
 
   if (!bem) return null;
 
+ 
   const handleUploadFoto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!foto) return;
+
+    // Proteção no Frontend: Impede o envio se for maior que 5MB
+    if (foto.size > 5 * 1024 * 1024) {
+      setMensagem({ tipo: 'warning', texto: 'A foto é muito grande! Escolha uma imagem de até 5MB.' });
+      return;
+    }
+
     setLoadingAcao(true);
     try {
-      await patrimonioService.uploadFoto(bem.id, foto);
+      // 1. Cria o pacote Multipart/form-data
+      const formData = new FormData();
+      formData.append('foto', foto);
+
+      // 2. Dispara direto pela API usando o FormData
+      await api.post(`/patrimonio/${bem.id}/foto`, formData);
+
       setMensagem({ tipo: 'success', texto: 'Foto atualizada com sucesso!' });
+      
+      // Limpa a seleção e atualiza a tela
+      setFoto(null);
       onUpdate();
     } catch (err) {
-      setMensagem({ tipo: 'danger', texto: 'Erro ao fazer upload da foto.' });
+      setMensagem({ tipo: 'danger', texto: 'Erro ao fazer upload da foto. Verifique a conexão.' });
     } finally {
       setLoadingAcao(false);
     }
@@ -118,7 +135,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
           </Col>
           <Col md={4} className="text-center">
             {bem.foto_url ? (
-               <img src={bem.foto_url} alt="Foto do Bem" className="img-thumbnail shadow-sm" style={{ maxHeight: '100px' }} />
+               <img src={`http://localhost:3001/${bem.foto_url}`} alt="Foto do Bem" className="img-thumbnail shadow-sm" style={{ maxHeight: '100px' }} />
             ) : (
                <div className="bg-light border rounded d-flex align-items-center justify-content-center text-muted" style={{ height: '100px' }}>
                  Sem Foto
@@ -133,12 +150,12 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
            <div className="text-center my-4"><Spinner animation="border" variant="primary" /></div>
         ) : (
           <Tabs defaultActiveKey="foto" className="mb-3 custom-tabs">
-            {/* ABA 1: UPLOAD DE FOTO */}
+            {/* ABA: UPLOAD DE FOTO */}
             <Tab eventKey="foto" title="📷 Atualizar Foto">
               <Form onSubmit={handleUploadFoto} className="mt-3">
                 <Form.Group className="mb-3">
                   <Form.Label className="small fw-bold text-secondary">Selecione uma imagem (JPG, PNG)</Form.Label>
-                  <Form.Control type="file" accept="image/*" onChange={(e: any) => setFoto(e.target.files[0])} required />
+                  <Form.Control type="file" accept="image/jpeg, image/png, image/jpg" onChange={(e: any) => setFoto(e.target.files[0])} required />
                 </Form.Group>
                 <div className="text-end">
                   <PrimaryButton type="submit" isLoading={loadingAcao} disabled={!foto}>Salvar Foto</PrimaryButton>
@@ -146,7 +163,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
               </Form>
             </Tab>
 
-            {/* ABA 2: TRANSFERIR (MOVIMENTAÇÃO) */}
+            {/* ABA: TRANSFERIR (MOVIMENTAÇÃO) */}
             <Tab eventKey="movimentar" title="🔄 Transferir Unidade">
               <Form onSubmit={handleMovimentar} className="mt-3">
                 <Form.Group className="mb-3">

@@ -1,6 +1,6 @@
 // src/pages/GerenciarSolicitacoesPage.tsx
 import { useState, useEffect, useCallback } from 'react';
-import { Spinner, Alert, Accordion, Row, Col, Form, Card, InputGroup } from 'react-bootstrap';
+import { Spinner, Alert, Accordion, Row, Col, Form, Card, InputGroup, Pagination } from 'react-bootstrap';
 import MainLayout from '../layouts/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import * as solicitacaoService from '../services/solicitacaoService';
@@ -15,7 +15,12 @@ function GerenciarSolicitacoesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Atualizado para usar numero_glpi em vez de id_filtro, acompanhando o backend
+  // Estados de Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const ITEMS_PER_PAGE = 10;
+
   const [filters, setFilters] = useState({
     status: '',
     tecnico_id_filtro: '',
@@ -39,17 +44,31 @@ function GerenciarSolicitacoesPage() {
     setLoading(true);
     setError(null);
 
-    const params: any = {};
+    const params: any = {
+      page: currentPage,
+      limit: ITEMS_PER_PAGE
+    };
+    
     if (user.role !== 'admin') params.unidade_id = user.unidade_id;
     if (filters.status) params.status = filters.status;
     if (filters.tecnico_id_filtro) params.tecnico_id_filtro = filters.tecnico_id_filtro;
     if (filters.numero_glpi) params.numero_glpi = filters.numero_glpi;
     
     solicitacaoService.getAllSolicitacoes(params)
-      .then(setSolicitacoes)
+      .then((resposta: any) => {
+        if (resposta.data && resposta.meta) {
+          setSolicitacoes(resposta.data);
+          setTotalPages(resposta.meta.totalPages);
+          setTotalItems(resposta.meta.total);
+        } else {
+          setSolicitacoes(resposta);
+          setTotalItems(resposta.length);
+          setTotalPages(1);
+        }
+      })
       .catch(() => setError('Falha ao buscar as Ordens de Serviço. Verifique a conexão.'))
       .finally(() => setLoading(false));
-  }, [user, filters]);
+  }, [user, filters, currentPage]);
 
   useEffect(() => {
     fetchTecnicos();
@@ -61,6 +80,27 @@ function GerenciarSolicitacoesPage() {
 
   const handleFilterChange = (e: React.ChangeEvent<any>) => {
     setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setCurrentPage(1); 
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+  };
+
+  const renderPaginationItems = () => {
+    let items = [];
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    for (let number = startPage; number <= endPage; number++) {
+      items.push(
+        <Pagination.Item key={number} active={number === currentPage} onClick={() => handlePageChange(number)}>
+          {number}
+        </Pagination.Item>
+      );
+    }
+    return items;
   };
   
   return (
@@ -71,7 +111,6 @@ function GerenciarSolicitacoesPage() {
         </Alert>
       )}
 
-      {/* Painel de Filtros Modernizado */}
       <Card className="floating-card border-0 shadow-sm mb-4 bg-white border-start border-primary border-4">
         <Card.Body className="p-4">
           <Card.Title className="fw-bold mb-4 fs-5 text-dark">🔍 Filtros de Busca</Card.Title>
@@ -131,24 +170,47 @@ function GerenciarSolicitacoesPage() {
         </Card.Body>
       </Card>
 
-      {/* Lista de Solicitações */}
+      {!loading && !error && solicitacoes.length > 0 && (
+        <div className="mb-3 d-flex justify-content-between align-items-center">
+           <span className="text-muted small fw-bold text-uppercase">
+             Exibindo {solicitacoes.length} de {totalItems} solicitações
+           </span>
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center my-5 py-5">
             <Spinner animation="border" variant="primary" />
             <div className="mt-2 text-muted fw-medium">Buscando Ordens de Serviço...</div>
         </div>
       ) : solicitacoes.length > 0 ? (
-        <Card className="floating-card border-0 shadow-sm p-3 bg-transparent">
-            <Accordion alwaysOpen className="custom-accordion">
-            {solicitacoes.map(s => (
-                <SolicitacaoItem 
-                key={s.id} 
-                solicitacao={s} 
-                onUpdate={fetchSolicitacoes}
-                />
-            ))}
-            </Accordion>
-        </Card>
+        <>
+          <Card className="floating-card border-0 shadow-sm p-3 bg-transparent">
+              <Accordion alwaysOpen className="custom-accordion">
+              {solicitacoes.map(s => (
+                  <SolicitacaoItem 
+                  key={s.id} 
+                  solicitacao={s} 
+                  onUpdate={fetchSolicitacoes}
+                  />
+              ))}
+              </Accordion>
+          </Card>
+
+          {totalPages > 1 && (
+            <div className="d-flex justify-content-center mt-4 mb-5">
+              <Pagination className="shadow-sm">
+                <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                
+                {renderPaginationItems()}
+                
+                <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+              </Pagination>
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center text-muted p-5 bg-white rounded shadow-sm border mt-4">
             <span className="fs-1 d-block mb-3">📭</span>

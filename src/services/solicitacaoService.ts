@@ -1,12 +1,11 @@
 // src/services/solicitacaoService.ts
 import api from './api';
-// CORRIGIDO: A função agora retorna o tipo SolicitacaoDetalhada
-import type { Solicitacao, SolicitacaoDetalhada, SolicitacaoCreateData } from '../types/index';
+import type { Solicitacao, SolicitacaoDetalhada, SolicitacaoCreateData, SolicitacaoPaginada } from '../types/index';
 
-export const getAllSolicitacoes = async (params?: any): Promise<SolicitacaoDetalhada[]> => {
-    const response = await api.get('/solicitacoes', { params });
-    return response.data;
-}
+export const getAllSolicitacoes = async (params?: any): Promise<SolicitacaoPaginada> => {
+  const response = await api.get('/solicitacoes', { params });
+  return response.data;
+};
 
 export const getSolicitacaoById = async (id: number): Promise<SolicitacaoDetalhada> => {
     const response = await api.get(`/solicitacoes/${id}`);
