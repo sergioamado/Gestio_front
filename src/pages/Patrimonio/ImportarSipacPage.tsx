@@ -1,164 +1,135 @@
 // src/pages/Patrimonio/ImportarSipacPage.tsx
 import { useState, useEffect } from 'react';
-import { Card, Form, Alert, Table, Row, Col } from 'react-bootstrap';
+import { Card, Form, Alert } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
+import api from '../../services/api';
 import * as unidadeService from '../../services/unidadeService';
 import * as patrimonioService from '../../services/patrimonioService';
-import type { Unidade, BemPatrimonial } from '../../types';
+import { useAuth } from '../../hooks/useAuth';
+import type { Unidade } from '../../types';
+
+import ModalForm from '../../components/ModalForm';
+import BemForm from '../../components/patrimonio/BemForm';
 
 function ImportarSipacPage() {
-  const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [selectedUnidade, setSelectedUnidade] = useState<string>('');
+  const { user } = useAuth();
   const [file, setFile] = useState<File | null>(null);
-  const [bensPreview, setBensPreview] = useState<Partial<BemPatrimonial>[]>([]);
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [unidadeDestinoId, setUnidadeDestinoId] = useState('');
   
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: string, text: string } | null>(null);
+  const [mensagem, setMensagem] = useState<{ tipo: string; texto: string; detalhes?: any } | null>(null);
+
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    unidadeService.getAllUnidades().then(setUnidades);
-  }, []);
+    unidadeService.getAllUnidades().then(setUnidades).catch(console.error);
+    if (user && user.role !== 'admin' && user.unidade_id) {
+      setUnidadeDestinoId(String(user.unidade_id));
+    }
+  }, [user]);
 
-  const handleProcessar = async (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) setFile(e.target.files[0]);
+  };
+
+  const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !selectedUnidade) return;
+    if (!file || !unidadeDestinoId) {
+      setMensagem({ tipo: 'warning', texto: 'Por favor, preencha a Unidade e selecione o ficheiro.' });
+      return;
+    }
 
     setLoading(true);
-    setMessage(null);
+    setMensagem(null);
+    const formData = new FormData();
+    formData.append('planilha', file); 
+    formData.append('unidade_id', unidadeDestinoId); 
+
     try {
-      const data = await patrimonioService.processarSipac(Number(selectedUnidade), file);
-      setBensPreview(data);
-      setMessage({ type: 'info', text: `Análise concluída! ${data.length} bens foram identificados. Verifique a lista abaixo antes de salvar.` });
+      const response = await api.post('/patrimonio/importar', formData);
+      setMensagem({ tipo: 'success', texto: response.data.message, detalhes: response.data.detalhes });
+      setFile(null); 
     } catch (err: any) {
-      setMessage({ type: 'danger', text: 'Erro ao processar o arquivo PDF. Verifique se o documento é um relatório válido do SIPAC.' });
-      setBensPreview([]);
+      setMensagem({ 
+        tipo: 'danger', 
+        texto: err.response?.data?.message || 'Erro ao processar o ficheiro. Tente salvar o PDF novamente ou use o formato CSV.' 
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConfirmar = async () => {
-    setLoading(true);
-    setMessage(null);
+  const handleManualSubmit = async (data: any) => {
+    setIsSubmitting(true);
+    setMensagem(null);
     try {
-      await patrimonioService.confirmarImportacao(Number(selectedUnidade), bensPreview);
-      setMessage({ type: 'success', text: '✅ Patrimônios importados e registrados com sucesso no banco de dados!' });
-      setBensPreview([]);
-      setFile(null);
-      setSelectedUnidade('');
-    } catch (err) {
-      setMessage({ type: 'danger', text: 'Erro ao salvar a importação. Tente novamente.' });
+      await patrimonioService.createBem(data);
+      setShowFormModal(false);
+      setMensagem({ tipo: 'success', texto: `Tombamento ${data.tombamento} cadastrado com sucesso!` });
+    } catch (err: any) {
+      setMensagem({ tipo: 'danger', texto: err.response?.data?.message || 'Erro ao cadastrar bem manualmente.' });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <MainLayout pageTitle="📤 Importação Patrimonial SIPAC">
-      {message && (
-        <Alert variant={message.type} className="shadow-sm border-0 mb-4" onClose={() => setMessage(null)} dismissible>
-          {message.text}
-        </Alert>
-      )}
+    <MainLayout pageTitle="📄 Importar Relatório SIPAC">
+      <Card className="floating-card border-0 shadow-sm max-w-lg mx-auto mt-4" style={{ maxWidth: '600px' }}>
+        <Card.Body className="p-5">
+          <div className="text-center mb-4">
+            <span className="display-4 d-block mb-3">📑</span>
+            <Card.Title className="fw-bold fs-4 text-dark">Sincronização Patrimonial</Card.Title>
+            <p className="text-muted">Faça o upload do seu relatório ou insira os itens manualmente.</p>
+          </div>
 
-      <Card className="floating-card border-0 shadow-sm mb-4 border-start border-primary border-4">
-        <Card.Body className="p-4">
-          <Card.Title className="fw-bold mb-4 fs-5 text-dark">📄 Upload de Relatório do SIPAC</Card.Title>
-          <Form onSubmit={handleProcessar}>
-            <Row className="align-items-end g-3">
-              <Col md={5}>
-                <Form.Group>
-                  <Form.Label className="small fw-bold text-secondary text-uppercase">Unidade de Destino</Form.Label>
-                  <Form.Select 
-                    className="bg-light border-0 shadow-none"
-                    value={selectedUnidade} 
-                    onChange={e => setSelectedUnidade(e.target.value)} 
-                    required
-                    disabled={loading || bensPreview.length > 0}
-                  >
-                    <option value="">Selecione a unidade...</option>
-                    {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={5}>
-                <Form.Group>
-                  <Form.Label className="small fw-bold text-secondary text-uppercase">Arquivo de Relatório (.PDF)</Form.Label>
-                  <Form.Control 
-                    type="file" 
-                    accept=".pdf" 
-                    className="bg-light border-0 shadow-none"
-                    onChange={e => setFile((e.target as any).files[0])} 
-                    required 
-                    disabled={loading || bensPreview.length > 0}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={2}>
-                <PrimaryButton 
-                  type="submit" 
-                  isLoading={loading && bensPreview.length === 0} 
-                  className="w-100 fw-bold"
-                  disabled={!file || !selectedUnidade || bensPreview.length > 0}
-                >
-                  🔍 Analisar
-                </PrimaryButton>
-              </Col>
-            </Row>
+          {mensagem && (
+            <Alert variant={mensagem.tipo} className="border-0 shadow-sm mb-4" dismissible onClose={() => setMensagem(null)}>
+              <strong>{mensagem.texto}</strong>
+              {mensagem.detalhes && (
+                <ul className="mt-2 mb-0 small">
+                  <li>Encontrados: <b>{mensagem.detalhes.total_bens_encontrados}</b></li>
+                  <li>Novos registos: <b>{mensagem.detalhes.novos_registos}</b></li>
+                  <li>Atualizados: <b>{mensagem.detalhes.atualizados}</b></li>
+                  <li>Erros/Ignorados: <b>{mensagem.detalhes.erros}</b></li>
+                </ul>
+              )}
+            </Alert>
+          )}
+
+          <Form onSubmit={handleImport}>
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-bold text-secondary">1. Unidade de Destino</Form.Label>
+              <Form.Select value={unidadeDestinoId} onChange={(e) => setUnidadeDestinoId(e.target.value)} required disabled={user?.role !== 'admin'} className="bg-light border-0 shadow-sm">
+                <option value="">Selecione o setor...</option>
+                {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-bold text-secondary">2. Ficheiro SIPAC (.pdf, .csv, .xlsx)</Form.Label>
+              <Form.Control type="file" accept=".pdf, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" onChange={handleFileChange} required className="bg-light border-0 shadow-sm" />
+            </Form.Group>
+
+            <div className="d-flex flex-column gap-3 mt-4 pt-4 border-top">
+              <PrimaryButton type="submit" isLoading={loading} disabled={!file || !unidadeDestinoId}>
+                {loading ? 'A processar ficheiro...' : '📥 Iniciar Sincronização'}
+              </PrimaryButton>
+              <div className="text-center text-muted fw-bold small my-1">OU</div>
+              <PrimaryButton type="button" variant="outline-primary" onClick={() => setShowFormModal(true)}>
+                ✏️ Cadastrar Item Manualmente
+              </PrimaryButton>
+            </div>
           </Form>
         </Card.Body>
       </Card>
 
-      {bensPreview.length > 0 && (
-        <Card className="floating-card border-0 shadow-sm animate__animated animate__fadeInUp">
-          <Card.Header className="bg-white border-bottom-0 pt-4 pb-3 d-flex justify-content-between align-items-center">
-            <h5 className="fw-bold text-dark mb-0">Pré-visualização ({bensPreview.length} bens)</h5>
-            <div className="d-flex gap-2">
-              <PrimaryButton 
-                variant="outline-danger" 
-                onClick={() => { setBensPreview([]); setFile(null); setMessage(null); }}
-                disabled={loading}
-              >
-                Cancelar
-              </PrimaryButton>
-              <PrimaryButton 
-                variant="success" 
-                onClick={handleConfirmar} 
-                isLoading={loading}
-              >
-                💾 Confirmar e Salvar
-              </PrimaryButton>
-            </div>
-          </Card.Header>
-          <Card.Body className="p-0">
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }} className="custom-scrollbar">
-              <Table responsive hover className="align-middle mb-0">
-                <thead className="bg-light text-secondary" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                  <tr>
-                    <th className="ps-4 border-0">Tombamento</th>
-                    <th className="border-0">Descrição do Equipamento</th>
-                    <th className="pe-4 border-0">Marca/Modelo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bensPreview.map((bem, idx) => (
-                    <tr key={idx}>
-                      <td className="ps-4">
-                        <span className="fw-bold text-primary bg-light px-2 py-1 rounded" style={{ letterSpacing: '0.5px' }}>
-                          {bem.tombamento}
-                        </span>
-                      </td>
-                      <td className="fw-medium text-dark">{bem.descricao}</td>
-                      <td className="pe-4 text-muted">{bem.marca || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </div>
-          </Card.Body>
-        </Card>
-      )}
+      <ModalForm show={showFormModal} onHide={() => setShowFormModal(false)} title="📦 Cadastrar Novo Equipamento">
+        <BemForm unidades={unidades} onSubmit={handleManualSubmit} isLoading={isSubmitting} />
+      </ModalForm>
     </MainLayout>
   );
 }

@@ -1,6 +1,6 @@
 // src/services/patrimonioService.ts
 import api from './api';
-import type { BemPatrimonial } from '../types/index';
+import type { BemPatrimonial, PatrimonioPaginado } from '../types/index';
 
 export const importarSipac = async (formData: FormData) => {
   const response = await api.post('/patrimonio/importar', formData, {
@@ -34,13 +34,9 @@ export const confirmarImportacao = async (unidadeId: number, bens: Partial<BemPa
   return response.data;
 };
 
-export const getAllBens = async (params?: any): Promise<BemPatrimonial[]> => {
+export const getAllBens = async (params?: any): Promise<PatrimonioPaginado> => {
   const response = await api.get('/patrimonio', { params });
   return response.data;
-};
-
-export const atribuirBem = async (data: { bem_id: number; tecnico_id: number; observacoes?: string }) => {
-  return (await api.post('/patrimonio/atribuir', data)).data;
 };
 
 export const registrarMovimentacao = async (data: any) => {
@@ -53,4 +49,29 @@ export const uploadFoto = async (id: number, file: File) => {
   return (await api.post(`/patrimonio/${id}/foto`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })).data;
+};
+
+export const atribuirBem = async (dados: { bem_id: number; tecnico_id: number; observacoes?: string }) => {
+  const response = await api.post('/patrimonio/atribuir', dados);
+  return response.data;
+};
+
+export const devolverBem = async (bem_id: number) => {
+  const response = await api.post('/patrimonio/devolver', { bem_id });
+  return response.data;
+};
+
+export const createBem = async (data: any) => {
+  const response = await api.post('/patrimonio', data);
+  return response.data;
+};
+
+export const updateBem = async (id: number, data: any) => {
+  const response = await api.put(`/patrimonio/${id}`, data);
+  return response.data;
+};
+
+export const deleteBem = async (id: number) => {
+  const response = await api.delete(`/patrimonio/${id}`);
+  return response.data;
 };

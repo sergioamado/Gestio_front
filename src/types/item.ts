@@ -25,3 +25,8 @@ export interface CartItem {
   quantidade: number;
   quantidade_estoque: number;
 }
+
+export interface ItemPaginado {
+  data: Item[];
+  meta: { total: number; page: number; limit: number; totalPages: number; };
+}

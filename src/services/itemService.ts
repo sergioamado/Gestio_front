@@ -1,9 +1,8 @@
 // src/services/itemService.ts
 import api from './api';
-import type { Item, ItemCreateData, ItemUpdateData } from '../types/index';
+import type { Item, ItemCreateData, ItemUpdateData, ItemPaginado } from '../types/index';
 
-export const getAllItems = async (unidadeId?: number | null): Promise<Item[]> => {
-  const params = unidadeId ? { unidadeId } : {};
+export const getAllItems = async (params?: any): Promise<ItemPaginado> => {
   const response = await api.get('/itens', { params });
   return response.data;
 };

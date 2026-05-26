@@ -1,19 +1,14 @@
 // src/components/patrimonio/BemDetailsModal.tsx
 import { useState, useEffect } from 'react';
-import { Modal, Button, Form, Alert, Tabs, Tab, Row, Col, Spinner } from 'react-bootstrap';
+import { Modal, Form, Alert, Tabs, Tab, Row, Col, Spinner, Badge } from 'react-bootstrap';
 import * as patrimonioService from '../../services/patrimonioService';
 import * as usuarioService from '../../services/usuarioService';
 import * as unidadeService from '../../services/unidadeService';
-import type { BemPatrimonial, User, Unidade } from '../../types';
 import PrimaryButton from '../PrimaryButton';
-import api from '../../services/api'; // <--- IMPORTANTE: Adicione a importação da API aqui
+import api from '../../services/api';
 
-interface BemDetailsModalProps {
-  show: boolean;
-  onHide: () => void;
-  bem: BemPatrimonial | null;
-  onUpdate: () => void;
-}
+// IMPORTAÇÃO CORRIGIDA: Adicionado User e Unidade que estavam faltando
+import type { BemPatrimonial, User, Unidade, BemDetailsModalProps } from '../../types';
 
 function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) {
   const [tecnicos, setTecnicos] = useState<User[]>([]);
@@ -45,7 +40,6 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
 
   if (!bem) return null;
 
- 
   const handleUploadFoto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!foto) return;
@@ -58,11 +52,11 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
 
     setLoadingAcao(true);
     try {
-      // 1. Cria o pacote Multipart/form-data
+      // Cria o pacote Multipart/form-data
       const formData = new FormData();
       formData.append('foto', foto);
 
-      // 2. Dispara direto pela API usando o FormData
+      // Dispara direto pela API usando o FormData
       await api.post(`/patrimonio/${bem.id}/foto`, formData);
 
       setMensagem({ tipo: 'success', texto: 'Foto atualizada com sucesso!' });
@@ -127,17 +121,31 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
         <Row className="mb-4">
           <Col md={8}>
             <h5 className="fw-bold text-dark">{bem.descricao}</h5>
-            <div className="text-muted small">
+            <div className="text-muted small mb-3">
               <strong>Marca/Modelo:</strong> {bem.marca || 'Não informado'} <br/>
               <strong>Localização Atual:</strong> {bem.localizacao_fisica} <br/>
               <strong>Status:</strong> {bem.status_atual}
             </div>
+            
+            {/* ESTRUTURA HTML CORRIGIDA: Removido o <td> e colocado uma div organizada */}
+            <div className="mt-2">
+              <strong className="d-block small text-secondary text-uppercase mb-1">Posse Atual:</strong>
+              {bem.tecnico_responsavel ? (
+                <Badge bg="info" text="dark" className="shadow-sm py-2 px-3 fs-6">
+                  👤 Em posse de: {bem.tecnico_responsavel}
+                </Badge>
+              ) : (
+                <Badge bg="secondary" className="shadow-sm py-2 px-3 fs-6">
+                  🏢 No Setor / Inventário Geral
+                </Badge>
+              )}
+            </div>
           </Col>
           <Col md={4} className="text-center">
             {bem.foto_url ? (
-               <img src={`http://localhost:3001/${bem.foto_url}`} alt="Foto do Bem" className="img-thumbnail shadow-sm" style={{ maxHeight: '100px' }} />
+               <img src={`http://localhost:3001/${bem.foto_url}`} alt="Foto do Bem" className="img-thumbnail shadow-sm" style={{ maxHeight: '120px' }} />
             ) : (
-               <div className="bg-light border rounded d-flex align-items-center justify-content-center text-muted" style={{ height: '100px' }}>
+               <div className="bg-light border rounded d-flex align-items-center justify-content-center text-muted" style={{ height: '120px' }}>
                  Sem Foto
                </div>
             )}
