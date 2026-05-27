@@ -39,9 +39,6 @@ export const getAllBens = async (params?: any): Promise<PatrimonioPaginado> => {
   return response.data;
 };
 
-export const registrarMovimentacao = async (data: any) => {
-  return (await api.post('/patrimonio/movimentar', data)).data;
-};
 
 export const uploadFoto = async (id: number, file: File) => {
   const formData = new FormData();
@@ -73,5 +70,40 @@ export const updateBem = async (id: number, data: any) => {
 
 export const deleteBem = async (id: number) => {
   const response = await api.delete(`/patrimonio/${id}`);
+  return response.data;
+};
+
+export const registrarMovimentacao = async (dados: { 
+  bem_ids: number[], 
+  origem_unidade_id?: number, 
+  destino_unidade_id: number, 
+  observacao?: string 
+}) => {
+  const response = await api.post('/patrimonio/transferencia', dados);
+  return response.data;
+};
+
+export const getHistoricoBem = async (bem_id: number) => {
+  const response = await api.get(`/patrimonio/${bem_id}/historico`);
+  return response.data;
+};
+
+export const iniciarLevantamento = async () => {
+  const response = await api.post('/patrimonio/levantamento/iniciar');
+  return response.data;
+};
+
+export const getLevantamentoAtual = async (unidade_id: number) => {
+  const response = await api.get('/patrimonio/levantamento/atual', { params: { unidade_id } });
+  return response.data;
+};
+
+export const biparItemLevantamento = async (dados: { tombamento: string, unidade_id: number }) => {
+  const response = await api.post('/patrimonio/levantamento/bipar', dados);
+  return response.data;
+};
+
+export const finalizarLevantamento = async () => {
+  const response = await api.post('/patrimonio/levantamento/finalizar');
   return response.data;
 };

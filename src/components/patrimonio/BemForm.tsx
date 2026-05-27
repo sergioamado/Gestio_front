@@ -21,7 +21,7 @@ function BemForm({ bem, unidades, onSubmit, isLoading }: BemFormProps) {
     unidade_id: ''
   });
 
-  // Se recebermos um "bem", é porque estamos a editar. Preenchemos os campos.
+  
   useEffect(() => {
     if (bem) {
       setFormData({

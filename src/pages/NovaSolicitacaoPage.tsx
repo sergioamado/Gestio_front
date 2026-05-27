@@ -28,11 +28,12 @@ function NovaSolicitacaoPage() {
   const [loading, setLoading] = useState(false);
   const [mensagem, setMensagem] = useState<{ tipo: 'success' | 'danger'; texto: string } | null>(null);
 
-  useEffect(() => {
+ useEffect(() => {
     const fetchItens = async () => {
       try {
-        const data = await itemService.getAllItems();
-        setItensDisponiveis(data);
+        const res = await itemService.getAllItems();
+        const arrayItens = Array.isArray(res) ? res : (res.data || []);
+        setItensDisponiveis(arrayItens);
       } catch (error) {
         console.error('Erro ao buscar itens do catálogo:', error);
       }
