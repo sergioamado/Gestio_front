@@ -21,11 +21,10 @@ function ImpressoraDetailsModal({ show, onHide, impressora }: ImpressoraDetailsM
         <p className="text-muted">{impressora.modelo}</p>
         <hr />
         <ListGroup variant="flush">
-          {/* ... (outros ListGroup.Item) ... */}
           <ListGroup.Item><strong>Servidor:</strong> {impressora.servidor || 'Não informado'}</ListGroup.Item>
           <ListGroup.Item><strong>Unidade Organizacional:</strong> {impressora.unidades_organizacionais?.nome || 'Não informada'}</ListGroup.Item>
           
-          {/* <<< LINHA ADICIONADA AQUI >>> */}
+          
           <ListGroup.Item>
             <strong>Tipo:</strong>{' '}
             <Badge bg={impressora.is_colorida ? 'info' : 'secondary'}>

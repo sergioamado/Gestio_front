@@ -4,6 +4,7 @@ import { Modal, Form, Alert, Row, Col, Card, Badge, Button } from 'react-bootstr
 import { BellFill, Telegram, InfoCircleFill } from 'react-bootstrap-icons';
 import PrimaryButton from '../PrimaryButton';
 import * as notificacaoService from '../../services/notificacaoService';
+import { useToast } from '../../contexts/ToastContext';
 
 interface ConfigModalProps {
   show: boolean;
@@ -11,14 +12,14 @@ interface ConfigModalProps {
 }
 
 function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
+  const { mostrarCard } = useToast(); // 🚀 INJETADO
   const [telegramId, setTelegramId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mensagem, setMensagem] = useState<{ tipo: string, texto: string } | null>(null);
   
-  // Estado de Permissão do Navegador (default, granted, denied)
+  // Estado de Permissão do Navegador
   const [permissaoNavegador, setPermissaoNavegador] = useState<NotificationPermission>('default');
 
-  // Controle Granular (Quais alertas vão pra onde)
+  // Controle Granular Visual (Na interface)
   const [prefsNavegador, setPrefsNavegador] = useState({
     os: true, estoque: true, sistema: true, alertas: true
   });
@@ -27,49 +28,56 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
     os: true, estoque: false, sistema: false, alertas: true
   });
 
-  // Checa a permissão real do navegador sempre que o modal abre
   useEffect(() => {
     if (show && 'Notification' in window) {
       setPermissaoNavegador(Notification.permission);
-      setMensagem(null);
-      // Aqui futuramente você pode buscar as prefs salvas no banco: 
-      // const prefs = await api.get('/usuarios/preferencias'); setPrefs...
+      // Aqui pode buscar as prefs salvas no banco e popular os states acima
     }
   }, [show]);
 
   const solicitarPermissaoNavegador = async () => {
     if (!('Notification' in window)) {
-      setMensagem({ tipo: 'danger', texto: 'Seu navegador não suporta notificações.' });
+      mostrarCard('Erro', 'Seu navegador não suporta notificações.', 'erro');
       return;
     }
     const permissao = await Notification.requestPermission();
     setPermissaoNavegador(permissao);
     if (permissao === 'granted') {
-      new Notification('COSUP+', { body: 'Notificações ativadas com sucesso!' });
+      new Notification('Gestio', { body: 'Notificações ativadas com sucesso!' });
+      mostrarCard('Sucesso', 'Permissão concedida no navegador!', 'sucesso');
     }
   };
 
   const checarPermissaoNovamente = () => {
     setPermissaoNavegador(Notification.permission);
     if (Notification.permission === 'granted') {
-      setMensagem({ tipo: 'success', texto: 'Permissão reconhecida com sucesso!' });
+      mostrarCard('Sucesso', 'Permissão reconhecida com sucesso!', 'sucesso');
     }
   };
 
   const handleSalvarConfiguracoes = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMensagem(null);
+    
     try {
-      await notificacaoService.salvarPreferencias({
-        telegram_chat_id: telegramId,
-        prefs_navegador: prefsNavegador,
-        prefs_telegram: prefsTelegram
-      });
-      setMensagem({ tipo: 'success', texto: 'Preferências salvas com sucesso!' });
-      setTimeout(onHide, 2000);
+      // 🚀 CORREÇÃO DO TYPESCRIPT: 
+      // O serviço espera um objeto com { notificacoes_app, notificacoes_bot, desvincular_telegram }
+      // Vamos assumir que se alguma opção granular estiver "true", a master key fica "true"
+      const payload = {
+        notificacoes_app: Object.values(prefsNavegador).some(v => v === true),
+        notificacoes_bot: Object.values(prefsTelegram).some(v => v === true),
+        desvincular_telegram: !telegramId // Se o campo estiver vazio, envia a flag para desvincular
+      };
+
+      await notificacaoService.salvarPreferencias(payload);
+
+      // Nota: Se a sua API requer que envie o "telegram_chat_id" para outro endpoint
+      // (ex: usuarioService.atualizarPerfil), você deve chamá-lo aqui.
+
+      mostrarCard('Sucesso!', 'As suas preferências de alerta foram salvas.', 'sucesso');
+      setTimeout(onHide, 1000);
     } catch (error) {
-      setMensagem({ tipo: 'danger', texto: 'Erro ao salvar as configurações.' });
+      mostrarCard('Erro', 'Falha ao salvar as configurações. Tente novamente.', 'erro');
     } finally {
       setLoading(false);
     }
@@ -85,20 +93,19 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
 
   return (
     <Modal show={show} onHide={onHide} centered size="xl">
-      <Modal.Header closeButton className="border-0 bg-light">
+      <Modal.Header closeButton className="border-0 bg-light pb-4">
         <Modal.Title className="fw-bold fs-5 text-dark d-flex align-items-center">
           ⚙️ Central de Preferências de Alertas
         </Modal.Title>
       </Modal.Header>
       
       <Form onSubmit={handleSalvarConfiguracoes}>
-        <Modal.Body className="p-4 bg-white">
-          {mensagem && <Alert variant={mensagem.tipo} className="border-0 shadow-sm py-2">{mensagem.texto}</Alert>}
-
+        <Modal.Body className="p-4 pt-0 bg-light">
           <Row className="g-4">
+            
             {/* LADO ESQUERDO: NAVEGADOR */}
             <Col lg={6}>
-              <Card className="h-100 border-0 shadow-sm bg-light">
+              <Card className="h-100 border-0 shadow-sm bg-white">
                 <Card.Body className="p-4">
                   <div className="d-flex align-items-center mb-4">
                     <BellFill size={32} className="text-warning me-3" />
@@ -108,7 +115,6 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
                     </div>
                   </div>
 
-                  {/* Lógica Inteligente de Permissão do Navegador */}
                   <div className="mb-4">
                     {permissaoNavegador === 'granted' ? (
                       <Badge bg="success" className="px-3 py-2 rounded-pill shadow-sm mb-3">✅ Permissão Concedida</Badge>
@@ -117,7 +123,7 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
                         <InfoCircleFill className="me-2" />
                         <strong>Bloqueado!</strong> Para ativar, clique no ícone de <strong>Cadeado 🔒</strong> na barra de endereços do seu navegador, permita as Notificações, e depois clique no botão abaixo.
                         <div className="mt-2 text-center">
-                          <Button variant="outline-danger" size="sm" onClick={checarPermissaoNovamente}>
+                          <Button variant="outline-danger" size="sm" onClick={checarPermissaoNovamente} className="fw-bold">
                             Já permiti no cadeado, verificar!
                           </Button>
                         </div>
@@ -132,12 +138,12 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
                   </div>
 
                   {/* Toggles Granulares */}
-                  <div className={`p-3 bg-white rounded border ${permissaoNavegador !== 'granted' ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <div className={`p-3 bg-light rounded border border-light-subtle ${permissaoNavegador !== 'granted' ? 'opacity-50 pointer-events-none' : ''}`}>
                     <h6 className="fw-bold text-secondary small text-uppercase mb-3">Quero receber alertas sobre:</h6>
-                    <Form.Check type="switch" id="nav-os" label="Atualizações de OS (Status, Aprovações)" checked={prefsNavegador.os} onChange={(e) => handleToggle('navegador', 'os', e.target.checked)} className="mb-2 fw-medium" />
-                    <Form.Check type="switch" id="nav-estoque" label="Baixo Estoque / Reposições" checked={prefsNavegador.estoque} onChange={(e) => handleToggle('navegador', 'estoque', e.target.checked)} className="mb-2 fw-medium" />
-                    <Form.Check type="switch" id="nav-alertas" label="Alertas Críticos (Defeitos, Urgências)" checked={prefsNavegador.alertas} onChange={(e) => handleToggle('navegador', 'alertas', e.target.checked)} className="mb-2 fw-medium" />
-                    <Form.Check type="switch" id="nav-sis" label="Avisos do Sistema / Admin" checked={prefsNavegador.sistema} onChange={(e) => handleToggle('navegador', 'sistema', e.target.checked)} className="fw-medium" />
+                    <Form.Check type="switch" id="nav-os" label={<span className="fw-medium text-dark ms-1">Atualizações de OS</span>} checked={prefsNavegador.os} onChange={(e) => handleToggle('navegador', 'os', e.target.checked)} className="mb-2" />
+                    <Form.Check type="switch" id="nav-estoque" label={<span className="fw-medium text-dark ms-1">Baixo Estoque / Reposições</span>} checked={prefsNavegador.estoque} onChange={(e) => handleToggle('navegador', 'estoque', e.target.checked)} className="mb-2" />
+                    <Form.Check type="switch" id="nav-alertas" label={<span className="fw-medium text-dark ms-1">Alertas Críticos (Defeitos)</span>} checked={prefsNavegador.alertas} onChange={(e) => handleToggle('navegador', 'alertas', e.target.checked)} className="mb-2" />
+                    <Form.Check type="switch" id="nav-sis" label={<span className="fw-medium text-dark ms-1">Avisos do Sistema</span>} checked={prefsNavegador.sistema} onChange={(e) => handleToggle('navegador', 'sistema', e.target.checked)} />
                   </div>
                 </Card.Body>
               </Card>
@@ -162,7 +168,7 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
                       placeholder="Ex: 123456789" 
                       value={telegramId}
                       onChange={(e) => setTelegramId(e.target.value)}
-                      className="border-0 shadow-sm bg-white"
+                      className="border-0 shadow-sm bg-white py-2"
                     />
                     <Form.Text className="text-muted" style={{ fontSize: '0.75rem' }}>
                       Não sabe seu ID? Mande um "Oi" para <strong>@userinfobot</strong> no Telegram para descobrir.
@@ -170,21 +176,21 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
                   </Form.Group>
 
                   {/* Toggles Granulares */}
-                  <div className={`p-3 bg-white rounded border ${!telegramId ? 'opacity-50' : ''}`}>
+                  <div className={`p-3 bg-white rounded border border-info border-opacity-25 shadow-sm ${!telegramId ? 'opacity-50' : ''}`}>
                     <h6 className="fw-bold text-secondary small text-uppercase mb-3">Quero receber mensagens sobre:</h6>
-                    <Form.Check type="switch" id="tg-os" label="Atualizações de OS" checked={prefsTelegram.os} onChange={(e) => handleToggle('telegram', 'os', e.target.checked)} className="mb-2 fw-medium" disabled={!telegramId} />
-                    <Form.Check type="switch" id="tg-estoque" label="Baixo Estoque / Reposições" checked={prefsTelegram.estoque} onChange={(e) => handleToggle('telegram', 'estoque', e.target.checked)} className="mb-2 fw-medium" disabled={!telegramId} />
-                    <Form.Check type="switch" id="tg-alertas" label="Alertas Críticos (Urgências)" checked={prefsTelegram.alertas} onChange={(e) => handleToggle('telegram', 'alertas', e.target.checked)} className="mb-2 fw-medium" disabled={!telegramId} />
-                    <Form.Check type="switch" id="tg-sis" label="Avisos do Sistema" checked={prefsTelegram.sistema} onChange={(e) => handleToggle('telegram', 'sistema', e.target.checked)} className="fw-medium" disabled={!telegramId} />
+                    <Form.Check type="switch" id="tg-os" label={<span className="fw-medium text-dark ms-1">Atualizações de OS</span>} checked={prefsTelegram.os} onChange={(e) => handleToggle('telegram', 'os', e.target.checked)} className="mb-2" disabled={!telegramId} />
+                    <Form.Check type="switch" id="tg-estoque" label={<span className="fw-medium text-dark ms-1">Baixo Estoque / Reposições</span>} checked={prefsTelegram.estoque} onChange={(e) => handleToggle('telegram', 'estoque', e.target.checked)} className="mb-2" disabled={!telegramId} />
+                    <Form.Check type="switch" id="tg-alertas" label={<span className="fw-medium text-dark ms-1">Alertas Críticos (Urgências)</span>} checked={prefsTelegram.alertas} onChange={(e) => handleToggle('telegram', 'alertas', e.target.checked)} className="mb-2" disabled={!telegramId} />
+                    <Form.Check type="switch" id="tg-sis" label={<span className="fw-medium text-dark ms-1">Avisos do Sistema</span>} checked={prefsTelegram.sistema} onChange={(e) => handleToggle('telegram', 'sistema', e.target.checked)} disabled={!telegramId} />
                   </div>
                 </Card.Body>
               </Card>
             </Col>
           </Row>
         </Modal.Body>
-        <Modal.Footer className="bg-light border-0">
-          <Button variant="outline-secondary" onClick={onHide} className="fw-bold border-0">Cancelar</Button>
-          <PrimaryButton type="submit" isLoading={loading} className="px-4">
+        <Modal.Footer className="bg-light border-0 pt-0">
+          <Button variant="outline-secondary" onClick={onHide} className="fw-bold border-0 px-4">Cancelar</Button>
+          <PrimaryButton type="submit" isLoading={loading} className="px-4 fw-bold shadow-sm">
             💾 Salvar Preferências
           </PrimaryButton>
         </Modal.Footer>

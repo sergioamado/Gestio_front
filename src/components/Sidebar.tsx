@@ -90,7 +90,7 @@ function Sidebar() {
             </Nav.Link>
           )}
 
-          {(user?.role === 'admin' || user?.role.startsWith('tecnico')) && (
+          {(user?.role === 'admin' || user?.role.startsWith('tecnico') || user?.role === 'gerente') && (
             <Nav.Link onClick={() => navigate('/fila-manutencao-eletronica')} style={getNavLinkStyle(isCollapsed)} className="sidebar-nav-link text-white">
               <Tools size={22} className={isCollapsed ? "" : "me-3"} />
               {!isCollapsed && <span>Manut. Eletrônica</span>}
@@ -105,7 +105,7 @@ function Sidebar() {
             {!isCollapsed && <span>Catálogo de Peças</span>}
           </Nav.Link>
 
-          {(user?.role === 'admin' || user?.role === 'tecnico_impressora') && (
+          {(user?.role === 'admin' || user?.role === 'tecnico_impressora' || user?.role === 'gerente') && (
           <>
             <Nav.Link onClick={() => navigate('/impressoras')} style={getNavLinkStyle(isCollapsed)} className="sidebar-nav-link text-white">
               <PrinterFill size={22} className={isCollapsed ? "" : "me-3"} />
@@ -149,7 +149,7 @@ function Sidebar() {
           )}
           
           {/* SESSÃO: ADMINISTRAÇÃO */}
-          {user?.role === 'admin' && (
+          {(user?.role === 'admin' || user?.role === 'gerente') && (
             <>
               {!isCollapsed && <div className="text-uppercase text-white-50 small fw-bold mt-4 mb-2 px-3" style={{ fontSize: '0.75rem', letterSpacing: '1px' }}>Sistema</div>}
               <Nav.Link onClick={() => navigate('/usuarios')} style={getNavLinkStyle(isCollapsed)} className="sidebar-nav-link text-white">

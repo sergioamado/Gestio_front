@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Cria a instância do Axios
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api', 
+  baseURL: import.meta.env.VITE_API_URL || 'http://10.110.1.69:3001/api', // mudar para http://localhost:3001/api se for usar localmente
 });
 
 // Interceptor de REQUISIÇÃO 

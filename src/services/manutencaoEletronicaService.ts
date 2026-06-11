@@ -26,3 +26,11 @@ export const finalizarManutencao = async (id: number, laudo_tecnico: string): Pr
   const response = await api.patch(`/manutencao-eletronica/${id}/finalizar`, { laudo_tecnico });
   return response.data;
 };
+
+export const editarManutencao = async (
+  id: number, 
+  dados: { equipamento: string; descricao_problema: string; laudo_tecnico?: string }
+): Promise<ManutencaoEletronica> => {
+  const response = await api.put(`/manutencao-eletronica/${id}`, dados);
+  return response.data;
+};

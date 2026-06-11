@@ -2,6 +2,7 @@
 import { Table, Badge, Button, Stack } from 'react-bootstrap';
 import { PencilSquare, Trash3Fill, InfoCircleFill } from 'react-bootstrap-icons';
 import type { Impressora } from '../../types';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface ImpressorasTableProps {
   impressoras: Impressora[];
@@ -11,8 +12,25 @@ interface ImpressorasTableProps {
 }
 
 function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: ImpressorasTableProps) {
+  const { confirmar } = useConfirm();
+
+  // 🚀 NOVA FUNÇÃO: Mostra o cartão de confirmação customizado antes de prosseguir
+  const handleDeleteClick = async (impressora: Impressora) => {
+    const confirmou = await confirmar({
+      titulo: '🗑️ Remover Impressora',
+      mensagem: `Tem a certeza que deseja eliminar do sistema a impressora "${impressora.nome}" (Série: ${impressora.numero_serie})? Esta ação pode afetar relatórios de suprimentos vinculados.`,
+      textoConfirmar: 'Sim, Eliminar',
+      textoCancelar: 'Cancelar',
+      varianteBotao: 'danger'
+    });
+
+    if (confirmou) {
+      onDelete(impressora);
+    }
+  };
+
   return (
-    <Table striped hover responsive className="align-middle">
+    <Table striped hover responsive className="align-middle shadow-sm bg-white rounded">
       <thead className="table-light">
         <tr>
           <th>Nome</th>
@@ -24,28 +42,29 @@ function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: Impresso
         </tr>
       </thead>
       <tbody>
-        {/* CORREÇÃO: Usar um operador ternário para garantir que não há nós de texto
-            inválidos quando a lista está vazia e para exibir uma mensagem clara. */}
         {impressoras.length > 0 ? (
           impressoras.map((item) => (
             <tr key={item.id}>
-              <td>{item.nome}</td>
+              <td className="fw-medium text-dark">{item.nome}</td>
               <td>{item.modelo}</td>
-              <td>{item.numero_serie}</td>
-              <td>{item.ip || 'N/A'}</td>
+              <td className="text-muted fw-bold">{item.numero_serie}</td>
+              <td className="font-monospace small">{item.ip || 'N/A'}</td>
               <td>
-                <Badge bg="secondary">{item.unidades_organizacionais?.nome}</Badge>
+                <Badge className="bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1 rounded-pill shadow-sm" style={{ fontSize: '0.8rem' }}>
+                  {item.unidades_organizacionais?.nome || 'Não Definida'}
+                </Badge>
               </td>
               <td className="text-center">
                 <Stack direction="horizontal" gap={2} className="justify-content-center">
-                  <Button variant="outline-secondary" size="sm" onClick={() => onDetails(item)}>
-                    <InfoCircleFill /> Detalhes
+                  <Button variant="outline-info" size="sm" onClick={() => onDetails(item)} className="fw-bold text-dark">
+                    <InfoCircleFill className="me-1" /> Detalhes
                   </Button>
-                  <Button variant="primary" size="sm" onClick={() => onEdit(item)} className="action-btn">
-                    <PencilSquare /> Editar
+                  <Button variant="outline-primary" size="sm" onClick={() => onEdit(item)} className="fw-bold">
+                    <PencilSquare className="me-1" /> Editar
                   </Button>
-                  <Button variant="danger" size="sm" onClick={() => onDelete(item)} className="action-btn">
-                    <Trash3Fill /> Excluir
+                  {/* 🚀 ALTERADO: Agora chama a nossa função de interceção */}
+                  <Button variant="outline-danger" size="sm" onClick={() => handleDeleteClick(item)} className="fw-bold">
+                    <Trash3Fill className="me-1" /> Excluir
                   </Button>
                 </Stack>
               </td>
@@ -53,7 +72,7 @@ function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: Impresso
           ))
         ) : (
           <tr>
-            <td colSpan={6} className="text-center text-muted">Nenhuma impressora encontrada.</td>
+            <td colSpan={6} className="text-center py-4 text-muted fst-italic">Nenhuma impressora encontrada.</td>
           </tr>
         )}
       </tbody>

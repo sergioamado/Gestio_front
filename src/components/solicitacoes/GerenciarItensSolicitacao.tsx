@@ -1,8 +1,9 @@
 // src/components/solicitacoes/GerenciarItensSolicitacao.tsx
 import { useState } from 'react';
-import { Table, Badge, Button, Spinner, Alert } from 'react-bootstrap';
+import { Table, Badge, Button, Spinner } from 'react-bootstrap';
 import { TrashFill, ExclamationTriangleFill, CheckCircleFill, XCircleFill } from 'react-bootstrap-icons';
-import PrimaryButton from '../PrimaryButton';
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useToast } from '../../contexts/ToastContext';
 
 // Tipagem baseada na nova estrutura granular
 export interface SolicitacaoItemDetalhe {
@@ -24,11 +25,22 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
   const [itens, setItens] = useState<SolicitacaoItemDetalhe[]>(itensIniciais);
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [isCancelingAll, setIsCancelingAll] = useState(false);
-  const [mensagem, setMensagem] = useState<{ tipo: string, texto: string } | null>(null);
+
+  // 🚀 INICIALIZAÇÃO DOS MOTORES UI
+  const { confirmar } = useConfirm();
+  const { mostrarCard } = useToast();
 
   // 1. Cancelar um item individualmente
   const handleCancelarItem = async (itemId: number) => {
-    if (!window.confirm("Tem certeza que deseja cancelar o pedido desta peça específica?")) return;
+    const confirmou = await confirmar({
+      titulo: '🗑️ Cancelar Peça',
+      mensagem: 'Tem certeza que deseja cancelar o pedido desta peça específica?',
+      textoConfirmar: 'Sim, Cancelar',
+      textoCancelar: 'Não',
+      varianteBotao: 'danger'
+    });
+
+    if (!confirmou) return;
     
     setLoadingId(itemId);
     try {
@@ -36,10 +48,10 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
       await new Promise(resolve => setTimeout(resolve, 800));
       
       setItens(itens.map(i => i.id === itemId ? { ...i, status: 'CANCELADO' } : i));
-      setMensagem({ tipo: 'success', texto: 'Item cancelado com sucesso.' });
+      mostrarCard('Peça Cancelada', 'Item cancelado com sucesso.', 'sucesso');
       onUpdate();
     } catch (err) {
-      setMensagem({ tipo: 'danger', texto: 'Erro ao cancelar o item.' });
+      mostrarCard('Erro', 'Erro ao cancelar o item.', 'erro');
     } finally {
       setLoadingId(null);
     }
@@ -47,7 +59,15 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
 
   // 2. Sinalizar peça com defeito
   const handleSinalizarDefeito = async (itemId: number) => {
-    if (!window.confirm("Deseja sinalizar esta peça como DEFEITUOSA? Ela voltará para o estoque isolado e ficará indisponível para uso.")) return;
+    const confirmou = await confirmar({
+      titulo: '⚠️ Sinalizar Defeito',
+      mensagem: 'Deseja sinalizar esta peça como DEFEITUOSA? Ela voltará para o estoque isolado e ficará indisponível para uso.',
+      textoConfirmar: 'Sim, Reportar Defeito',
+      textoCancelar: 'Cancelar',
+      varianteBotao: 'warning'
+    });
+
+    if (!confirmou) return;
 
     setLoadingId(itemId);
     try {
@@ -55,10 +75,10 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setItens(itens.map(i => i.id === itemId ? { ...i, status: 'DEFEITO' } : i));
-      setMensagem({ tipo: 'warning', texto: 'Peça isolada com defeito no sistema.' });
+      mostrarCard('Defeito Registado', 'Peça isolada com defeito no sistema.', 'alerta');
       onUpdate();
     } catch (err) {
-      setMensagem({ tipo: 'danger', texto: 'Erro ao sinalizar defeito.' });
+      mostrarCard('Erro', 'Erro ao sinalizar defeito.', 'erro');
     } finally {
       setLoadingId(null);
     }
@@ -66,7 +86,15 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
 
   // 3. Cancelar a solicitação inteira (todos os itens pendentes)
   const handleCancelarTudo = async () => {
-    if (!window.confirm("Deseja cancelar TODOS os itens pendentes desta solicitação?")) return;
+    const confirmou = await confirmar({
+      titulo: '🗑️ Cancelar Toda a Solicitação',
+      mensagem: 'Deseja cancelar TODOS os itens pendentes desta solicitação?',
+      textoConfirmar: 'Sim, Cancelar Tudo',
+      textoCancelar: 'Não',
+      varianteBotao: 'danger'
+    });
+
+    if (!confirmou) return;
 
     setIsCancelingAll(true);
     try {
@@ -74,10 +102,10 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
       await new Promise(resolve => setTimeout(resolve, 1200));
       
       setItens(itens.map(i => i.status === 'PENDENTE' ? { ...i, status: 'CANCELADO' } : i));
-      setMensagem({ tipo: 'success', texto: 'Todos os itens pendentes foram cancelados.' });
+      mostrarCard('Solicitação Cancelada', 'Todos os itens pendentes foram cancelados.', 'sucesso');
       onUpdate();
     } catch (err) {
-      setMensagem({ tipo: 'danger', texto: 'Erro ao cancelar a solicitação.' });
+      mostrarCard('Erro', 'Erro ao cancelar a solicitação.', 'erro');
     } finally {
       setIsCancelingAll(false);
     }
@@ -113,12 +141,6 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
           </Button>
         )}
       </div>
-
-      {mensagem && (
-        <Alert variant={mensagem.tipo} className="border-0 shadow-sm py-2" dismissible onClose={() => setMensagem(null)}>
-          {mensagem.texto}
-        </Alert>
-      )}
 
       <div className="table-responsive rounded border shadow-sm">
         <Table hover className="align-middle mb-0 bg-white">

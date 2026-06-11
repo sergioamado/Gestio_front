@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import { NotificationRadar } from '../components/notificacoes/NotificationRadar';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,10 @@ const MainLayout = ({ children, pageTitle }: MainLayoutProps) => {
   return (
     // Adiciona uma classe quando a sidebar está aberta
     <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+      
+      
+      <NotificationRadar />
+
       <div className="sidebar-wrapper">
         <Sidebar />
       </div>

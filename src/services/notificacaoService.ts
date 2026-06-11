@@ -25,16 +25,16 @@ export const marcarTodasComoLidas = async () => {
   return response.data;
 };
 
-export const vincularTelegram = async (chatId: string) => {
-  const response = await api.post('/usuarios/telegram', { telegram_chat_id: chatId });
+export const gerarLinkTelegram = async (): Promise<{ link: string }> => {
+  const response = await api.get('/usuarios/telegram/gerar-link');
   return response.data;
 };
 
 export const salvarPreferencias = async (dados: { 
-  telegram_chat_id: string, 
-  prefs_navegador: Record<string, boolean>, 
-  prefs_telegram: Record<string, boolean> 
+  notificacoes_app: boolean, 
+  notificacoes_bot: boolean,
+  desvincular_telegram?: boolean
 }) => {
-  const response = await api.post('/usuarios/preferencias-notificacao', dados);
+  const response = await api.put('/usuarios/preferencias-notificacoes', dados);
   return response.data;
 };

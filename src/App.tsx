@@ -5,7 +5,9 @@ import {
   Route,
   Navigate,
 } from 'react-router-dom';
+import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ConfirmProvider } from './contexts/ConfirmContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -27,9 +29,12 @@ import ImportarSipacPage from './pages/Patrimonio/ImportarSipacPage';
 function App() {
   return (
     <AuthProvider>
+      <ToastProvider> 
+        <ConfirmProvider>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          
 
           {/* Rotas Protegidas */}
           <Route element={<ProtectedRoute />}>
@@ -52,9 +57,11 @@ function App() {
           </Route>
 
           {/* Rota padrão: redireciona para o dashboard se logado, senão para o login */}
-          <Route path="*" element={<Navigate to="/dashboard" />} />
-        </Routes>
+          <Route path="*" element={<Navigate to="/dashboard" />} />          
+        </Routes>        
       </Router>
+      </ConfirmProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }
