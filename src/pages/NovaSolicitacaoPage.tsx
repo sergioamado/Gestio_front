@@ -1,8 +1,11 @@
 // src/pages/NovaSolicitacaoPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Form, Button, Table, Badge, InputGroup, Alert, Spinner } from 'react-bootstrap';
+import { Row, Col, Card, Form, Button, Table, Badge, InputGroup, Spinner } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import { useAuth } from '../hooks/useAuth';
+import { useConfirm } from '../contexts/ConfirmContext';
+import { useToast } from '../contexts/ToastContext';
 import type { Item } from '../types';
 
 import * as itemService from '../services/itemService';
@@ -14,6 +17,9 @@ interface ItemCarrinho extends Item {
 
 function NovaSolicitacaoPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { confirmar } = useConfirm();
+  const { mostrarCard } = useToast();
   
   const [itensDisponiveis, setItensDisponiveis] = useState<Item[]>([]);
   const [busca, setBusca] = useState('');
@@ -26,7 +32,6 @@ function NovaSolicitacaoPage() {
   const [justificativa, setJustificativa] = useState('');
   
   const [loading, setLoading] = useState(false);
-  const [mensagem, setMensagem] = useState<{ tipo: 'success' | 'danger'; texto: string } | null>(null);
 
  useEffect(() => {
     const fetchItens = async () => {
@@ -35,17 +40,17 @@ function NovaSolicitacaoPage() {
         const arrayItens = Array.isArray(res) ? res : (res.data || []);
         setItensDisponiveis(arrayItens);
       } catch (error) {
-        console.error('Erro ao buscar itens do catálogo:', error);
+        mostrarCard('Erro', 'Falha ao buscar itens do catálogo.', 'erro');
       }
     };
     fetchItens();
-  }, []);
+  }, [mostrarCard]);
 
   const adicionarAoCarrinho = (item: Item) => {
     const itemJaExiste = carrinho.find(c => c.id === item.id);
     if (itemJaExiste) {
       if (itemJaExiste.quantidadeSelecionada >= item.quantidade) {
-        alert('Você já selecionou todo o estoque disponível desta peça.');
+        mostrarCard('Aviso de Estoque', 'Você já selecionou todo o estoque disponível desta peça.', 'alerta');
         return;
       }
       setCarrinho(carrinho.map(c => 
@@ -61,7 +66,7 @@ function NovaSolicitacaoPage() {
       if (item.id === id) {
         const novaQtd = item.quantidadeSelecionada + delta;
         if (novaQtd > item.quantidade) {
-          alert(`Estoque máximo atingido (${item.quantidade} unid.)`);
+          mostrarCard('Aviso de Estoque', `Estoque máximo atingido (${item.quantidade} unid.)`, 'alerta');
           return item;
         }
         if (novaQtd < 1) return item; 
@@ -78,16 +83,39 @@ function NovaSolicitacaoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMensagem(null);
 
     if (carrinho.length === 0) {
-      setMensagem({ tipo: 'danger', texto: 'Adicione pelo menos um item da lista.' });
+      mostrarCard('Carrinho Vazio', 'Adicione pelo menos um item da lista antes de finalizar.', 'alerta');
       return;
     }
 
     setLoading(true);
 
     try {
+      // 🚀 1. Verificação Inteligente de Duplicidade (Geral #9)
+      try {
+        const respostaBusca = await solicitacaoService.getAllSolicitacoes({ numero_glpi: glpi, status: 'PENDENTE' });
+        const duplicados = respostaBusca.data ? respostaBusca.data : (Array.isArray(respostaBusca) ? respostaBusca : []);
+        
+        if (duplicados.length > 0) {
+          const prosseguir = await confirmar({
+            titulo: '⚠️ Chamado Duplicado Identificado',
+            mensagem: `Já existe uma Ordem de Serviço pendente para a máquina GLPI #${glpi}. Tem certeza de que deseja abrir um novo chamado para o mesmo equipamento?`,
+            textoConfirmar: 'Sim, Prosseguir e Abrir OS',
+            textoCancelar: 'Cancelar',
+            varianteBotao: 'warning'
+          });
+          
+          if (!prosseguir) {
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Aviso: Falha não-crítica ao verificar duplicidade.", err);
+      }
+
+      // 2. Salvar OS
       const payload = {
         responsavel_usuario_id: user?.id,
         unidade_id: user?.unidade_id || 1,
@@ -101,7 +129,7 @@ function NovaSolicitacaoPage() {
 
       await solicitacaoService.createSolicitacao(payload as any);
 
-      setMensagem({ tipo: 'success', texto: 'Ordem de Serviço gerada com sucesso!' });
+      mostrarCard('Sucesso!', 'Ordem de Serviço gerada com sucesso!', 'sucesso');
       
       setCarrinho([]);
       setGlpi('');
@@ -109,19 +137,12 @@ function NovaSolicitacaoPage() {
       setPatrimonio('');
       setJustificativa('');
       
-      const novosItens = itensDisponiveis.map(itemDb => {
-          const itemNoCarrinho = carrinho.find(c => c.id === itemDb.id);
-          if(itemNoCarrinho) {
-              return { ...itemDb, quantidade: itemDb.quantidade - itemNoCarrinho.quantidadeSelecionada };
-          }
-          return itemDb;
-      });
-      setItensDisponiveis(novosItens);
-      window.scrollTo(0, 0);
+      // 🚀 3. Redirecionamento Automático para acompanhamento (Geral #1)
+      navigate('/solicitacoes');
 
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.message || 'Falha na comunicação com o servidor.';
-      setMensagem({ tipo: 'danger', texto: errorMsg });
+      mostrarCard('Erro de Cadastro', errorMsg, 'erro');
     } finally {
       setLoading(false);
     }
@@ -134,12 +155,6 @@ function NovaSolicitacaoPage() {
 
   return (
     <MainLayout pageTitle="Nova Solicitação de Material">
-      {mensagem && (
-        <Alert variant={mensagem.tipo} dismissible onClose={() => setMensagem(null)} className="shadow-sm">
-          {mensagem.texto}
-        </Alert>
-      )}
-
       <Form onSubmit={handleSubmit}>
         <Card className="floating-card border-0 shadow-sm mb-4 border-start border-primary border-4">
           <Card.Body className="p-4">
@@ -150,7 +165,7 @@ function NovaSolicitacaoPage() {
                 <Form.Control 
                   type="number" 
                   size="lg"
-                  className="bg-light"
+                  className="bg-light fw-bold text-primary"
                   placeholder="Ex: 12945" 
                   value={glpi}
                   onChange={(e) => setGlpi(e.target.value)}
@@ -163,7 +178,7 @@ function NovaSolicitacaoPage() {
                 <Form.Control 
                   type="text" 
                   size="lg"
-                  className="bg-light"
+                  className="bg-light text-uppercase"
                   placeholder="Ex: Secretaria, Laboratório 01..." 
                   value={setorEquipamento}
                   onChange={(e) => setSetorEquipamento(e.target.value)}
@@ -176,7 +191,7 @@ function NovaSolicitacaoPage() {
                 <Form.Control 
                   type="text" 
                   size="lg"
-                  className="bg-light"
+                  className="bg-light fw-bold"
                   placeholder="Ex: 213456" 
                   value={patrimonio}
                   onChange={(e) => setPatrimonio(e.target.value)}
@@ -246,7 +261,8 @@ function NovaSolicitacaoPage() {
                                 <Card className={`h-100 border-0 shadow-sm ${item.quantidade === 0 ? 'opacity-50 bg-light' : 'bg-white'} ${item.is_permanente ? 'border-start border-warning border-4' : 'border'}`}>
                                     <Card.Body className="d-flex flex-column p-3">
                                         <div className="d-flex justify-content-between align-items-start mb-2">
-                                            <h6 className="fw-bold text-dark fs-6 mb-0 lh-base">{item.descricao}</h6>
+                                            {/* Texto Padronizado em Maiúsculas */}
+                                            <h6 className="fw-bold text-dark fs-6 mb-0 lh-base text-uppercase">{item.descricao}</h6>
                                             {item.is_permanente && <Badge bg="warning" text="dark" className="ms-2">Permanente</Badge>}
                                         </div>
                                         <div className="mb-3 text-muted small">
@@ -296,7 +312,8 @@ function NovaSolicitacaoPage() {
                         {carrinho.map(item => (
                           <tr key={item.id}>
                             <td className="ps-3 w-50">
-                              <span className="fw-bold text-dark d-block" style={{ fontSize: '0.95rem' }}>{item.descricao}</span>
+                              {/* Texto Padronizado em Maiúsculas */}
+                              <span className="fw-bold text-dark d-block text-uppercase" style={{ fontSize: '0.95rem' }}>{item.descricao}</span>
                               {item.is_permanente && <Badge bg="warning" text="dark" className="mt-1" style={{fontSize: '0.7rem'}}>Devolver após uso</Badge>}
                             </td>
                             <td className="px-2" style={{ width: '130px' }}>

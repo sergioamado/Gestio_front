@@ -23,10 +23,18 @@ function ManutencaoEletronicaPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedManutencao, setSelectedManutencao] = useState<ManutencaoEletronica | null>(null);
 
-  const [filters, setFilters] = useState({ status: '', tecnicoId: '', dataInicio: '', dataFim: '' });
+  // Filtros atualizados: 'ATIVAS' como padrão e inclusão do buscaGlpi
+  const [filters, setFilters] = useState({ 
+    status: 'ATIVAS', 
+    tecnicoId: '', 
+    dataInicio: '', 
+    dataFim: '',
+    buscaGlpi: '' 
+  });
 
-  const fetchData = useCallback(() => {
-    setLoading(true);
+  // Modificado para aceitar isSilent (evita que a tela pisque a cada 1 minuto)
+  const fetchData = useCallback((isSilent = false) => {
+    if (!isSilent) setLoading(true);
     setError(null);
     Promise.all([
       manutencaoService.getAll(),
@@ -35,14 +43,19 @@ function ManutencaoEletronicaPage() {
       setFilaCompleta(manutencoes);
       setTecnicos(tecnicosData);
     }).catch((err) => {
-      setError(err.response?.data?.message || 'Falha ao carregar dados da fila. Verifique a conexão com o servidor.');
+      if (!isSilent) setError(err.response?.data?.message || 'Falha ao carregar dados da fila. Verifique a conexão com o servidor.');
     }).finally(() => {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     });
   }, []);
 
+  // Motor de Auto-Refresh (60 segundos)
   useEffect(() => {
-    fetchData();
+    fetchData(false); // Carga inicial
+    const intervalId = setInterval(() => {
+      fetchData(true); // Carga silenciosa
+    }, 60000);
+    return () => clearInterval(intervalId); // Limpa ao desmontar
   }, [fetchData]);
 
   const handleShowDetails = (item: ManutencaoEletronica) => {
@@ -55,13 +68,28 @@ function ManutencaoEletronicaPage() {
   };
 
   const filteredFila = useMemo(() => {
-    return filaCompleta.filter(item => {
-      const matchStatus = !filters.status || item.status === filters.status;
+    const filtrado = filaCompleta.filter(item => {
+      // Lógica do Status Ocultando Concluídos (Eletrônica #6)
+      let matchStatus = true;
+      if (filters.status === 'ATIVAS') {
+        matchStatus = item.status === 'Pendente' || item.status === 'Em_manutencao';
+      } else if (filters.status) {
+        matchStatus = item.status === filters.status;
+      }
+
       const matchTecnico = !filters.tecnicoId || item.tecnico_responsavel_id === Number(filters.tecnicoId);
       const matchDataInicio = !filters.dataInicio || new Date(item.data_entrada) >= new Date(filters.dataInicio);
       const matchDataFim = !filters.dataFim || new Date(item.data_entrada) <= new Date(filters.dataFim);
-      return matchStatus && matchTecnico && matchDataInicio && matchDataFim;
+      
+      // Tratativa segura para o GLPI evitando erros de undefined ou nomes de variáveis discrepantes (Eletrônica #1)
+      const glpiValue = (item as any).numero_glpi || (item as any).glpi || (item as any).chamado_glpi || '';
+      const matchGlpi = !filters.buscaGlpi || String(glpiValue).includes(filters.buscaGlpi.trim());
+
+      return matchStatus && matchTecnico && matchDataInicio && matchDataFim && matchGlpi;
     });
+
+    // Ordenação do mais recente para o mais antigo (Eletrônica #6)
+    return filtrado.sort((a, b) => new Date(b.data_entrada).getTime() - new Date(a.data_entrada).getTime());
   }, [filaCompleta, filters]);
   
   if (!user || (!user.role.startsWith('tecnico') && user.role !== 'admin')) {
@@ -89,6 +117,7 @@ function ManutencaoEletronicaPage() {
               <Form.Group>
                 <Form.Label className="fw-bold text-secondary small text-uppercase">Status</Form.Label>
                 <Form.Select name="status" className="bg-light" value={filters.status} onChange={handleFilterChange}>
+                  <option value="ATIVAS">Ativas (Pendente / Em Manutenção)</option>
                   <option value="">Todos</option>
                   <option value="Pendente">Pendente</option>
                   <option value="Em_manutencao">Em Manutenção</option>
@@ -105,13 +134,20 @@ function ManutencaoEletronicaPage() {
                 </Form.Select>
               </Form.Group>
             </Col>
-            <Col md={3}>
+            {/* Novo Campo de Busca GLPI */}
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label className="fw-bold text-secondary small text-uppercase">Nº GLPI</Form.Label>
+                <Form.Control type="text" name="buscaGlpi" placeholder="Ex: 123" className="bg-light" value={filters.buscaGlpi} onChange={handleFilterChange} />
+              </Form.Group>
+            </Col>
+            <Col md={2}>
               <Form.Group>
                 <Form.Label className="fw-bold text-secondary small text-uppercase">Data Início</Form.Label>
                 <Form.Control type="date" name="dataInicio" className="bg-light" value={filters.dataInicio} onChange={handleFilterChange} />
               </Form.Group>
             </Col>
-            <Col md={3}>
+            <Col md={2}>
               <Form.Group>
                 <Form.Label className="fw-bold text-secondary small text-uppercase">Data Fim</Form.Label>
                 <Form.Control type="date" name="dataFim" className="bg-light" value={filters.dataFim} onChange={handleFilterChange} />

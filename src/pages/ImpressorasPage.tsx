@@ -5,6 +5,7 @@ import MainLayout from '../layouts/MainLayout';
 import PrimaryButton from '../components/PrimaryButton';
 import ModalForm from '../components/ModalForm';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../contexts/ToastContext';
 import * as impressoraService from '../services/impressoraService';
 import type { Impressora, ImpressoraCreateData, ImpressoraFiltros, ImpressoraUpdateData, Unidade } from '../types';
 import * as unidadeService from '../services/unidadeService';
@@ -15,6 +16,8 @@ import ImpressoraDetailsModal from '../components/impressoras/ImpressoraDetailsM
 
 function ImpressorasPage() {
   const { user } = useAuth();
+  const { mostrarCard } = useToast();
+  
   const [impressoras, setImpressoras] = useState<Impressora[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +83,9 @@ function ImpressorasPage() {
     setShowDetailsModal(true);
   };
 
-  const handleShowDeleteModal = (impressora: Impressora) => {
+  // Como o componente ImpressorasTable já usa o useConfirm, esta função é acionada após a confirmação.
+  const handleShowDeleteModal = async (impressora: Impressora) => {
+    // Mantemos a lógica da modal original, ou podemos fazer a chamada direta se preferir.
     setDeletingImpressora(impressora);
     setShowDeleteModal(true);
   };
@@ -89,12 +94,10 @@ function ImpressorasPage() {
     setIsSubmitting(true);
     setError(null);
     try {
-      // <<< LÓGICA CORRETA RESTAURADA AQUI >>>
       if (editingImpressora) {
-        // Se estamos a editar, usamos o ID da impressora em estado para chamar o update
         await impressoraService.updateImpressora(editingImpressora.id, data as ImpressoraUpdateData);
+        mostrarCard('Sucesso', 'Impressora atualizada com sucesso!', 'sucesso');
       } else {
-        // Se estamos a criar, calculamos a unidade_id e chamamos o create
         const createData = data as ImpressoraCreateData;
         let unidadeIdFinal: number;
         if (user?.role === 'admin') {
@@ -105,11 +108,23 @@ function ImpressorasPage() {
           unidadeIdFinal = user.unidade_id;
         }
         await impressoraService.createImpressora({ ...createData, unidade_id: unidadeIdFinal });
+        mostrarCard('Sucesso', 'Nova impressora cadastrada com sucesso!', 'sucesso');
       }
       setShowFormModal(false);
-      fetchData(filtros); // Re-busca os dados com os filtros atuais
+      fetchData(filtros); 
     } catch (err: any) {
-      setError(err.message || 'Erro ao salvar a impressora.');
+      // 🚀 Correção do Bug de Tratamento de Erro 400 (Geral #4)
+      const errorMsg = err.response?.data?.message || err.message || '';
+      
+      if (err.response?.status === 400 || errorMsg.toLowerCase().includes('unique')) {
+        mostrarCard(
+          'Erro de Duplicidade', 
+          'Este Número de Série ou Endereço IP já se encontra registado noutra impressora do sistema.', 
+          'erro'
+        );
+      } else {
+        mostrarCard('Erro', 'Ocorreu um problema ao salvar a impressora.', 'erro');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -118,13 +133,13 @@ function ImpressorasPage() {
   const handleConfirmDelete = async () => {
     if (!deletingImpressora) return;
     setIsDeleting(true);
-    setError(null);
     try {
       await impressoraService.deleteImpressora(deletingImpressora.id);
+      mostrarCard('Sucesso', 'Impressora excluída permanentemente.', 'sucesso');
       setShowDeleteModal(false);
       fetchData(filtros);
     } catch (err) {
-      setError('Não foi possível excluir a impressora. Ela pode estar vinculada a chamados.');
+      mostrarCard('Aviso', 'Não foi possível excluir a impressora. Ela pode estar vinculada a históricos ou chamados.', 'alerta');
       setShowDeleteModal(false);
     } finally {
       setIsDeleting(false);
@@ -135,29 +150,29 @@ function ImpressorasPage() {
     <MainLayout pageTitle="🖨️ Gerenciar Impressoras">
       {error && <Alert variant="danger" className="shadow-sm border-0" onClose={() => setError(null)} dismissible>{error}</Alert>}
       
-      <Card className="floating-card border-0 shadow-sm mb-4">
+      <Card className="floating-card border-0 shadow-sm mb-4 bg-white border-start border-primary border-4">
         <Card.Header className="bg-white border-bottom-0 pt-4 pb-2">
-          <h5 className="fw-bold text-dark mb-0">Filtros de Pesquisa</h5>
+          <h5 className="fw-bold text-dark mb-0">🔍 Filtros de Pesquisa</h5>
         </Card.Header>
         <Card.Body>
           <Row className="g-3">
             <Col md={3}>
               <Form.Group>
                 <Form.Label className="fw-bold text-secondary small text-uppercase">IP</Form.Label>
-                <Form.Control type="text" name="ip" className="bg-light" placeholder="Ex: 192.168.1.10" value={filtros.ip || ''} onChange={handleFiltroChange} />
+                <Form.Control type="text" name="ip" className="bg-light border-0 shadow-none fw-medium" placeholder="Ex: 192.168.1.10" value={filtros.ip || ''} onChange={handleFiltroChange} />
               </Form.Group>
             </Col>
             <Col md={3}>
               <Form.Group>
                 <Form.Label className="fw-bold text-secondary small text-uppercase">Nº de Série</Form.Label>
-                <Form.Control type="text" name="numero_serie" className="bg-light" placeholder="Ex: BR12345" value={filtros.numero_serie || ''} onChange={handleFiltroChange} />
+                <Form.Control type="text" name="numero_serie" className="bg-light border-0 shadow-none fw-medium text-uppercase" placeholder="Ex: BR12345" value={filtros.numero_serie || ''} onChange={handleFiltroChange} />
               </Form.Group>
             </Col>
             {user?.role === 'admin' && (
               <Col md={3}>
                 <Form.Group>
                   <Form.Label className="fw-bold text-secondary small text-uppercase">Unidade Org.</Form.Label>
-                  <Form.Select name="unidade_id_filtro" className="bg-light" value={filtros.unidade_id_filtro || ''} onChange={handleFiltroChange}>
+                  <Form.Select name="unidade_id_filtro" className="bg-light border-0 shadow-none fw-medium" value={filtros.unidade_id_filtro || ''} onChange={handleFiltroChange}>
                     <option value="">Todas as Unidades</option>
                     {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
                   </Form.Select>
@@ -167,7 +182,7 @@ function ImpressorasPage() {
             <Col md={3}>
               <Form.Group>
                 <Form.Label className="fw-bold text-secondary small text-uppercase">Políticas Aplicadas</Form.Label>
-                <Form.Select name="politicas_aplicadas" className="bg-light" value={filtros.politicas_aplicadas || ''} onChange={handleFiltroChange}>
+                <Form.Select name="politicas_aplicadas" className="bg-light border-0 shadow-none fw-medium" value={filtros.politicas_aplicadas || ''} onChange={handleFiltroChange}>
                   <option value="">Todas</option>
                   <option value="true">Sim (Aplicadas)</option>
                   <option value="false">Não (Pendentes)</option>
@@ -182,16 +197,18 @@ function ImpressorasPage() {
         </Card.Body>
       </Card>
       
-      <Card className="floating-card border-0 shadow-sm">
+      <Card className="floating-card border-0 shadow-sm bg-white">
         <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
           <h5 className="fw-bold text-dark mb-0">Impressoras Cadastradas</h5>
-          <PrimaryButton onClick={handleShowCreateModal}>+ Nova Impressora</PrimaryButton>
+          <PrimaryButton onClick={handleShowCreateModal} className="fw-bold shadow-sm">
+            + Nova Impressora
+          </PrimaryButton>
         </Card.Header>
         <Card.Body>
           {loading ? (
             <div className="text-center my-5 py-5">
               <Spinner animation="border" variant="primary" />
-              <div className="mt-2 text-muted">Carregando dados das impressoras...</div>
+              <div className="mt-2 text-muted fw-medium">Carregando dados das impressoras...</div>
             </div>
           ) : (
              <ImpressorasTable 
@@ -221,8 +238,8 @@ function ImpressorasPage() {
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
         onConfirm={handleConfirmDelete}
-        title="Confirmar Exclusão"
-        body={`Tem certeza de que deseja excluir a impressora "${deletingImpressora?.nome}"?`}
+        title="🗑️ Confirmar Exclusão"
+        body={`Tem certeza de que deseja excluir permanentemente a impressora "${deletingImpressora?.nome}" do sistema?`}
         isDeleting={isDeleting}
       />
       

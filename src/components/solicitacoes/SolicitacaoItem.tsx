@@ -20,7 +20,6 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
   
   const [statusGeral, setStatusGeral] = useState<StatusSolicitacao>(solicitacao.status);
   
-  // 🚀 INICIALIZAÇÃO DOS NOSSOS MOTORES DE UI
   const { confirmar } = useConfirm();
   const { mostrarCard } = useToast();
 
@@ -45,7 +44,6 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
     setItemStatus(prev => ({ ...prev, [itemId]: isChecked }));
   };
 
-  // 🚀 NOVA LÓGICA DE MUDANÇA DE STATUS: Mais direta e sem estado extra
   const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStatus = e.target.value as StatusSolicitacao;
     
@@ -134,10 +132,31 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
     }
   };
 
+  // 🚀 Fallback Universal para Copiar Resumo (Eletrônica #4)
   const handleCopy = () => {
-    const summary = `[Requisição Material]\nGLPI: ${solicitacao.numero_glpi || ''}\nPATRIMONIO: ${solicitacao.patrimonio || ''}\nSETOR: ${solicitacao.setor_equipamento || ''}`;
-    navigator.clipboard.writeText(summary);
-    mostrarCard('Copiado', 'Resumo copiado para a área de transferência.', 'info');
+    const summary = `[Requisição Material]\nREQ: #${solicitacao.id}\nGLPI: ${solicitacao.numero_glpi || 'N/A'}\nPATRIMONIO: ${solicitacao.patrimonio || 'N/A'}\nSETOR: ${solicitacao.setor_equipamento || 'N/A'}`;
+    
+    const fallbackCopy = (text: string) => {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        mostrarCard('Copiado', 'Resumo copiado para a área de transferência.', 'info');
+      } catch (err) {
+        mostrarCard('Erro', 'O navegador bloqueou a cópia.', 'erro');
+      }
+      document.body.removeChild(textArea);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(summary)
+        .then(() => mostrarCard('Copiado', 'Resumo copiado para a área de transferência.', 'info'))
+        .catch(() => fallbackCopy(summary));
+    } else {
+      fallbackCopy(summary);
+    }
   };
 
   const nomeTecnico = (solicitacao as any).tecnico_responsavel || solicitacao.responsavel?.nome_completo || 'Técnico Não Identificado';
@@ -151,7 +170,8 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
     <Accordion.Item eventKey={String(solicitacao.id)} className="floating-card mb-3 border-0 shadow-sm overflow-hidden">
       <Accordion.Header className="bg-white">
         <Stack direction="horizontal" gap={3} className="w-100 me-2 align-items-center">
-          <Badge bg="primary" className="px-3 py-2 rounded-pill fs-6">#{solicitacao.id}</Badge>
+          {/* 🚀 Visibilidade do Número da Requisição (Geral #8) */}
+          <Badge bg="primary" className="px-3 py-2 rounded-pill fs-6 shadow-sm">REQ #{solicitacao.id}</Badge>
           
           <div className="d-flex flex-column">
             <span className="fw-bold text-dark">{nomeTecnico}</span>
@@ -194,7 +214,7 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
             <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: '#ffedd5' }}>
               <Card.Body className="text-center p-3">
                 <div className="small text-uppercase fw-bold mb-1" style={{ color: '#ea580c' }}>Setor / Local</div>
-                <div className="fs-5 fw-bold text-dark">{solicitacao.setor_equipamento || 'N/A'}</div>
+                <div className="fs-5 fw-bold text-dark text-uppercase">{solicitacao.setor_equipamento || 'N/A'}</div>
               </Card.Body>
             </Card>
           </Col>
@@ -218,7 +238,8 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
               <tbody>
                 {solicitacao.solicitacao_itens.map(item => (
                   <tr key={item.id} className={(item.status_entrega as string) === 'Cancelado' ? 'opacity-50' : ''}>
-                    <td className="ps-3 fw-medium text-dark">{item.itens?.descricao || 'Peça Indefinida'}</td>
+                    {/* 🚀 Padronização Maiúscula (Eletrônica #5) */}
+                    <td className="ps-3 fw-medium text-dark text-uppercase">{item.itens?.descricao || 'Peça Indefinida'}</td>
                     <td className="text-center fw-bold text-primary">{item.quantidade_solicitada}</td>
                     
                     <td className="text-center">

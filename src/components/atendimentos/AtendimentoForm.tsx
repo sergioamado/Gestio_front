@@ -1,4 +1,5 @@
 // src/components/atendimentos/AtendimentoForm.tsx
+import { useEffect } from 'react';
 import { Form, Row, Col, Accordion, Card } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { InfoCircle, Tools, PrinterFill, Check2All, Hash, CardText, Cpu, CalendarEvent } from 'react-bootstrap-icons';
@@ -30,7 +31,8 @@ function AtendimentoForm({ atendimento, impressoras, onSubmit, isLoading }: Aten
   const isEditMode = !!atendimento;
   const { mostrarCard } = useToast();
   
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  // 🚀 Adicionado setValue para manipular campos programaticamente
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
       ...atendimento,
       data_visita: formatDateForInput(atendimento?.data_visita),
@@ -42,7 +44,15 @@ function AtendimentoForm({ atendimento, impressoras, onSubmit, isLoading }: Aten
   const necessitaBackup = watch('necessita_backup');
   const assistenciaConcluiu = watch('assistencia_concluiu');
 
-  // 🚀 Validação Inteligente das Fases do Chamado
+  // 🚀 Automação de Status (Impressoras #3)
+  // Se o switch "assistência concluiu" for ativado, o status muda automaticamente para Concluído.
+  useEffect(() => {
+    if (assistenciaConcluiu) {
+      setValue('status', 'Concluido');
+    }
+  }, [assistenciaConcluiu, setValue]);
+
+  // Validação Inteligente das Fases do Chamado
   const onSubmitWrapper = (data: any) => {
     // Regra 1: Se exigiu backup, tem de dizer qual foi a máquina
     if (data.necessita_backup && (!data.backup_impressora_modelo || !data.backup_numero_serie)) {
@@ -54,6 +64,11 @@ function AtendimentoForm({ atendimento, impressoras, onSubmit, isLoading }: Aten
     if (data.assistencia_concluiu && (!data.parecer_final_assistencia || data.parecer_final_assistencia.trim() === '')) {
       mostrarCard('Parecer Obrigatório', 'Para finalizar o chamado da assistência, por favor, redija o Parecer Final.', 'alerta');
       return;
+    }
+
+    // Regra 3 (Garantia Extra de Backend): Força o envio do status correto
+    if (data.assistencia_concluiu) {
+      data.status = 'Concluido';
     }
 
     onSubmit(data);
@@ -108,7 +123,7 @@ function AtendimentoForm({ atendimento, impressoras, onSubmit, isLoading }: Aten
                  <Form.Group className="mt-4 p-3 bg-light rounded border border-light-subtle">
                     <Form.Label className="small fw-bold text-dark text-uppercase mb-2">Status do Atendimento</Form.Label>
                     <Form.Select 
-                      className="border-0 shadow-sm py-2 fw-bold text-primary"
+                      className={`border-0 shadow-sm py-2 fw-bold ${assistenciaConcluiu ? 'text-success bg-success bg-opacity-10' : 'text-primary'}`}
                       {...register("status", { required: "O status é obrigatório" })}
                     >
                         {statusOptions.map(status => (

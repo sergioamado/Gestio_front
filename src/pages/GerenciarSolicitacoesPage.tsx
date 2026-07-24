@@ -21,8 +21,9 @@ function GerenciarSolicitacoesPage() {
   const [totalItems, setTotalItems] = useState(0);
   const ITEMS_PER_PAGE = 10;
 
+  
   const [filters, setFilters] = useState({
-    status: '',
+    status: 'ATIVAS',
     tecnico_id_filtro: '',
     numero_glpi: '' 
   });
@@ -39,9 +40,11 @@ function GerenciarSolicitacoesPage() {
     }
   }, [user]);
 
-  const fetchSolicitacoes = useCallback(() => {
+  //  Adicionado flag isSilent para o Auto-Refresh não piscar a tela
+  const fetchSolicitacoes = useCallback((isSilent = false) => {
     if (!user) return;
-    setLoading(true);
+    
+    if (!isSilent) setLoading(true);
     setError(null);
 
     const params: any = {
@@ -50,7 +53,16 @@ function GerenciarSolicitacoesPage() {
     };
     
     if (user.role !== 'admin') params.unidade_id = user.unidade_id;
-    if (filters.status) params.status = filters.status;
+    
+    // Lógica  para traduzir 'ATIVAS' num array para o Backend
+    if (filters.status) {
+      if (filters.status === 'ATIVAS') {
+        params.status = ['PENDENTE', 'EM ATENDIMENTO'];
+      } else {
+        params.status = filters.status;
+      }
+    }
+
     if (filters.tecnico_id_filtro) params.tecnico_id_filtro = filters.tecnico_id_filtro;
     if (filters.numero_glpi) params.numero_glpi = filters.numero_glpi;
     
@@ -66,16 +78,27 @@ function GerenciarSolicitacoesPage() {
           setTotalPages(1);
         }
       })
-      .catch(() => setError('Falha ao buscar as Ordens de Serviço. Verifique a conexão.'))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!isSilent) setError('Falha ao buscar as Ordens de Serviço. Verifique a conexão.');
+      })
+      .finally(() => {
+        if (!isSilent) setLoading(false);
+      });
   }, [user, filters, currentPage]);
 
   useEffect(() => {
     fetchTecnicos();
   }, [fetchTecnicos]);
 
+  // Auto-Refresh configurado para a cada 1 minuto (60000ms)
   useEffect(() => {
-    fetchSolicitacoes();
+    fetchSolicitacoes(false); // Carga inicial com Loading visual
+    
+    const intervalId = setInterval(() => {
+      fetchSolicitacoes(true); // Carga silenciosa em background
+    }, 60000);
+
+    return () => clearInterval(intervalId); // Previne memory leaks ao sair da página
   }, [fetchSolicitacoes]);
 
   const handleFilterChange = (e: React.ChangeEvent<any>) => {
@@ -122,9 +145,10 @@ function GerenciarSolicitacoesPage() {
                   name="status" 
                   value={filters.status} 
                   onChange={handleFilterChange}
-                  className="bg-light border-0 shadow-none"
+                  className="bg-light border-0 shadow-none fw-medium"
                 >
-                  <option value="">Todos os Status</option>
+                  <option value="ATIVAS">🔥 Ativas (Pendente / Em Atendimento)</option>
+                  <option value="">📋 Todos os Status</option>
                   <option value="PENDENTE">⏳ Pendente (Aprovação)</option>
                   <option value="EM ATENDIMENTO">🛠️ Em Atendimento</option>
                   <option value="CONCLUIDA">✅ Concluída</option>
@@ -140,7 +164,7 @@ function GerenciarSolicitacoesPage() {
                   name="tecnico_id_filtro" 
                   value={filters.tecnico_id_filtro} 
                   onChange={handleFilterChange}
-                  className="bg-light border-0 shadow-none"
+                  className="bg-light border-0 shadow-none fw-medium"
                 >
                   <option value="">Toda a Equipe</option>
                   {tecnicos.map(t => (
@@ -161,7 +185,7 @@ function GerenciarSolicitacoesPage() {
                     value={filters.numero_glpi} 
                     onChange={handleFilterChange} 
                     placeholder="Ex: 12345" 
-                    className="bg-light border-0 shadow-none"
+                    className="bg-light border-0 shadow-none fw-medium"
                   />
                 </InputGroup>
               </Form.Group>

@@ -3,25 +3,9 @@ import { useState, useEffect } from 'react';
 import { Row, Col, Card, Spinner, ListGroup, Alert, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import type { GraficoStatus, Estatisticas, TarefaRecente } from '../../types';
 
-interface GraficoStatus {
-  name: string;
-  quantidade: number;
-}
 
-interface Estatisticas {
-  os_pendentes: number;
-  baixo_estoque: number;
-  patrimonio_ativo: number;
-  grafico_status?: GraficoStatus[];
-}
-
-interface TarefaRecente {
-  id: number;
-  data_solicitacao: string;
-  status: string;
-  numero_glpi?: string;
-}
 
 function TecnicoDashboard() {
   const [stats, setStats] = useState<Estatisticas | null>(null);
