@@ -1,0 +1,169 @@
+/* src/index.css */
+
+/* 1. IMPORTAÇÃO DE FONTES (SaaS Moderno) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* 2. VARIÁVEIS GLOBAIS (O DNA do Design) */
+:root {
+  /* Cores de Marca (Azul) */
+  --brand-blue: #034EA2;
+  --brand-blue-hover: #023670;
+  --brand-blue-light: #eef2f6;
+
+  /* Cores Semânticas & Alertas (Padrão Internacional) */
+  --color-success: #10b981; /* Verde Esmeralda (Sucesso/Ativo) */
+  --color-danger:  #ef4444; /* Vermelho (Erro/Cancelar/Inservível) */
+  --color-warning: #f59e0b; /* Amarelo/Laranja (Atenção/Transferido) */
+  --color-info:    #3b82f6; /* Azul Claro (Informação) */
+
+  /* Neutros (O seu "Preto e Branco" suavizado) */
+  --bg-body: #f4f7fb;       /* Fundo da tela (Gelo/Cinza Azulado) */
+  --bg-surface: #ffffff;    /* Fundo dos cartões (Branco Puro) */
+  --text-primary: #0f172a;  /* Texto Principal (Quase Preto / Ardósia) */
+  --text-muted: #64748b;    /* Texto Secundário (Cinza) */
+  --border-light: #e2e8f0;  /* Linhas e separadores sutis */
+
+  /* Gradients e Efeitos */
+  --primary-gradient: linear-gradient(135deg, #034EA2, #0a66c2, #438bf2);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* 3. RESET E CORPO DA PÁGINA */
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-body);
+  color: var(--text-primary);
+}
+
+/* Links globais */
+a { 
+  color: var(--brand-blue); 
+  text-decoration: none; 
+  transition: color 0.2s ease;
+}
+a:hover { 
+  color: var(--brand-blue-hover); 
+}
+
+/* 4. CUSTOMIZAÇÃO DO SCROLLBAR (Detalhe Premium) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Scrollbar invisível para a Sidebar */
+.invisible-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.invisible-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 5. LAYOUT BASE */
+.app-layout { 
+  display: flex; 
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content { 
+  flex-grow: 1; 
+  height: 100vh; 
+  overflow-y: auto; 
+  background-color: var(--bg-body);
+}
+
+.auth-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--primary-gradient);
+  padding: 1rem;
+}
+
+/* 6. COMPONENTES VISUAIS */
+
+/* O Card Flutuante Padrão (Agora consolidado e limpo) */
+.floating-card {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 1rem !important; /* Bordas um pouco mais redondas */
+  box-shadow: var(--shadow-sm) !important;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.floating-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* O Card de Boas Vindas do Dashboard */
+.card-welcome {
+  background: var(--primary-gradient) !important;
+  border: none !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 8px 25px rgba(3, 78, 162, 0.25) !important;
+}
+
+/* 7. CUSTOMIZAÇÃO DO BOOTSTRAP (Botões) */
+.btn-primary {
+  background-color: var(--brand-blue) !important;
+  border-color: var(--brand-blue) !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--brand-blue-hover) !important;
+  border-color: var(--brand-blue-hover) !important;
+  box-shadow: 0 4px 12px rgba(3, 78, 162, 0.3) !important;
+}
+
+/* Estilo para links da barra lateral quando passar o mouse */
+.sidebar-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  transform: translateX(4px); /* Leve animação para a direita */
+}
+
+/* Ajuste de tabelas para o padrão da COSUP */
+.table {
+  color: var(--text-primary);
+}
+.table-light {
+  background-color: #f8fafc !important;
+}
+.table-light th {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+/* Efeito de vidro para a logomarca Sidebar */
+.cosup-plus-logo-sidebar {
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+.cosup-plus-logo-sidebar span {
+  color: var(--color-info);
+}
