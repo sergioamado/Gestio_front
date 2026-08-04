@@ -28,13 +28,13 @@ function App() {
     <AuthProvider>
       <ToastProvider> 
         <ConfirmProvider>
-          {/*  Adicionamos o provedor global do layout aqui */}
+          {/*   provedor global do layout aqui */}
           <SidebarProvider>
             <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
 
-                {/* Rotas Protegidas - Voltam à arquitetura original segura */}
+                {/* Rotas Protegidas - arquitetura segura */}
                 <Route element={<ProtectedRoute />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/unidades" element={<UnidadesPage />} /> 
