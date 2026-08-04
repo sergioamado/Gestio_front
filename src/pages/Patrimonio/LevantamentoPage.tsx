@@ -22,6 +22,9 @@ function LevantamentoPage() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // 🚀 CONTROLO DE ACESSO: Apenas Admin e Gerente
+  const hasAccess = user?.role === 'admin' || user?.role === 'gerente';
+
   // Forçamos a buscar o Levantamento usando o ID da Unidade do usuário atual (ou 1 se for Admin sem unidade)
   const unidadeId = user?.unidade_id || 1;
 
@@ -49,8 +52,13 @@ function LevantamentoPage() {
   };
 
   useEffect(() => {
-    carregarLevantamento();
-  }, [unidadeId]);
+    // 🚀 Só tenta buscar os dados se o utilizador tiver permissão
+    if (user && hasAccess) {
+      carregarLevantamento();
+    } else if (user && !hasAccess) {
+      setLoading(false); // Remove o loading infinito para quem não tem acesso
+    }
+  }, [unidadeId, user, hasAccess]);
 
   const handleIniciar = async () => {
     setLoadingAcao(true);
@@ -110,6 +118,21 @@ function LevantamentoPage() {
     if (resumo.total === 0) return 0;
     return Math.round((resumo.conferidos_qtd / resumo.total) * 100);
   };
+
+  // 🚀 TELA DE BLOQUEIO: Exibida se o utilizador não for Admin ou Gerente
+  if (!user || !hasAccess) {
+    return (
+      <MainLayout pageTitle="🚫 Acesso Restrito">
+        <Alert variant="danger" className="shadow-sm border-0 mt-4 d-flex align-items-center p-4">
+          <span className="fs-1 me-3">🔒</span>
+          <div>
+            <h5 className="fw-bold mb-1">Acesso Negado</h5>
+            Apenas administradores e gerentes têm permissão para acessar o levantamento e auditoria patrimonial.
+          </div>
+        </Alert>
+      </MainLayout>
+    );
+  }
 
   if (loading) {
     return <MainLayout pageTitle="📊 Auditoria Patrimonial"><div className="text-center mt-5"><Spinner animation="border" variant="primary" /></div></MainLayout>;

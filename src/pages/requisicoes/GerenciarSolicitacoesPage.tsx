@@ -1,12 +1,12 @@
 // src/pages/GerenciarSolicitacoesPage.tsx
 import { useState, useEffect, useCallback } from 'react';
 import { Spinner, Alert, Accordion, Row, Col, Form, Card, InputGroup, Pagination } from 'react-bootstrap';
-import MainLayout from '../layouts/MainLayout';
-import { useAuth } from '../hooks/useAuth';
-import * as solicitacaoService from '../services/solicitacaoService';
-import * as usuarioService from '../services/usuarioService';
-import type { SolicitacaoDetalhada, User } from '../types';
-import SolicitacaoItem from '../components/solicitacoes/SolicitacaoItem';
+import MainLayout from '../../layouts/MainLayout';
+import { useAuth } from '../../hooks/useAuth';
+import * as solicitacaoService from '../../services/solicitacaoService';
+import * as usuarioService from '../../services/usuarioService';
+import type { SolicitacaoDetalhada, User } from '../../types';
+import SolicitacaoItem from '../../components/solicitacoes/SolicitacaoItem';
 
 function GerenciarSolicitacoesPage() {
   const { user } = useAuth();
@@ -40,7 +40,7 @@ function GerenciarSolicitacoesPage() {
     }
   }, [user]);
 
-  //  Adicionado flag isSilent para o Auto-Refresh não piscar a tela
+  // Adicionado flag isSilent para o Auto-Refresh não piscar a tela
   const fetchSolicitacoes = useCallback((isSilent = false) => {
     if (!user) return;
     
@@ -54,7 +54,7 @@ function GerenciarSolicitacoesPage() {
     
     if (user.role !== 'admin') params.unidade_id = user.unidade_id;
     
-    // Lógica  para traduzir 'ATIVAS' num array para o Backend
+    // Lógica para traduzir 'ATIVAS' num array para o Backend
     if (filters.status) {
       if (filters.status === 'ATIVAS') {
         params.status = ['PENDENTE', 'EM ATENDIMENTO'];
@@ -147,7 +147,6 @@ function GerenciarSolicitacoesPage() {
                   onChange={handleFilterChange}
                   className="bg-light border-0 shadow-none fw-medium"
                 >
-                  <option value="ATIVAS">🔥 Ativas (Pendente / Em Atendimento)</option>
                   <option value="">📋 Todos os Status</option>
                   <option value="PENDENTE">⏳ Pendente (Aprovação)</option>
                   <option value="EM ATENDIMENTO">🛠️ Em Atendimento</option>
@@ -213,9 +212,10 @@ function GerenciarSolicitacoesPage() {
               <Accordion alwaysOpen className="custom-accordion">
               {solicitacoes.map(s => (
                   <SolicitacaoItem 
-                  key={s.id} 
-                  solicitacao={s} 
-                  onUpdate={fetchSolicitacoes}
+                    key={s.id} 
+                    solicitacao={s} 
+                    onUpdate={fetchSolicitacoes}
+                    currentUserRole={user?.role} // Passamos o cargo do usuário logado para o item
                   />
               ))}
               </Accordion>

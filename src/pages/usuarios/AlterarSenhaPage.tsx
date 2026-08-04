@@ -1,13 +1,14 @@
 // src/pages/AlterarSenhaPage.tsx
 import { useState, useEffect } from 'react';
 import { Card, Row, Col, Spinner, Alert } from 'react-bootstrap';
-import { useAuth } from '../hooks/useAuth';
-import MainLayout from '../layouts/MainLayout';
-import ChangeOwnPasswordForm from '../components/auth/ChangeOwnPasswordForm';
-import AdminResetPasswordForm from '../components/auth/AdminResetPasswordForm';
-import SuccessModal from '../components/SuccessModal';
-import { getAllUsers } from '../services/usuarioService';
-import type { User } from '../types';
+import { useAuth } from '../../hooks/useAuth';
+import MainLayout from '../../layouts/MainLayout';
+import ChangeOwnPasswordForm from '../../components/auth/ChangeOwnPasswordForm';
+import AdminResetPasswordForm from '../../components/auth/AdminResetPasswordForm';
+import SuccessModal from '../../components/SuccessModal';
+import { getAllUsers } from '../../services/usuarioService';
+import type { User } from '../../types';
+
 
 function AlterarSenhaPage() {
   const { user } = useAuth();

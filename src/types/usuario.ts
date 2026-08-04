@@ -8,6 +8,9 @@ export interface User {
   telefone?: string | null;
   email?: string | null;   
   unidade_id: number | null;
+  notificacoes_app?: boolean;
+  notificacoes_bot?: boolean;
+  telegram_chat_id?: string | null;
   unidades_organizacionais?: {
     nome: string;
   };

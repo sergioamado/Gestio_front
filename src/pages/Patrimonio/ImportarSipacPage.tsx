@@ -24,12 +24,18 @@ function ImportarSipacPage() {
   const [showFormModal, setShowFormModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 🚀 CONTROLO DE ACESSO: Apenas Admin e Gerente
+  const hasAccess = user?.role === 'admin' || user?.role === 'gerente';
+
   useEffect(() => {
-    unidadeService.getAllUnidades().then(setUnidades).catch(console.error);
-    if (user && user.role !== 'admin' && user.unidade_id) {
-      setUnidadeDestinoId(String(user.unidade_id));
+    // 🚀 Evita chamadas à API caso o utilizador não tenha permissão
+    if (user && hasAccess) {
+      unidadeService.getAllUnidades().then(setUnidades).catch(console.error);
+      if (user.role !== 'admin' && user.unidade_id) {
+        setUnidadeDestinoId(String(user.unidade_id));
+      }
     }
-  }, [user]);
+  }, [user, hasAccess]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) setFile(e.target.files[0]);
@@ -75,6 +81,21 @@ function ImportarSipacPage() {
       setIsSubmitting(false);
     }
   };
+
+  // 🚀 TELA DE BLOQUEIO: Exibida se o utilizador não for Admin ou Gerente
+  if (!user || !hasAccess) {
+    return (
+      <MainLayout pageTitle="🚫 Acesso Restrito">
+        <Alert variant="danger" className="shadow-sm border-0 mt-4 d-flex align-items-center p-4">
+          <span className="fs-1 me-3">🔒</span>
+          <div>
+            <h5 className="fw-bold mb-1">Acesso Negado</h5>
+            Apenas administradores e gerentes têm permissão para acessar, importar ou modificar dados patrimoniais.
+          </div>
+        </Alert>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout pageTitle="📄 Importar Relatório SIPAC">

@@ -8,6 +8,7 @@ export interface Notificacao {
   lida: boolean;
   data_criacao: string;
   tipo: 'SISTEMA' | 'OS' | 'ESTOQUE' | 'ALERTA';
+  link_acao?: string |null;
 }
 
 export const getNotificacoes = async (): Promise<Notificacao[]> => {

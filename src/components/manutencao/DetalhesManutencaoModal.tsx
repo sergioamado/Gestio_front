@@ -47,16 +47,17 @@ function DetalhesManutencaoModal({ show, onHide, manutencao, onUpdate }: Detalhe
   const nomeTecnico = (manutencao as any).usuarios?.nome_completo || 'Aguardando Atribuição';
   const nomeAbertura = (manutencao as any).aberto_por?.nome_completo || 'Não Informado';
 
-  const canFinalizar = manutencao.status === 'Em_manutencao' && manutencao.tecnico_responsavel_id === user?.id;
-  
-  // 🚀 Regra de Negócio de Edição (Eletrônica #2)
+  // 🚀 Verificações de Papel e Permissões
+  const isAdmin = user?.role === 'admin';
+  const isTecnicoEletronica = user?.role === 'tecnico_eletronica';
   const isCriador = (manutencao as any).aberto_por_id === user?.id;
   const isResponsavel = manutencao.tecnico_responsavel_id === user?.id;
-  const isAdminOrGerente = user?.role === 'admin' || user?.role === 'gerente';
+
+  // Finalizar: Somente técnicos em eletrônica responsáveis e com status Em_manutencao
+  const canFinalizar = !isAdmin && isTecnicoEletronica && manutencao.status === 'Em_manutencao' && isResponsavel;
   
-  // O utilizador pode editar se for Admin/Gerente, ou se for o Técnico Responsável, 
-  // ou se for quem abriu O CHAMADO E este ainda estiver 'Pendente'.
-  const canEdit = isAdminOrGerente || isResponsavel || (isCriador && manutencao.status === 'Pendente');
+  // Editar chamado: Todos exceto o administrador (técnicos em eletrônica, criador se pendente, ou responsável)
+  const canEdit = !isAdmin && (isTecnicoEletronica || isResponsavel || (isCriador && manutencao.status === 'Pendente'));
 
   const handleFinalizar = async () => {
     if (!laudo) {
@@ -96,7 +97,7 @@ function DetalhesManutencaoModal({ show, onHide, manutencao, onUpdate }: Detalhe
     }
   };
   
-  // 🚀 Fallback Universal para Copiar Resumo (Eletrônica #4)
+  // Fallback Universal para Copiar Resumo
   const handleCopy = () => {
     const summary = `[Resumo Manutenção Eletrônica]\nID: ${manutencao.id}\nGLPI: ${glpiValue}\nEquipamento: ${manutencao.equipamento}\nProblema: ${manutencao.descricao_problema}\nAberto por: ${nomeAbertura}\nTécnico: ${nomeTecnico}\nStatus: ${manutencao.status.replace('_', ' ')}\nParecer: ${manutencao.laudo_tecnico || laudo || 'N/A'}`;
     

@@ -1,16 +1,16 @@
 // src/pages/ManutencaoEletronicaPage.tsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Spinner, Alert, Row, Col, Card, Form } from 'react-bootstrap';
-import MainLayout from '../layouts/MainLayout';
-import PrimaryButton from '../components/PrimaryButton';
-import ModalForm from '../components/ModalForm';
-import type { ManutencaoEletronica, User } from '../types';
-import * as manutencaoService from '../services/manutencaoEletronicaService';
-import * as usuarioService from '../services/usuarioService';
-import ManutencaoEletronicaForm from '../components/manutencao/ManutencaoEletronicaForm';
-import ManutencaoCard from '../components/manutencao/ManutencaoCard';
-import DetalhesManutencaoModal from '../components/manutencao/DetalhesManutencaoModal';
-import { useAuth } from '../hooks/useAuth';
+import MainLayout from '../../layouts/MainLayout';
+import PrimaryButton from '../../components/PrimaryButton';
+import ModalForm from '../../components/ModalForm';
+import type { ManutencaoEletronica, User } from '../../types';
+import * as manutencaoService from '../../services/manutencaoEletronicaService';
+import * as usuarioService from '../../services/usuarioService';
+import ManutencaoEletronicaForm from '../../components/manutencao/ManutencaoEletronicaForm';
+import ManutencaoCard from '../../components/manutencao/ManutencaoCard';
+import DetalhesManutencaoModal from '../../components/manutencao/DetalhesManutencaoModal';
+import { useAuth } from '../../hooks/useAuth';
 
 function ManutencaoEletronicaPage() {
   const { user } = useAuth();
@@ -22,6 +22,9 @@ function ManutencaoEletronicaPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedManutencao, setSelectedManutencao] = useState<ManutencaoEletronica | null>(null);
+
+  // Verificação se é Administrador
+  const isAdmin = user?.role === 'admin';
 
   // Filtros atualizados: 'ATIVAS' como padrão e inclusão do buscaGlpi
   const [filters, setFilters] = useState({ 
@@ -81,14 +84,14 @@ function ManutencaoEletronicaPage() {
       const matchDataInicio = !filters.dataInicio || new Date(item.data_entrada) >= new Date(filters.dataInicio);
       const matchDataFim = !filters.dataFim || new Date(item.data_entrada) <= new Date(filters.dataFim);
       
-      // Tratativa segura para o GLPI evitando erros de undefined ou nomes de variáveis discrepantes (Eletrônica #1)
+      // Tratativa segura para o GLPI
       const glpiValue = (item as any).numero_glpi || (item as any).glpi || (item as any).chamado_glpi || '';
       const matchGlpi = !filters.buscaGlpi || String(glpiValue).includes(filters.buscaGlpi.trim());
 
       return matchStatus && matchTecnico && matchDataInicio && matchDataFim && matchGlpi;
     });
 
-    // Ordenação do mais recente para o mais antigo (Eletrônica #6)
+    // Ordenação do mais recente para o mais antigo
     return filtrado.sort((a, b) => new Date(b.data_entrada).getTime() - new Date(a.data_entrada).getTime());
   }, [filaCompleta, filters]);
   
@@ -107,9 +110,13 @@ function ManutencaoEletronicaPage() {
       <Card className="floating-card border-0 shadow-sm mb-4">
         <Card.Header className="bg-white border-bottom-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
           <h5 className="fw-bold text-dark mb-0">Filtros de Pesquisa</h5>
-          <PrimaryButton onClick={() => setShowCreateModal(true)}>
-            + Novo Registro
-          </PrimaryButton>
+          
+          {/* 🚀 Botão de Novo Registro oculto para o Administrador */}
+          {!isAdmin && (
+            <PrimaryButton onClick={() => setShowCreateModal(true)}>
+              + Novo Registro
+            </PrimaryButton>
+          )}
         </Card.Header>
         <Card.Body>
           <Row className="g-3">
@@ -167,7 +174,12 @@ function ManutencaoEletronicaPage() {
           {filteredFila.length > 0 ? (
             filteredFila.map(item => (
               <Col key={item.id} md={6} lg={4}>
-                <ManutencaoCard manutencao={item} onDetailsClick={handleShowDetails} onUpdate={fetchData} />
+                <ManutencaoCard 
+                  manutencao={item} 
+                  onDetailsClick={handleShowDetails} 
+                  onUpdate={fetchData} 
+                  
+                />
               </Col>
             ))
           ) : (
@@ -182,19 +194,21 @@ function ManutencaoEletronicaPage() {
         </Row>
       )}
 
-      <ModalForm 
-        show={showCreateModal} 
-        onHide={() => setShowCreateModal(false)} 
-        title="🔧 Novo Registro de Manutenção"
-      >
-        <ManutencaoEletronicaForm 
-          tecnicos={tecnicos}
-          onSuccess={() => {
-            setShowCreateModal(false);
-            fetchData();
-          }}
-        />
-      </ModalForm>
+      {!isAdmin && (
+        <ModalForm 
+          show={showCreateModal} 
+          onHide={() => setShowCreateModal(false)} 
+          title="🔧 Novo Registro de Manutenção"
+        >
+          <ManutencaoEletronicaForm 
+            tecnicos={tecnicos}
+            onSuccess={() => {
+              setShowCreateModal(false);
+              fetchData();
+            }}
+          />
+        </ModalForm>
+      )}
       
       {selectedManutencao && (
         <DetalhesManutencaoModal 
@@ -202,6 +216,7 @@ function ManutencaoEletronicaPage() {
           onHide={() => setSelectedManutencao(null)}
           manutencao={selectedManutencao}
           onUpdate={fetchData}
+           
         />
       )}
     </MainLayout>

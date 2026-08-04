@@ -1,18 +1,18 @@
 // src/pages/ImpressorasPage.tsx
 import React, { useState, useEffect } from 'react';
 import { Card, Spinner, Alert, Row, Col, Form, Button, Stack } from 'react-bootstrap';
-import MainLayout from '../layouts/MainLayout';
-import PrimaryButton from '../components/PrimaryButton';
-import ModalForm from '../components/ModalForm';
-import { useAuth } from '../hooks/useAuth';
-import { useToast } from '../contexts/ToastContext';
-import * as impressoraService from '../services/impressoraService';
-import type { Impressora, ImpressoraCreateData, ImpressoraFiltros, ImpressoraUpdateData, Unidade } from '../types';
-import * as unidadeService from '../services/unidadeService';
-import ImpressorasTable from '../components/impressoras/ImpressorasTable';
-import ImpressoraForm from '../components/impressoras/ImpressoraForm';
-import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
-import ImpressoraDetailsModal from '../components/impressoras/ImpressoraDetailsModal';
+import MainLayout from '../../layouts/MainLayout';
+import PrimaryButton from '../../components/PrimaryButton';
+import ModalForm from '../../components/ModalForm';
+import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../contexts/ToastContext';
+import * as impressoraService from '../../services/impressoraService';
+import type { Impressora, ImpressoraCreateData, ImpressoraFiltros, ImpressoraUpdateData, Unidade } from '../../types';
+import * as unidadeService from '../../services/unidadeService';
+import ImpressorasTable from '../../components/impressoras/ImpressorasTable';
+import ImpressoraForm from '../../components/impressoras/ImpressoraForm';
+import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
+import ImpressoraDetailsModal from '../../components/impressoras/ImpressoraDetailsModal';
 
 function ImpressorasPage() {
   const { user } = useAuth();
@@ -36,6 +36,9 @@ function ImpressorasPage() {
   
   const [filtros, setFiltros] = useState<ImpressoraFiltros>({});
 
+  //  CONTROLO DE ACESSO: Apenas Admin, Gerente e Técnico de Impressoras
+  const hasAccess = user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_impressora';
+
   const fetchData = (currentFilters: ImpressoraFiltros = {}) => {
     setLoading(true);
     setError(null);
@@ -46,13 +49,16 @@ function ImpressorasPage() {
   };
 
   useEffect(() => {
-    if (user) {
-      unidadeService.getAllUnidades()
-        .then(setUnidades)
-        .catch(() => setError('Falha ao carregar a lista de unidades organizacionais.'));
+    //  Só tenta buscar os dados se o utilizador tiver permissão de acesso
+    if (user && hasAccess) {
+      if (user.role === 'admin') {
+        unidadeService.getAllUnidades()
+          .then(setUnidades)
+          .catch(() => setError('Falha ao carregar a lista de unidades organizacionais.'));
+      }
       fetchData();
     }
-  }, [user]);
+  }, [user, hasAccess]);
 
   const handleFiltroChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -83,9 +89,7 @@ function ImpressorasPage() {
     setShowDetailsModal(true);
   };
 
-  // Como o componente ImpressorasTable já usa o useConfirm, esta função é acionada após a confirmação.
   const handleShowDeleteModal = async (impressora: Impressora) => {
-    // Mantemos a lógica da modal original, ou podemos fazer a chamada direta se preferir.
     setDeletingImpressora(impressora);
     setShowDeleteModal(true);
   };
@@ -113,7 +117,6 @@ function ImpressorasPage() {
       setShowFormModal(false);
       fetchData(filtros); 
     } catch (err: any) {
-      // 🚀 Correção do Bug de Tratamento de Erro 400 (Geral #4)
       const errorMsg = err.response?.data?.message || err.message || '';
       
       if (err.response?.status === 400 || errorMsg.toLowerCase().includes('unique')) {
@@ -145,6 +148,20 @@ function ImpressorasPage() {
       setIsDeleting(false);
     }
   };
+
+  //  TELA DE BLOQUEIO: Exibida se o utilizador não tiver um dos 3 cargos permitidos
+  if (!user || !hasAccess) {
+    return (
+      <MainLayout pageTitle="Acesso Restrito">
+        <Alert variant="danger" className="shadow-sm border-0 mt-4 d-flex align-items-center">
+          <span className="fs-4 me-3">🔒</span>
+          <div>
+            <strong>Acesso Negado:</strong> O módulo de gestão de impressoras é restrito apenas a Administradores, Gerentes e Técnicos Especializados em Impressoras.
+          </div>
+        </Alert>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout pageTitle="🖨️ Gerenciar Impressoras">

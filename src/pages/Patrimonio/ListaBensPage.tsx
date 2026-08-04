@@ -16,7 +16,7 @@ import type { BemPatrimonial, Unidade } from '../../types';
 function ListaBensPage() {
   const { user } = useAuth();
   const [bens, setBens] = useState<BemPatrimonial[]>([]);
-  const [unidades, setUnidades] = useState<Unidade[]>([]); // 🚀 Lista de Unidades
+  const [unidades, setUnidades] = useState<Unidade[]>([]); 
   
   const [filtroStatus, setFiltroStatus] = useState('');
   const [busca, setBusca] = useState('');
@@ -39,9 +39,13 @@ function ListaBensPage() {
   const [totalItems, setTotalItems] = useState(0);
   const ITEMS_PER_PAGE = 10;
 
-  const canManage = user?.role === 'admin' || user?.role === 'gerente';
+  //  CONTROLO DE ACESSO: Apenas Admin e Gerente têm acesso a esta página
+  const hasAccess = user?.role === 'admin' || user?.role === 'gerente';
 
   const fetchDados = useCallback(() => {
+    //  Trava extra de segurança: não faz requisições se não tiver permissão
+    if (!hasAccess) return;
+
     setLoading(true);
     setError(null);
     const params: any = { status_atual: filtroStatus, search: busca, page: currentPage, limit: ITEMS_PER_PAGE };
@@ -64,15 +68,21 @@ function ListaBensPage() {
           setTotalPages(1);
         }
 
-        // 🚀 CORREÇÃO AQUI: Garante que o dropdown recebe sempre uma lista (Array)
+        // Garante que o dropdown recebe sempre uma lista (Array)
         const arrayUnidades = Array.isArray(unidRes) ? unidRes : ((unidRes as any).data || []);
         setUnidades(arrayUnidades);
       })
       .catch(() => setError('Falha ao carregar o inventário de bens patrimoniais.'))
       .finally(() => setLoading(false));
-  }, [filtroStatus, busca, currentPage, user]);
+  }, [filtroStatus, busca, currentPage, user, hasAccess]);
 
-  useEffect(() => { fetchDados(); }, [fetchDados]);
+  useEffect(() => { 
+    if (user && hasAccess) {
+      fetchDados(); 
+    } else if (user && !hasAccess) {
+      setLoading(false); // Remove o loading para quem é barrado
+    }
+  }, [fetchDados, user, hasAccess]);
 
   const handleFormSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -123,6 +133,21 @@ function ListaBensPage() {
     }
   };
 
+  //  TELA DE BLOQUEIO: Se o utilizador não for Gerente ou Administrador, barra o acesso
+  if (!user || !hasAccess) {
+    return (
+      <MainLayout pageTitle="🚫 Acesso Restrito">
+        <Alert variant="danger" className="shadow-sm border-0 mt-4 d-flex align-items-center p-4">
+          <span className="fs-1 me-3">🔒</span>
+          <div>
+            <h5 className="fw-bold mb-1">Acesso Negado</h5>
+            Apenas administradores e gerentes têm permissão para aceder à lista de bens patrimoniais.
+          </div>
+        </Alert>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout pageTitle="📦 Gestão de Património">
       {error && <Alert variant="danger" className="shadow-sm border-0 mb-4" onClose={() => setError(null)} dismissible>{error}</Alert>}
@@ -131,11 +156,9 @@ function ListaBensPage() {
         <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <Card.Title className="fw-bold fs-5 text-dark mb-0">🔍 Filtros de Busca do Inventário</Card.Title>
-            {canManage && (
-              <PrimaryButton onClick={() => { setEditingBem(null); setShowFormModal(true); }} className="px-4 shadow-sm fw-bold">
-                + Novo Equipamento
-              </PrimaryButton>
-            )}
+            <PrimaryButton onClick={() => { setEditingBem(null); setShowFormModal(true); }} className="px-4 shadow-sm fw-bold">
+              + Novo Equipamento
+            </PrimaryButton>
           </div>
           
           <Row className="g-3">
@@ -193,13 +216,9 @@ function ListaBensPage() {
                       </td>
                       <td>{getStatusBadge(bem.status_atual)}</td>
                       <td className="pe-4 text-end">
-                        <PrimaryButton size="sm" variant="outline-primary" onClick={() => { setSelectedBem(bem); setShowDetailsModal(true); }} className="me-2">⚙️</PrimaryButton>
-                        {canManage && (
-                          <>
-                            <PrimaryButton size="sm" variant="outline-secondary" onClick={() => { setEditingBem(bem); setShowFormModal(true); }} className="me-2">✏️</PrimaryButton>
-                            <PrimaryButton size="sm" variant="outline-danger" onClick={() => { setDeletingBem(bem); setShowDeleteModal(true); }}>🗑️</PrimaryButton>
-                          </>
-                        )}
+                        <PrimaryButton size="sm" variant="outline-primary" onClick={() => { setSelectedBem(bem); setShowDetailsModal(true); }} className="me-2" title="Detalhes do Bem">⚙️</PrimaryButton>
+                        <PrimaryButton size="sm" variant="outline-secondary" onClick={() => { setEditingBem(bem); setShowFormModal(true); }} className="me-2" title="Editar">✏️</PrimaryButton>
+                        <PrimaryButton size="sm" variant="outline-danger" onClick={() => { setDeletingBem(bem); setShowDeleteModal(true); }} title="Excluir">🗑️</PrimaryButton>
                       </td>
                     </tr>
                   ))}
@@ -228,7 +247,7 @@ function ListaBensPage() {
 
       <BemDetailsModal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} bem={selectedBem} onUpdate={fetchDados} />
       
-      {canManage && (
+      {hasAccess && (
         <>
           <ModalForm show={showFormModal} onHide={() => setShowFormModal(false)} title={editingBem ? '✏️ Editar Equipamento' : '📦 Cadastrar Novo Equipamento'}>
             <BemForm bem={editingBem} unidades={unidades} onSubmit={handleFormSubmit} isLoading={isSubmitting} />

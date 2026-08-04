@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react';
 import { Row, Col, Card, Spinner, ListGroup, Alert, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import type { GraficoStatus, Estatisticas, TarefaRecente } from '../../types';
-
-
+import * as solicitacaoService from '../../services/solicitacaoService'; // 🚀 Importado o service correto
+import type { Estatisticas, TarefaRecente } from '../../types';
 
 function TecnicoDashboard() {
   const [stats, setStats] = useState<Estatisticas | null>(null);
@@ -18,19 +17,24 @@ function TecnicoDashboard() {
     const fetchMinhasTarefas = async () => {
       try {
         setLoading(true);
-        // Faz as duas requisições ao mesmo tempo para não travar a tela
-        const [resStats, resAgenda] = await Promise.all([
+        
+        // Busca as estatísticas e usamos o service oficial para as solicitações
+        const [resStats, resSolicitacoes] = await Promise.all([
           api.get('/estatisticas'),
-          api.get('/solicitacoes/recentes')
+          solicitacaoService.getAllSolicitacoes()
         ]);
         
         setStats(resStats.data); 
-        setAgenda(resAgenda.data);
+
+        
+        const listaItens = Array.isArray(resSolicitacoes) ? resSolicitacoes : (resSolicitacoes.data || []);
+        setAgenda(listaItens.slice(0, 5));
+
       } catch (err: any) {
         console.error("Erro ao carregar tarefas do técnico", err);
         setError("Não foi possível carregar os seus dados em tempo real.");
         
-        // Mock de emergência
+        // Mock de emergência caso a API de estatísticas falhe
         setStats({ os_pendentes: 3, baixo_estoque: 2, patrimonio_ativo: 0 });
         setAgenda([]);
       } finally {
@@ -41,7 +45,6 @@ function TecnicoDashboard() {
     fetchMinhasTarefas();
   }, []);
 
-  // Calcula OS concluídas olhando o gráfico que vem do backend
   const osConcluidas = stats?.grafico_status?.find(s => s.name === 'CONCLUIDA')?.quantidade || 0;
 
   if (loading) {
@@ -78,7 +81,7 @@ function TecnicoDashboard() {
           </Card>
         </Col>
 
-        {/* Alerta de Estoque (Para o técnico lembrar de pedir) */}
+        {/* Alerta de Estoque */}
         <Col md={4}>
           <Card className="border-0 shadow-sm h-100 overflow-hidden position-relative">
             <div className="position-absolute top-0 start-0 h-100 bg-warning" style={{ width: '5px' }}></div>
@@ -112,7 +115,7 @@ function TecnicoDashboard() {
       </Row>
 
       <Row className="g-4">
-        {/* AGENDA DINÂMICA (Vem direto do Banco de Dados) */}
+        {/* AGENDA RECENTE VIA SERVICE */}
         <Col md={7} lg={8}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Header className="bg-white border-bottom-0 pt-4 pb-0">

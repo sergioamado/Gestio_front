@@ -33,7 +33,9 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
   const { user } = useAuth();
   const { mostrarCard } = useToast(); 
   const { confirmar } = useConfirm();
-  const canManage = user?.role === 'admin' || user?.role === 'tecnico_eletronica';
+  
+  //  Restrito estritamente a técnicos de eletrônica (Administrador não pode iniciar/gerenciar ações operacionais aqui)
+  const isTecnicoEletronica = user?.role === 'tecnico_eletronica';
   const urgency = getUrgencyConfig(manutencao.data_entrada, manutencao.status);
 
   // Tratamento seguro para relacionamentos do backend
@@ -61,7 +63,7 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
     }
   };
 
-  // 🚀 Fallback Universal para Copiar Resumo (Eletrônica #4)
+  //  Fallback Universal para Copiar Resumo
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
     const summary = `[Manutenção Eletrônica]\nGLPI: ${glpiValue}\nEquipamento: ${manutencao.equipamento}`;
@@ -70,7 +72,6 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
       navigator.clipboard.writeText(summary);
       mostrarCard('Copiado', 'Resumo copiado com sucesso!', 'info');
     } else {
-      // Método seguro para HTTP (IP local)
       const textArea = document.createElement("textarea");
       textArea.value = summary;
       document.body.appendChild(textArea);
@@ -91,7 +92,6 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
         
         <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
           <div>
-            {/* 🚀 Nome do equipamento em maiúsculas (Eletrônica #5) */}
             <Card.Title className="fw-bold text-dark mb-1 lh-sm text-uppercase" style={{fontSize: '0.95rem'}}>
               {manutencao.equipamento}
             </Card.Title>
@@ -118,7 +118,6 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
           </div>
         </div>
 
-        {/* 🚀 Exibição de quem abriu e do técnico (Eletrônica #7) */}
         <div className="text-secondary flex-grow-1 bg-white mb-2" style={{fontSize: '0.8rem'}}>
           <div className="d-flex flex-column gap-1 bg-light p-2 rounded border border-light-subtle">
             <div className="text-truncate">
@@ -140,7 +139,9 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
           <Button variant="outline-primary" size="sm" className="fw-bold w-100 shadow-sm" onClick={() => onDetailsClick(manutencao)}>
             🔍 Detalhes
           </Button>
-          {canManage && manutencao.status === 'Pendente' && (
+          
+          {/*  Botão Iniciar visível apenas para técnicos em eletrônica */}
+          {isTecnicoEletronica && manutencao.status === 'Pendente' && (
             <PrimaryButton size="sm" className="w-100 fw-bold shadow-sm" onClick={handleIniciar}>
               🚀 Iniciar
             </PrimaryButton>

@@ -12,9 +12,10 @@ import { useToast } from '../../contexts/ToastContext';
 interface SolicitacaoItemProps {
   solicitacao: SolicitacaoDetalhada;
   onUpdate: () => void;
+  currentUserRole?: string; //  Adicionado para controlar as permissões visuais e de ação
 }
 
-function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
+function SolicitacaoItem({ solicitacao, onUpdate, currentUserRole }: SolicitacaoItemProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingItemId, setLoadingItemId] = useState<number | null>(null);
   
@@ -22,6 +23,9 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
   
   const { confirmar } = useConfirm();
   const { mostrarCard } = useToast();
+
+  //  Verifica se o usuário tem privilégios gerenciais/administrativos para alterar status e entregas
+  const canManageStatusAndDelivery = currentUserRole === 'admin' || currentUserRole === 'gerente';
 
   const [itemStatus, setItemStatus] = useState<Record<number, boolean>>(() =>
     solicitacao.solicitacao_itens.reduce((acc, item) => {
@@ -41,10 +45,13 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
   }, [statusGeral, itemStatus, solicitacao]);
 
   const handleItemCheckChange = (itemId: number, isChecked: boolean) => {
+    if (!canManageStatusAndDelivery) return; // Trava de segurança extra
     setItemStatus(prev => ({ ...prev, [itemId]: isChecked }));
   };
 
   const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!canManageStatusAndDelivery) return;
+
     const newStatus = e.target.value as StatusSolicitacao;
     
     const confirmou = await confirmar({
@@ -62,6 +69,8 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
   };
   
   const handleSaveChanges = async (statusOverride?: StatusSolicitacao | null) => {
+    if (!canManageStatusAndDelivery) return;
+
     setIsSubmitting(true);
     try {
       const finalStatus = statusOverride || statusGeral;
@@ -132,7 +141,6 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
     }
   };
 
-  // 🚀 Fallback Universal para Copiar Resumo (Eletrônica #4)
   const handleCopy = () => {
     const summary = `[Requisição Material]\nREQ: #${solicitacao.id}\nGLPI: ${solicitacao.numero_glpi || 'N/A'}\nPATRIMONIO: ${solicitacao.patrimonio || 'N/A'}\nSETOR: ${solicitacao.setor_equipamento || 'N/A'}`;
     
@@ -170,7 +178,6 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
     <Accordion.Item eventKey={String(solicitacao.id)} className="floating-card mb-3 border-0 shadow-sm overflow-hidden">
       <Accordion.Header className="bg-white">
         <Stack direction="horizontal" gap={3} className="w-100 me-2 align-items-center">
-          {/* 🚀 Visibilidade do Número da Requisição (Geral #8) */}
           <Badge bg="primary" className="px-3 py-2 rounded-pill fs-6 shadow-sm">REQ #{solicitacao.id}</Badge>
           
           <div className="d-flex flex-column">
@@ -238,7 +245,6 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
               <tbody>
                 {solicitacao.solicitacao_itens.map(item => (
                   <tr key={item.id} className={(item.status_entrega as string) === 'Cancelado' ? 'opacity-50' : ''}>
-                    {/* 🚀 Padronização Maiúscula (Eletrônica #5) */}
                     <td className="ps-3 fw-medium text-dark text-uppercase">{item.itens?.descricao || 'Peça Indefinida'}</td>
                     <td className="text-center fw-bold text-primary">{item.quantidade_solicitada}</td>
                     
@@ -247,7 +253,8 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
                         <Badge bg="secondary">Cancelado</Badge>
                       ) : (item.status_entrega as string) === 'Defeito' ? (
                         <Badge bg="danger">Com Defeito</Badge>
-                      ) : (
+                      ) : canManageStatusAndDelivery ? (
+                        //  Switch interativo APENAS para Admin e Gerente
                         <Form.Check 
                           type="switch"
                           id={`item-${item.id}`}
@@ -256,12 +263,17 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
                           onChange={(e) => handleItemCheckChange(item.id, e.target.checked)}
                           className="d-inline-block text-start"
                         />
+                      ) : (
+                        // 👁️ Visualização estática para técnicos/outros perfis
+                        <Badge bg={itemStatus[item.id] ? "success" : "light"} text={itemStatus[item.id] ? "light" : "dark"}>
+                          {itemStatus[item.id] ? 'Entregue' : 'Pendente'}
+                        </Badge>
                       )}
                     </td>
 
                     <td className="text-end pe-3">
                       <div className="d-flex justify-content-end gap-2">
-                        {itemStatus[item.id] && (item.status_entrega as string) !== 'Defeito' && (
+                        {canManageStatusAndDelivery && itemStatus[item.id] && (item.status_entrega as string) !== 'Defeito' && (
                           <Button 
                             variant="outline-danger" size="sm" title="Reportar Defeito e Devolver"
                             onClick={() => handleSinalizarDefeito(item.id)}
@@ -271,6 +283,7 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
                           </Button>
                         )}
 
+                        {/*  Cancelar item individual liberado para todos (se não estiver entregue/cancelado) */}
                         {!itemStatus[item.id] && (item.status_entrega as string) !== 'Cancelado' && (
                           <Button 
                             variant="outline-secondary" size="sm" title="Cancelar Pedido da Peça"
@@ -291,11 +304,15 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
 
         <div className="d-flex flex-wrap gap-3 align-items-center bg-white p-3 rounded shadow-sm border-top border-3 border-primary">
           <div className="fw-bold me-2 text-dark">Status da OS:</div>
+          
+          {/*  Select de Status geral: Interativo para Admin/Gerente, desativado/estático para os demais */}
           <Form.Select 
             style={{ maxWidth: '220px' }} 
-            className="fw-bold bg-light border-0"
+            className={`fw-bold border-0 ${canManageStatusAndDelivery ? 'bg-light' : 'bg-light text-muted'}`}
             value={solicitacao.status.toUpperCase()} 
             onChange={handleStatusChange}
+            disabled={!canManageStatusAndDelivery}
+            title={!canManageStatusAndDelivery ? "Apenas Administradores e Gerentes podem alterar o status geral" : ""}
           >
               <option value="PENDENTE">⏳ Pendente</option>
               <option value="EM ATENDIMENTO">🛠️ Em Atendimento</option>
@@ -303,14 +320,18 @@ function SolicitacaoItem({ solicitacao, onUpdate }: SolicitacaoItemProps) {
               <option value="CANCELADA">❌ Cancelada</option>
           </Form.Select>
           
-          <PrimaryButton 
-            onClick={() => handleSaveChanges()} 
-            disabled={!hasChanges || isSubmitting} 
-            isLoading={isSubmitting}
-          >
-            💾 Salvar Alterações Gerais
-          </PrimaryButton>
+          {/*  Botão de Salvar Alterações Gerais visível e funcional apenas para Admin e Gerente */}
+          {canManageStatusAndDelivery && (
+            <PrimaryButton 
+              onClick={() => handleSaveChanges()} 
+              disabled={!hasChanges || isSubmitting} 
+              isLoading={isSubmitting}
+            >
+              💾 Salvar Alterações Gerais
+            </PrimaryButton>
+          )}
           
+          {/*  Copiar Resumo visível para TODOS */}
           <Button variant="light" onClick={handleCopy} className="ms-auto border shadow-sm fw-medium text-muted">
             <Clipboard className="me-2" /> Copiar Resumo
           </Button>

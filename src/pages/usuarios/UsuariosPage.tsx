@@ -1,15 +1,15 @@
 // src/pages/UsuariosPage.tsx
 import { useState, useEffect } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
-import MainLayout from '../layouts/MainLayout';
-import PrimaryButton from '../components/PrimaryButton';
-import UsuariosTable from '../components/usuarios/UsuariosTable';
-import ModalForm from '../components/ModalForm';
-import UsuarioForm from '../components/usuarios/UsuarioForm';
+import MainLayout from '../../layouts/MainLayout';
+import PrimaryButton from '../../components/PrimaryButton';
+import UsuariosTable from '../../components/usuarios/UsuariosTable';
+import ModalForm from '../../components/ModalForm';
+import UsuarioForm from '../../components/usuarios/UsuarioForm';
 
-import * as usuarioService from '../services/usuarioService';
-import * as unidadeService from '../services/unidadeService';
-import type { User, UserCreateData, UserUpdateData, Role, Unidade } from '../types';
+import * as usuarioService from '../../services/usuarioService';
+import * as unidadeService from '../../services/unidadeService';
+import type { User, UserCreateData, UserUpdateData, Role, Unidade } from '../../types';
 
 function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<User[]>([]);

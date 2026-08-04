@@ -1,12 +1,12 @@
 // src/pages/EstoqueSuprimentosPage.tsx
 import { useState, useEffect, useCallback } from 'react';
 import { Alert, Spinner } from 'react-bootstrap';
-import MainLayout from '../layouts/MainLayout';
-import { useAuth } from '../hooks/useAuth';
-import * as suprimentosService from '../services/suprimentosService';
-import type { EstoqueSuprimentos } from '../types';
-import EstoqueAtualCard from '../components/estoque/EstoqueAtualCard';
-import AdicionarEstoqueForm from '../components/estoque/AdicionarEstoqueForm';
+import MainLayout from '../../layouts/MainLayout';
+import { useAuth } from '../../hooks/useAuth';
+import * as suprimentosService from '../../services/suprimentosService';
+import type { EstoqueSuprimentos } from '../../types';
+import EstoqueAtualCard from '../../components/estoque/EstoqueAtualCard';
+import AdicionarEstoqueForm from '../../components/estoque/AdicionarEstoqueForm';
 
 function EstoqueSuprimentosPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -16,7 +16,8 @@ function EstoqueSuprimentosPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canManageImpressoras = user?.role === 'admin' || user?.role === 'tecnico_impressora';
+  // verifica se o usuário tem permissão para gerenciar impressoras
+  const canManageImpressoras = user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_impressora';
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -53,7 +54,7 @@ function EstoqueSuprimentosPage() {
     }
   };
 
-  // 1. Loading inicial de Autenticação
+  //  Loading inicial de Autenticação
   if (isAuthLoading) {
     return (
       <MainLayout pageTitle="📦 Gerenciar Estoque de Suprimentos">
@@ -65,19 +66,22 @@ function EstoqueSuprimentosPage() {
     );
   }
 
-  // 2. Trava de Segurança visualmente amigável
+  //  Trava de Segurança visualmente amigável
   if (!canManageImpressoras) {
     return (
       <MainLayout pageTitle="🚫 Acesso Negado">
-        <Alert variant="danger" className="shadow-sm border-0 mt-3 p-4">
-          <h5 className="fw-bold mb-2">Acesso Restrito</h5>
-          Apenas administradores e técnicos do setor de impressão podem acessar esta página para gerenciamento de estoque.
+        <Alert variant="danger" className="shadow-sm border-0 mt-3 p-4 d-flex align-items-center">
+          <span className="fs-1 me-3">🔒</span>
+          <div>
+            <h5 className="fw-bold mb-1">Acesso Restrito</h5>
+            Apenas administradores, gerentes e técnicos do setor de impressão podem acessar esta página para gerenciamento de estoque.
+          </div>
         </Alert>
       </MainLayout>
     );
   }
 
-  // 3. Loading dos dados da API
+  //  Loading dos dados da API
   if (loading) {
       return (
           <MainLayout pageTitle="📦 Gerenciar Estoque de Suprimentos">
@@ -89,7 +93,7 @@ function EstoqueSuprimentosPage() {
       );
   }
 
-  // 4. Renderização Principal
+  //  Renderização Principal (Liberada para os 3 perfis autorizados)
   return (
     <MainLayout pageTitle="📦 Gerenciar Estoque de Suprimentos">
       {error && (

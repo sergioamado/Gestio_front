@@ -1,15 +1,15 @@
 // src/pages/NovaSolicitacaoPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Form, Button, Table, Badge, InputGroup, Spinner } from 'react-bootstrap';
+import { Row, Col, Card, Form, Button, Table, Badge, InputGroup, Spinner, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import MainLayout from '../layouts/MainLayout';
-import { useAuth } from '../hooks/useAuth';
-import { useConfirm } from '../contexts/ConfirmContext';
-import { useToast } from '../contexts/ToastContext';
-import type { Item } from '../types';
+import MainLayout from '../../layouts/MainLayout';
+import { useAuth } from '../../hooks/useAuth';
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useToast } from '../../contexts/ToastContext';
+import type { Item } from '../../types';
 
-import * as itemService from '../services/itemService';
-import * as solicitacaoService from '../services/solicitacaoService';
+import * as itemService from '../../services/itemService';
+import * as solicitacaoService from '../../services/solicitacaoService';
 
 interface ItemCarrinho extends Item {
   quantidadeSelecionada: number;
@@ -32,6 +32,9 @@ function NovaSolicitacaoPage() {
   const [justificativa, setJustificativa] = useState('');
   
   const [loading, setLoading] = useState(false);
+
+  //  Verifica se o usuário logado é administrador
+  const isAdmin = user?.role === 'admin';
 
  useEffect(() => {
     const fetchItens = async () => {
@@ -84,6 +87,12 @@ function NovaSolicitacaoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    //  Trava de segurança extra caso o admin tente submeter por código/atalho
+    if (isAdmin) {
+      mostrarCard('Ação Não Permitida', 'Contas de Administrador não possuem unidade atrelada e não podem gerar solicitações.', 'alerta');
+      return;
+    }
+
     if (carrinho.length === 0) {
       mostrarCard('Carrinho Vazio', 'Adicione pelo menos um item da lista antes de finalizar.', 'alerta');
       return;
@@ -92,7 +101,7 @@ function NovaSolicitacaoPage() {
     setLoading(true);
 
     try {
-      // 🚀 1. Verificação Inteligente de Duplicidade (Geral #9)
+      // 1. Verificação Inteligente de Duplicidade
       try {
         const respostaBusca = await solicitacaoService.getAllSolicitacoes({ numero_glpi: glpi, status: 'PENDENTE' });
         const duplicados = respostaBusca.data ? respostaBusca.data : (Array.isArray(respostaBusca) ? respostaBusca : []);
@@ -137,8 +146,17 @@ function NovaSolicitacaoPage() {
       setPatrimonio('');
       setJustificativa('');
       
-      // 🚀 3. Redirecionamento Automático para acompanhamento (Geral #1)
-      navigate('/solicitacoes');
+      const irParaGerenciar = await confirmar({
+        titulo: '✅ OS Criada com Sucesso!',
+        mensagem: 'Sua solicitação foi registrada. Deseja ir para a tela de Gerenciar Solicitações para acompanhar o chamado ou deseja continuar nesta tela para abrir outra OS?',
+        textoConfirmar: 'Ir para Gerenciar',
+        textoCancelar: 'Continuar aqui',
+        varianteBotao: 'success'
+      });
+
+      if (irParaGerenciar) {
+        navigate('/gerenciar-solicitacoes');
+      }
 
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.message || 'Falha na comunicação com o servidor.';
@@ -155,6 +173,17 @@ function NovaSolicitacaoPage() {
 
   return (
     <MainLayout pageTitle="Nova Solicitação de Material">
+      
+      {/*  Alerta informativo exibido exclusivamente para Administradores */}
+      {isAdmin && (
+        <Alert variant="info" className="shadow-sm border-0 mb-4 d-flex align-items-center">
+          <span className="fs-4 me-3">ℹ️</span>
+          <div>
+            <strong>Modo de Consulta:</strong> Como perfil de Administrador, você pode visualizar o catálogo e testar a interface livremente, mas a abertura de ordens de serviço é restrita a técnicos e gerentes vinculados a uma unidade.
+          </div>
+        </Alert>
+      )}
+
       <Form onSubmit={handleSubmit}>
         <Card className="floating-card border-0 shadow-sm mb-4 border-start border-primary border-4">
           <Card.Body className="p-4">
@@ -261,7 +290,6 @@ function NovaSolicitacaoPage() {
                                 <Card className={`h-100 border-0 shadow-sm ${item.quantidade === 0 ? 'opacity-50 bg-light' : 'bg-white'} ${item.is_permanente ? 'border-start border-warning border-4' : 'border'}`}>
                                     <Card.Body className="d-flex flex-column p-3">
                                         <div className="d-flex justify-content-between align-items-start mb-2">
-                                            {/* Texto Padronizado em Maiúsculas */}
                                             <h6 className="fw-bold text-dark fs-6 mb-0 lh-base text-uppercase">{item.descricao}</h6>
                                             {item.is_permanente && <Badge bg="warning" text="dark" className="ms-2">Permanente</Badge>}
                                         </div>
@@ -312,7 +340,6 @@ function NovaSolicitacaoPage() {
                         {carrinho.map(item => (
                           <tr key={item.id}>
                             <td className="ps-3 w-50">
-                              {/* Texto Padronizado em Maiúsculas */}
                               <span className="fw-bold text-dark d-block text-uppercase" style={{ fontSize: '0.95rem' }}>{item.descricao}</span>
                               {item.is_permanente && <Badge bg="warning" text="dark" className="mt-1" style={{fontSize: '0.7rem'}}>Devolver após uso</Badge>}
                             </td>
@@ -342,16 +369,19 @@ function NovaSolicitacaoPage() {
                             {carrinho.reduce((acc, curr) => acc + curr.quantidadeSelecionada, 0)}
                         </span>
                     </div>
+
+                    {/*  Botão desativado para o Administrador com tooltip/texto explicativo */}
                     <Button 
-                      variant="success" 
+                      variant={isAdmin ? "secondary" : "success"}
                       size="lg" 
                       className="w-100 fw-bold shadow-sm py-3 fs-5" 
                       type="submit" 
-                      disabled={loading || carrinho.length === 0}
+                      disabled={loading || carrinho.length === 0 || isAdmin}
+                      title={isAdmin ? "Administradores não podem gerar solicitações" : ""}
                     >
-                        {loading ? (
+                        {isAdmin ? '🔒 Indisponível para Administradores' : (loading ? (
                           <><Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2"/> Registrando...</>
-                        ) : '🚀 Finalizar Solicitação'}
+                        ) : '🚀 Finalizar Solicitação')}
                     </Button>
                 </div>
               </Card.Body>

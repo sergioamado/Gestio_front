@@ -3,7 +3,7 @@
 /* 1. IMPORTAÇÃO DE FONTES (SaaS Moderno) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* 2. VARIÁVEIS GLOBAIS (O DNA do Design) */
+/* 2. VARIÁVEIS GLOBAIS */
 :root {
   /* Cores de Marca (Azul) */
   --brand-blue: #034EA2;
@@ -74,20 +74,44 @@ a:hover {
   scrollbar-width: none;
 }
 
-/* 5. LAYOUT BASE */
+/* 5. LAYOUT BASE E ANIMAÇÃO DA SIDEBAR 🚀 */
 .app-layout { 
   display: flex; 
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
 }
 
+/* Comportamento da Barra Lateral */
+.sidebar-wrapper {
+  width: 250px; 
+  flex-shrink: 0;
+  transition: width 0.3s ease-in-out; 
+  overflow: hidden; 
+  z-index: 1040;
+}
+
+/* Comportamento do Conteúdo Principal (A Tela em si) */
 .main-content { 
   flex-grow: 1; 
   height: 100vh; 
   overflow-y: auto; 
   background-color: var(--bg-body);
+  width: calc(100% - 250px);
+  min-width: 0; 
+  transition: width 0.3s ease-in-out; 
 }
 
+/* Efeito quando o Botão de Fechar Sidebar é clicado */
+.app-layout.sidebar-closed .sidebar-wrapper {
+  width: 0px;
+}
+
+.app-layout.sidebar-closed .main-content {
+  width: 100%; 
+}
+
+/* RESTAURADO: Layout da Tela de Login que eu tinha apagado sem querer! */
 .auth-layout {
   display: flex;
   flex-direction: column;
@@ -100,11 +124,11 @@ a:hover {
 
 /* 6. COMPONENTES VISUAIS */
 
-/* O Card Flutuante Padrão (Agora consolidado e limpo) */
+/* O Card Flutuante Padrão */
 .floating-card {
   background-color: var(--bg-surface) !important;
   border: 1px solid var(--border-light) !important;
-  border-radius: 1rem !important; /* Bordas um pouco mais redondas */
+  border-radius: 1rem !important; 
   box-shadow: var(--shadow-sm) !important;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
@@ -140,7 +164,7 @@ a:hover {
 .sidebar-nav-link:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
-  transform: translateX(4px); /* Leve animação para a direita */
+  transform: translateX(4px); 
 }
 
 /* Ajuste de tabelas para o padrão da COSUP */

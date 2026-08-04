@@ -1,17 +1,17 @@
 // src/pages/ItensPage.tsx
 import { useState, useEffect, useCallback } from 'react';
 import { Spinner, Alert, Card, Row, Col, InputGroup, Form, Pagination } from 'react-bootstrap';
-import MainLayout from '../layouts/MainLayout';
-import PrimaryButton from '../components/PrimaryButton';
-import ItensTable from '../components/itens/ItensTable';
-import ModalForm from '../components/ModalForm';
-import ItemForm from '../components/itens/ItemForm';
-import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
-import { useAuth } from '../hooks/useAuth';
-import ItemDetailsModal from '../components/itens/ItemDetailsModal';
-import * as itemService from '../services/itemService';
-import * as unidadeService from '../services/unidadeService';
-import type { Item, ItemCreateData, Unidade } from '../types';
+import MainLayout from '../../layouts/MainLayout';
+import PrimaryButton from '../../components/PrimaryButton';
+import ItensTable from '../../components/itens/ItensTable';
+import ModalForm from '../../components/ModalForm';
+import ItemForm from '../../components/itens/ItemForm';
+import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
+import { useAuth } from '../../hooks/useAuth';
+import ItemDetailsModal from '../../components/itens/ItemDetailsModal';
+import * as itemService from '../../services/itemService';
+import * as unidadeService from '../../services/unidadeService';
+import type { Item, ItemCreateData, Unidade } from '../../types';
 
 function ItensPage() {
   const { user } = useAuth();
@@ -32,6 +32,7 @@ function ItensPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingItem, setViewingItem] = useState<Item | null>(null);
 
+  // 🚀 Regra de Ouro: Apenas Admin e Gerente podem gerir e ver quantidades
   const canManageItems = user?.role === 'admin' || user?.role === 'gerente';
 
   // Estados de Paginação e Filtros
@@ -93,7 +94,6 @@ function ItensPage() {
     fetchItens();
   }, [fetchItens]);
 
-  // Se pesquisar algo, volta sempre para a página 1
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
@@ -118,12 +118,15 @@ function ItensPage() {
     return items;
   };
 
+  // 🚀 Travas de segurança nas ações
   const handleShowCreateModal = () => {
+    if (!canManageItems) return;
     setEditingItem(null);
     setShowFormModal(true);
   };
 
   const handleShowEditModal = (item: Item) => {
+    if (!canManageItems) return;
     setEditingItem(item);
     setShowFormModal(true);
   };
@@ -134,6 +137,7 @@ function ItensPage() {
   };
 
   const handleFormSubmit = async (data: ItemCreateData) => {
+    if (!canManageItems) return;
     setIsSubmitting(true);
     setError(null);
     try {
@@ -154,12 +158,13 @@ function ItensPage() {
   };
 
   const handleShowDeleteModal = (item: Item) => {
+    if (!canManageItems) return;
     setDeletingItem(item);
     setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!deletingItem) return;
+    if (!canManageItems || !deletingItem) return;
     setIsDeleting(true);
     setError(null);
     try {
@@ -226,9 +231,11 @@ function ItensPage() {
           ) : itens.length > 0 ? (
              <ItensTable 
               itens={itens} 
-              onEdit={handleShowEditModal} 
-              onDelete={handleShowDeleteModal}
-              onDetails={handleShowDetailsModal} 
+              // 🚀 Passa null/undefined se não puder editar/excluir
+              onEdit={canManageItems ? handleShowEditModal : undefined} 
+              onDelete={canManageItems ? handleShowDeleteModal : undefined}
+              onDetails={handleShowDetailsModal}
+              canManageItems={canManageItems} // 🚀 Passamos a permissão para a tabela esconder a coluna "Quantidade"
             />
           ) : (
              <div className="text-center text-muted p-5 border border-dashed rounded bg-light my-3">
@@ -287,6 +294,7 @@ function ItensPage() {
         show={showDetailsModal}
         onHide={() => setShowDetailsModal(false)}
         item={viewingItem}
+        canManageItems={canManageItems} 
       />
     </MainLayout>
   );

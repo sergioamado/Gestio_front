@@ -10,6 +10,7 @@
   --main-bg-color: #F1FAEE;      /* Fundo principal da aplicação (Branco suave) */
   
   --sidebar-width: 280px; /* Largura fixa da barra lateral */
+  --sidebar-collapsed-width: 80px; /* Largura da Mini Sidebar */
 
   /* --- Paleta de Cores Antiga (Pode ser removida se não estiver em uso) --- */
   --cor-azul-ufs: #034EA2;
@@ -22,37 +23,89 @@
   --cor-verde-claro-card: #198754;
   --cor-amarelo-card: #ffc107;
   --cor-vermelho-card: #dc3545;
+  
+  /* Cores Base  (Tons de Azul Corporativo e Cinza Neutro) */
+  --bg-color: #f4f7fb; /* Fundo geral do sistema bem clarinho */
+  --text-main: #2c3e50; /* Texto principal mais suave que preto */
+  --card-bg: #ffffff;
+  --primary-gradient: linear-gradient(135deg, #0052d4, #4364f7, #6fb1fc);
 }
 
 /* --- LÓGICA DE RESPONSIVIDADE FLUIDA --- */
-/* Define o tamanho da fonte base de forma dinâmica. */
 html {
-  /* A função clamp() define um tamanho que se ajusta à largura do ecrã.
-     - Tamanho Mínimo: 14px (para ecrãs muito pequenos).
-     - Tamanho Preferencial: 1vw (1% da largura do ecrã).
-     - Tamanho Máximo: 18px (para ecrãs muito grandes).
-     Isto faz com que todas as unidades 'rem' na aplicação escalem proporcionalmente.
-  */
   font-size: clamp(14px, 1vw, 18px);
 }
 
 /* --- ESTILOS GLOBAIS E RESET --- */
-/* Remove margens padrão e define a fonte principal da aplicação. */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
-  -webkit-font-smoothing: antialiased; /* Melhora a renderização de fontes em navegadores Webkit */
-  -moz-osx-font-smoothing: grayscale; /* Melhora a renderização de fontes no Firefox */
-  background-color: var(--main-bg-color); /* Aplica a cor de fundo principal */
+  -webkit-font-smoothing: antialiased; 
+  -moz-osx-font-smoothing: grayscale; 
+  background-color: var(--bg-color); 
+  color: var(--text-main);
 }
 
-/* --- ESTRUTURA DE LAYOUT --- */
-/* Layout principal da aplicação com a barra lateral */
-.app-layout { display: flex; }
-.sidebar-wrapper { width: var(--sidebar-width); flex-shrink: 0; } /* Impede que a sidebar encolha */
-.main-content { flex-grow: 1; height: 100vh; overflow-y: auto; } /* Ocupa o resto do espaço e permite scroll vertical */
+/* --- ESTRUTURA DE LAYOUT 🚀 --- */
+.app-layout { 
+  display: flex; 
+  width: 100%;
+  overflow-x: hidden; 
+}
+
+.sidebar-wrapper { 
+  width: var(--sidebar-width); 
+  flex-shrink: 0; 
+  transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+  overflow: hidden; 
+  z-index: 1040;
+} 
+
+.main-content { 
+  flex-grow: 1; 
+  height: 100vh; 
+  overflow-y: auto; 
+  width: calc(100% - var(--sidebar-width));
+  transition: width 0.3s ease-in-out;
+}
+
+/* 🚀 COMPORTAMENTO DE RECOLHER NO DESKTOP (Mini Sidebar) */
+@media (min-width: 992px) {
+  .app-layout.sidebar-closed .sidebar-wrapper {
+    width: var(--sidebar-collapsed-width); /* Encolhe para 80px */
+  }
+  .app-layout.sidebar-closed .main-content {
+    width: calc(100% - var(--sidebar-collapsed-width)); 
+  }
+
+  /* Centraliza a barra e os ícones */
+  .app-layout.sidebar-closed .sidebar-container {
+    width: var(--sidebar-collapsed-width);
+    align-items: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Esconde os textos dos links e títulos gerais quando fechada */
+  .app-layout.sidebar-closed .sidebar-nav-link span,
+  .app-layout.sidebar-closed .sidebar-title,
+  .app-layout.sidebar-closed .logo-text {
+    display: none !important;
+  }
+
+  /* Ajusta o ícone para ficar centrado */
+  .app-layout.sidebar-closed .sidebar-nav-link {
+    justify-content: center;
+    padding: 0.75rem 0;
+  }
+  
+  .app-layout.sidebar-closed .sidebar-nav-link svg {
+    margin-right: 0 !important;
+    font-size: 1.5rem; /* Aumenta um pouquinho o ícone para dar destaque */
+  }
+}
 
 /* Layout para as páginas de autenticação (Login) */
 .auth-layout {
@@ -60,28 +113,35 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100%;
-  background-color: var(--cor-azul-ufs); /* Mantida cor antiga, pode ser alterada para --cosup-primary */
+  min-height: 100vh;
+  background-color: var(--cor-azul-ufs); 
   padding: 1rem;
+}
+
+.auth-content {
+  flex-grow: 1; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  width: 100%;
 }
 
 /* Estilo do container da barra lateral */
 .sidebar-container {
-  background-color: var(--cor-azul-ufs); /* Mantida cor antiga */
+  background-color: var(--cor-azul-ufs); 
   color: #ffffff;
   height: 100vh;
   display: flex;
   flex-direction: column;
   padding: 1.5rem 1rem;
-  position: fixed;
   width: var(--sidebar-width);
+  transition: width 0.3s ease-in-out; /* Suaviza a cor do fundo a encolher */
 }
 
 /* --- COMPONENTES ESPECÍFICOS --- */
-
-/* Estilo da Barra Superior (Header) */
 .app-header {
-  background-color: var(--cor-verde-header) !important; /* Cor de fundo do header */
+  background-color: var(--cor-verde-header) !important; 
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   padding: 1rem 1.5rem;
   color: white;
@@ -93,7 +153,6 @@ body {
   color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* Estilos para Botões */
 .btn-primary {
   background-color: var(--cor-azul-ufs) !important;
   border-color: var(--cor-azul-ufs) !important;
@@ -112,22 +171,29 @@ body {
   border-color: var(--cor-vermelho-cancelar) !important;
 }
 
-/* Estilo para os Cards "Flutuantes" com borda superior */
 .floating-card {
-  border-radius: 0.75rem !important;
-  border: 1px solid #dee2e6 !important;
+  border: none !important;
   border-top: 4px solid var(--cor-azul-ufs) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-  transition: all 0.2s ease-in-out;
-}
-.floating-card:hover {
-  transform: translateY(-2px); /* Efeito de elevação ao passar o rato */
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+  background-color: var(--card-bg) !important;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out !important;
 }
 
-/* Estilos para os Cards de Estatísticas Coloridos no Dashboard */
+.floating-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-welcome {
+  background: var(--primary-gradient) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 25px rgba(67, 100, 247, 0.25) !important;
+}
+
 .stat-card.card {
-  border-top: none !important; /* Remove a borda azul dos floating-cards */
+  border-top: none !important; 
   color: white !important;
 }
 .stat-card-unidades { background-color: var(--cor-azul-claro-card) !important; }
@@ -139,16 +205,16 @@ body {
 }
 .stat-card-itens.card .card-title,
 .stat-card-itens.card .card-text {
-  color: #000 !important; /* Garante que o texto seja legível no fundo amarelo */
+  color: #000 !important; 
 }
 
-/* Estilo Padrão para Links */
 a { color: var(--cor-azul-ufs); text-decoration: none; }
 
-/* Estilos para os Links de Navegação na Barra Lateral */
 .sidebar-nav-link {
   color: rgba(255, 255, 255, 0.8) !important;
   transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
 }
 .sidebar-nav-link:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
@@ -156,8 +222,6 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
 }
 
 /* --- ESTILOS DE PÁGINAS ESPECÍFICAS --- */
-
-/* Estilos da página "Gerenciar Solicitações" */
 .status-badge {
   padding: 0.4em 0.7em;
   border-radius: 15px;
@@ -172,12 +236,10 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
 .status-concluida { background-color: #198754; color: #fff !important; }
 .status-cancelada { background-color: #dc3545; color: #fff !important; }
 
-/* Cor de fundo alternada para os itens do accordion */
 .accordion-item:nth-of-type(even) .accordion-button {
   background-color: var(--cor-azul-ufs-light);
 }
 
-/* Cards de informação (GLPI, Património) */
 .info-card {
   color: white !important;
   border: none !important;
@@ -186,19 +248,16 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
 .card.info-card-patrimonio { background-color: #198754 !important; }
 .card.info-card-setor { background-color: #6c757d !important; }
 
-/* Barra de ferramentas de ações */
 .actions-toolbar {
   display: flex;
   gap: 1rem;
   align-items: center;
 }
 
-/* Estilo de tabela com linhas alternadas na cor da UFS */
 .table-striped-ufs tbody tr:nth-of-type(odd) > * {
   background-color: var(--cor-azul-ufs-light);
 }
 
-/* Estilos para os cards de manutenção baseados no estado de alerta */
 .card-manutencao-vencido-grave {
   background-color: rgba(102, 0, 0, 0.1) !important;
   border-left: 5px solid #660000 !important;
@@ -216,22 +275,6 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
   border-left: 5px solid #198754 !important;
 }
 
-/* Layout de autenticação (ajustes) */
-.auth-layout {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: var(--cor-azul-ufs);
-}
-.auth-content {
-  flex-grow: 1; /* Faz o conteúdo crescer e empurrar o rodapé para baixo */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-/* Estilo para o footer de faixa branca (usado em algumas páginas) */
 .footer-light {
   background-color: #f8f9fa;
   border-top: 1px solid #e7e7e7;
@@ -248,62 +291,57 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
 
 /* --- ESTILOS DE RESPONSIVIDADE --- */
 
-/* Esconde o botão de toggle em ecrãs grandes */
+/* 🚀 Botão do Header Liberado para todos os ecrãs */
 .sidebar-toggle-btn {
-  display: none;
   background: none;
   border: none;
-  color: var(--ufs-blue); /* Usa a variável compatível */
+  color: white; /* Corrigido para branco já que ficará no Header */
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+.sidebar-toggle-btn:hover {
+  transform: scale(1.1);
 }
 
-/* Aplica-se a tablets e ecrãs menores (largura máxima de 991.98px) */
 @media (max-width: 991.98px) {
-  /* Posiciona a barra lateral fora do ecrã */
   .sidebar-wrapper {
     position: fixed;
     left: 0;
     top: 0;
     height: 100%;
-    z-index: 1050; /* Garante que a sidebar fique acima de outros conteúdos */
+    z-index: 1050; 
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
   }
 
-  /* Faz o conteúdo principal ocupar toda a largura */
   .main-content {
     width: 100%;
     margin-left: 0;
   }
 
-  /* Mostra a sidebar quando a classe 'sidebar-open' é adicionada ao layout */
   .app-layout.sidebar-open .sidebar-wrapper {
     transform: translateX(0);
   }
 
-  /* Mostra o botão "hamburguer" para abrir/fechar a sidebar */
-  .sidebar-toggle-btn {
-    display: block;
-  }
-
-  /* Reduz o tamanho da fonte do título da página */
   .header-title {
       font-size: 1.2rem;
   }
 }
 
-/* Aplica-se a smartfones (largura máxima de 575.98px) */
 @media (max-width: 575.98px) {
-    /* Reduz ainda mais o título da página */
     .header-title {
         font-size: 1rem;
     }
     
-    /* Reduz o espaçamento interno do conteúdo principal */
     .main-content .p-4 {
         padding: 1rem !important;
     }
 
-    /* Permite que os botões de ação nas tabelas quebrem a linha se não houver espaço */
     .action-btn {
         margin-bottom: 0.25rem;
     }
@@ -314,46 +352,10 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
 
 /* --- CLASSE UTILITÁRIA PARA BARRA DE ROLAGEM INVISÍVEL --- */
 .invisible-scrollbar {
-  -ms-overflow-style: none;  /* Oculta a barra de rolagem no Internet Explorer e Edge */
-  scrollbar-width: none;  /* Oculta a barra de rolagem no Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;  
 }
 
-/* Oculta a barra de rolagem em navegadores baseados em Webkit (Chrome, Safari, Opera) */
 .invisible-scrollbar::-webkit-scrollbar {
   display: none;
-}
-
-/* Cores Base Harmoniosas (Tons de Azul Corporativo e Cinza Neutro) */
-:root {
-  --bg-color: #f4f7fb; /* Fundo geral do sistema bem clarinho */
-  --text-main: #2c3e50; /* Texto principal mais suave que preto */
-  --card-bg: #ffffff;
-  --primary-gradient: linear-gradient(135deg, #0052d4, #4364f7, #6fb1fc);
-}
-
-body {
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
-}
-
-/* Deixa os cartões mais elegantes */
-.floating-card {
-  border: none !important;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  background-color: var(--card-bg);
-  transition: transform 0.2s ease-in-out;
-}
-
-.floating-card:hover {
-  transform: translateY(-2px);
-}
-
-/* Gradiente para o cartão de boas-vindas */
-.card-welcome {
-  background: var(--primary-gradient);
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(67, 100, 247, 0.25);
 }

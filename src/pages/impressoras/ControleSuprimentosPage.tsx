@@ -1,15 +1,15 @@
 // src/pages/ControleSuprimentosPage.tsx
 import { useState, useEffect } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
-import MainLayout from '../layouts/MainLayout';
-import PrimaryButton from '../components/PrimaryButton';
-import ModalForm from '../components/ModalForm';
-import { useAuth } from '../hooks/useAuth';
-import * as suprimentosService from '../services/suprimentosService';
-import * as impressoraService from '../services/impressoraService';
-import type { Impressora, ControleSuprimentos, ControleSuprimentosCreateData } from '../types';
-import SuprimentosTable from '../components/suprimentos/SuprimentosTable';
-import SuprimentoForm from '../components/suprimentos/SuprimentoForm';
+import MainLayout from '../../layouts/MainLayout';
+import PrimaryButton from '../../components/PrimaryButton';
+import ModalForm from '../../components/ModalForm';
+import { useAuth } from '../../hooks/useAuth';
+import * as suprimentosService from '../../services/suprimentosService';
+import * as impressoraService from '../../services/impressoraService';
+import type { Impressora, ControleSuprimentos, ControleSuprimentosCreateData } from '../../types';
+import SuprimentosTable from '../../components/suprimentos/SuprimentosTable';
+import SuprimentoForm from '../../components/suprimentos/SuprimentoForm';
 
 function ControleSuprimentosPage() {
   const { user } = useAuth();
@@ -20,6 +20,9 @@ function ControleSuprimentosPage() {
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // CONTROLO DE ACESSO: Apenas Admin, Gerente e Técnico de Impressoras
+  const hasAccess = user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_impressora';
 
   const fetchData = () => {
     setLoading(true);
@@ -36,8 +39,11 @@ function ControleSuprimentosPage() {
   };
 
   useEffect(() => {
-    if (user) fetchData();
-  }, [user]);
+    // Só tenta buscar os dados no backend se tiver permissão visual
+    if (user && hasAccess) {
+      fetchData();
+    }
+  }, [user, hasAccess]);
   
   const handleFormSubmit = async (data: ControleSuprimentosCreateData) => {
     setIsSubmitting(true);
@@ -52,6 +58,21 @@ function ControleSuprimentosPage() {
       setIsSubmitting(false);
     }
   };
+
+  // TELA DE BLOQUEIO: Se não for um dos perfis autorizados, exibe o alerta e barra a tela
+  if (!user || !hasAccess) {
+    return (
+      <MainLayout pageTitle="🚫 Acesso Restrito">
+        <Alert variant="danger" className="shadow-sm border-0 mt-4 d-flex align-items-center p-4">
+          <span className="fs-1 me-3">🔒</span>
+          <div>
+            <h5 className="fw-bold mb-1">Acesso Negado</h5>
+            Apenas administradores, gerentes e técnicos do setor de impressão podem acessar o controle de requisições de suprimentos.
+          </div>
+        </Alert>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout pageTitle="🖨️ Requisição de Suprimentos">

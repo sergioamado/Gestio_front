@@ -1,16 +1,16 @@
 // src/pages/AtendimentosPage.tsx
 import { useState, useEffect } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
-import MainLayout from '../layouts/MainLayout';
-import PrimaryButton from '../components/PrimaryButton';
-import ModalForm from '../components/ModalForm';
-import { useAuth } from '../hooks/useAuth';
-import * as atendimentoService from '../services/atendimentoService';
-import * as impressoraService from '../services/impressoraService';
-import type { AtendimentoImpressora, AtendimentoCreateData, AtendimentoUpdateData, Impressora } from '../types';
-import AtendimentosTable from '../components/atendimentos/AtendimentosTable';
-import AtendimentoForm from '../components/atendimentos/AtendimentoForm';
-import AtendimentoDetailsModal from '../components/atendimentos/AtendimentoDetailsModal';
+import MainLayout from '../../layouts/MainLayout';
+import PrimaryButton from '../../components/PrimaryButton';
+import ModalForm from '../../components/ModalForm';
+import { useAuth } from '../../hooks/useAuth';
+import * as atendimentoService from '../../services/atendimentoService';
+import * as impressoraService from '../../services/impressoraService';
+import type { AtendimentoImpressora, AtendimentoCreateData, AtendimentoUpdateData, Impressora } from '../../types';
+import AtendimentosTable from '../../components/atendimentos/AtendimentosTable';
+import AtendimentoForm from '../../components/atendimentos/AtendimentoForm';
+import AtendimentoDetailsModal from '../../components/atendimentos/AtendimentoDetailsModal';
 
 function AtendimentosPage() {
   const { user } = useAuth();
@@ -26,6 +26,9 @@ function AtendimentosPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingAtendimento, setViewingAtendimento] = useState<AtendimentoImpressora | null>(null);
 
+  //  CONTROLO DE ACESSO: Apenas Admin, Gerente e Técnico de Impressoras
+  const hasAccess = user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_impressora';
+
   const fetchData = () => {
     setLoading(true);
     setError(null);
@@ -40,8 +43,11 @@ function AtendimentosPage() {
   };
 
   useEffect(() => {
-    if (user) fetchData();
-  }, [user]);
+    //  Só tenta buscar os dados se tiver permissão visual
+    if (user && hasAccess) {
+      fetchData();
+    }
+  }, [user, hasAccess]);
 
   const handleShowCreateModal = () => {
     setEditingAtendimento(null);
@@ -82,6 +88,21 @@ function AtendimentosPage() {
       setIsSubmitting(false);
     }
   };
+
+  //  TELA DE BLOQUEIO: Se não for um dos perfis autorizados, exibe o alerta e barra a tela
+  if (!user || !hasAccess) {
+    return (
+      <MainLayout pageTitle="🚫 Acesso Restrito">
+        <Alert variant="danger" className="shadow-sm border-0 mt-4 d-flex align-items-center p-4">
+          <span className="fs-1 me-3">🔒</span>
+          <div>
+            <h5 className="fw-bold mb-1">Acesso Negado</h5>
+            Apenas administradores, gerentes e técnicos do setor de impressão podem acessar os atendimentos técnicos.
+          </div>
+        </Alert>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout pageTitle="🔧 Atendimentos Técnicos de Impressoras">

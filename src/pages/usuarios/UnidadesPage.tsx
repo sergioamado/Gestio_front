@@ -1,14 +1,14 @@
 // src/pages/UnidadesPage.tsx
 import { useState, useEffect } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
-import MainLayout from '../layouts/MainLayout';
-import PrimaryButton from '../components/PrimaryButton';
-import UnidadesTable from '../components/unidades/UnidadesTable';
-import ModalForm from '../components/ModalForm';
-import UnidadeForm from '../components/unidades/UnidadeForm';
+import MainLayout from '../../layouts/MainLayout';
+import PrimaryButton from '../../components/PrimaryButton';
+import UnidadesTable from '../../components/unidades/UnidadesTable';
+import ModalForm from '../../components/ModalForm';
+import UnidadeForm from '../../components/unidades/UnidadeForm';
 
-import * as unidadeService from '../services/unidadeService';
-import type { Unidade, UnidadeCreateData } from '../types';
+import * as unidadeService from '../../services/unidadeService';
+import type { Unidade, UnidadeCreateData } from '../../types';
 
 function UnidadesPage() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
