@@ -1,343 +1,432 @@
 // src/components/solicitacoes/SolicitacaoItem.tsx
-import { useState, useMemo } from 'react';
-import { Accordion, Row, Col, Form, Badge, Stack, Card, Button, Spinner } from 'react-bootstrap';
-import { Clipboard, TrashFill, ExclamationTriangleFill } from 'react-bootstrap-icons';
-import type { SolicitacaoDetalhada, StatusSolicitacao } from '../../types';
-import StatusBadge from './StatusBadge';
-import PrimaryButton from '../PrimaryButton';
+import React, { useState } from 'react';
+import { Accordion, Badge, Button, Row, Col, Table, Form, InputGroup, Modal } from 'react-bootstrap';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
+import { 
+  Clipboard, 
+  CheckCircleFill, 
+  XCircleFill, 
+  ClockFill, 
+  BoxSeamFill, 
+  EyeFill,
+  ArrowReturnLeft
+} from 'react-bootstrap-icons';
 import * as solicitacaoService from '../../services/solicitacaoService';
-import { useConfirm } from '../../contexts/ConfirmContext';
-import { useToast } from '../../contexts/ToastContext';
+import * as notificacaoService from '../../services/notificacaoService'; 
+import PrimaryButton from '../PrimaryButton';
+import type { SolicitacaoDetalhada, StatusSolicitacao } from '../../types';
 
 interface SolicitacaoItemProps {
   solicitacao: SolicitacaoDetalhada;
   onUpdate: () => void;
-  currentUserRole?: string; //  Adicionado para controlar as permissões visuais e de ação
+  currentUserRole?: string;
 }
 
-function SolicitacaoItem({ solicitacao, onUpdate, currentUserRole }: SolicitacaoItemProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingItemId, setLoadingItemId] = useState<number | null>(null);
-  
-  const [statusGeral, setStatusGeral] = useState<StatusSolicitacao>(solicitacao.status);
-  
-  const { confirmar } = useConfirm();
-  const { mostrarCard } = useToast();
-
-  //  Verifica se o usuário tem privilégios gerenciais/administrativos para alterar status e entregas
-  const canManageStatusAndDelivery = currentUserRole === 'admin' || currentUserRole === 'gerente';
-
-  const [itemStatus, setItemStatus] = useState<Record<number, boolean>>(() =>
-    solicitacao.solicitacao_itens.reduce((acc, item) => {
-      acc[item.id] = item.status_entrega === 'Entregue';
-      return acc;
-    }, {} as Record<number, boolean>)
-  );
-
-  const hasChanges = useMemo(() => {
-    if (statusGeral !== solicitacao.status) return true;
-    for (const item of solicitacao.solicitacao_itens) {
-      if ((item.status_entrega === 'Entregue') !== itemStatus[item.id]) {
-        return true;
-      }
-    }
-    return false;
-  }, [statusGeral, itemStatus, solicitacao]);
-
-  const handleItemCheckChange = (itemId: number, isChecked: boolean) => {
-    if (!canManageStatusAndDelivery) return; // Trava de segurança extra
-    setItemStatus(prev => ({ ...prev, [itemId]: isChecked }));
-  };
-
-  const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!canManageStatusAndDelivery) return;
-
-    const newStatus = e.target.value as StatusSolicitacao;
-    
-    const confirmou = await confirmar({
-      titulo: '🔄 Confirmar Alteração',
-      mensagem: `Tem certeza que deseja mudar o status desta Ordem de Serviço para "${newStatus}"?`,
-      textoConfirmar: 'Sim, Alterar',
-      textoCancelar: 'Cancelar',
-      varianteBotao: 'primary'
-    });
-
-    if (confirmou) {
-      setStatusGeral(newStatus);
-      await handleSaveChanges(newStatus);
-    }
-  };
-  
-  const handleSaveChanges = async (statusOverride?: StatusSolicitacao | null) => {
-    if (!canManageStatusAndDelivery) return;
-
-    setIsSubmitting(true);
-    try {
-      const finalStatus = statusOverride || statusGeral;
-      if (finalStatus !== solicitacao.status) {
-        await solicitacaoService.updateSolicitacaoStatus(solicitacao.id, finalStatus);
-      }
-      
-      for (const item of solicitacao.solicitacao_itens) {
-        const isChecked = itemStatus[item.id];
-        const originalStatus = item.status_entrega === 'Entregue';
-        if (isChecked !== originalStatus) {
-          await solicitacaoService.updateSolicitacaoItemStatus(item.id, isChecked ? 'Entregue' : 'Pendente');
-        }
-      }
-      mostrarCard('Sucesso!', 'As alterações na OS foram salvas.', 'sucesso');
-      onUpdate();
-    } catch (error) {
-      console.error("Erro ao salvar alterações:", error);
-      mostrarCard('Erro', 'Falha ao salvar as alterações. Tente novamente.', 'erro');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleCancelarItemUnico = async (itemId: number) => {
-    const confirmou = await confirmar({
-      titulo: '🗑️ Cancelar Pedido da Peça',
-      mensagem: 'Deseja realmente cancelar O PEDIDO desta peça específica?',
-      textoConfirmar: 'Sim, Cancelar',
-      textoCancelar: 'Não',
-      varianteBotao: 'danger'
-    });
-
-    if (!confirmou) return;
-
-    setLoadingItemId(itemId);
-    try {
-      await solicitacaoService.cancelarItemSolicitacao(itemId);
-      mostrarCard('Peça Cancelada', 'O item foi cancelado com sucesso.', 'sucesso');
-      onUpdate();
-    } catch (error) {
-      mostrarCard('Erro', 'Falha ao cancelar o item.', 'erro');
-    } finally {
-      setLoadingItemId(null);
-    }
-  };
-
-  const handleSinalizarDefeito = async (itemId: number) => {
-    const confirmou = await confirmar({
-      titulo: '⚠️ Sinalizar Defeito',
-      mensagem: 'Deseja isolar esta peça como DEFEITUOSA no estoque?',
-      textoConfirmar: 'Sim, Reportar',
-      textoCancelar: 'Cancelar',
-      varianteBotao: 'warning'
-    });
-
-    if (!confirmou) return;
-
-    setLoadingItemId(itemId);
-    try {
-      await solicitacaoService.sinalizarDefeitoItem(itemId);
-      mostrarCard('Defeito Registado', 'A peça foi marcada como defeituosa.', 'alerta');
-      onUpdate();
-    } catch (error) {
-      mostrarCard('Erro', 'Falha ao reportar o defeito da peça.', 'erro');
-    } finally {
-      setLoadingItemId(null);
-    }
-  };
-
-  const handleCopy = () => {
-    const summary = `[Requisição Material]\nREQ: #${solicitacao.id}\nGLPI: ${solicitacao.numero_glpi || 'N/A'}\nPATRIMONIO: ${solicitacao.patrimonio || 'N/A'}\nSETOR: ${solicitacao.setor_equipamento || 'N/A'}`;
-    
-    const fallbackCopy = (text: string) => {
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        mostrarCard('Copiado', 'Resumo copiado para a área de transferência.', 'info');
-      } catch (err) {
-        mostrarCard('Erro', 'O navegador bloqueou a cópia.', 'erro');
-      }
-      document.body.removeChild(textArea);
-    };
-
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(summary)
-        .then(() => mostrarCard('Copiado', 'Resumo copiado para a área de transferência.', 'info'))
-        .catch(() => fallbackCopy(summary));
-    } else {
-      fallbackCopy(summary);
-    }
-  };
-
-  const nomeTecnico = (solicitacao as any).tecnico_responsavel || solicitacao.responsavel?.nome_completo || 'Técnico Não Identificado';
-
-  const dataHoraSolicitacao = new Date(solicitacao.data_solicitacao).toLocaleString('pt-BR', {
+const formatarData = (dataString?: string | null) => {
+  if (!dataString) return 'N/A';
+  return new Date(dataString).toLocaleString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
+};
+
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'PENDENTE': return <Badge bg="warning" text="dark" className="px-3 py-2 border border-warning"><ClockFill className="me-1"/> Pendente</Badge>;
+    case 'EM ATENDIMENTO': return <Badge bg="info" className="px-3 py-2"><CheckCircleFill className="me-1"/> Em Atendimento</Badge>;
+    case 'PRONTA PARA VISTORIA': return <Badge bg="primary" className="px-3 py-2" style={{ backgroundColor: '#6f42c1' }}><EyeFill className="me-1"/> Pronta para Vistoria</Badge>;
+    case 'CONCLUIDA': return <Badge bg="success" className="px-3 py-2"><CheckCircleFill className="me-1"/> Concluída</Badge>;
+    case 'CANCELADA': return <Badge bg="danger" className="px-3 py-2"><XCircleFill className="me-1"/> Cancelada</Badge>;
+    default: return <Badge bg="secondary" className="px-3 py-2">{status}</Badge>;
+  }
+};
+
+const getEntregaStatusBadge = (status: string) => {
+  switch (status) {
+    case 'Entregue': return <Badge bg="success">Entregue</Badge>;
+    case 'Devolvida': return <Badge bg="danger">Devolvida c/ Defeito</Badge>;
+    case 'Recebida pelo Técnico': return <Badge bg="info">Em posse do Técnico</Badge>;
+    default: return <Badge bg="warning" text="dark">Pendente</Badge>;
+  }
+};
+
+const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate, currentUserRole }) => {
+  const isGestor = currentUserRole === 'admin' || currentUserRole === 'gerente';
+  const isTecnico = currentUserRole === 'tecnico' || currentUserRole?.startsWith('tecnico');
+
+  // Estados principais
+  const [statusOS, setStatusOS] = useState<StatusSolicitacao>(solicitacao.status);
+  const [entregas, setEntregas] = useState<Record<number, string>>(
+    solicitacao.solicitacao_itens.reduce((acc, item) => ({ ...acc, [item.id]: item.status_entrega }), {})
+  );
+
+  const [chamadoAlmoxarifado, setChamadoAlmoxarifado] = useState(solicitacao.numero_pedido_externo ?? '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Estados para Gestão de Modais (Substituindo alerts e prompts nativos)
+  const [modalFeedback, setModalFeedback] = useState<{ show: boolean; title: string; message: string; variant: 'success' | 'danger' | 'info' }>({
+    show: false, title: '', message: '', variant: 'info'
+  });
+  
+  const [modalConfirmVistoria, setModalConfirmVistoria] = useState(false);
+
+  // Estado para o Modal de Devolução de Peça com Defeito (substitui o window.prompt)
+  const [modalDevolucao, setModalDevolucao] = useState<{ show: boolean; itemId: number | null; nomeItem: string }>({
+    show: false, itemId: null, nomeItem: ''
+  });
+  const [motivoDefeito, setMotivoDefeito] = useState('');
+
+  const handleEntregaChange = (itemId: number, novoStatus: string) => {
+    setEntregas(prev => ({ ...prev, [itemId]: novoStatus }));
+  };
+
+  // AÇÃO DO GESTOR: Salvar OS e Alterações
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      let justificativaAtualizada = solicitacao.justificativa;
+      if (chamadoAlmoxarifado !== solicitacao.numero_pedido_externo) {
+         const dataHora = formatarData(new Date().toISOString());
+         justificativaAtualizada = `${solicitacao.justificativa || ''}\n[${dataHora}] Chamado Almoxarifado atualizado para: ${chamadoAlmoxarifado}`.trim();
+      }
+
+      await solicitacaoService.updateSolicitacao(solicitacao.id, { 
+        status: statusOS,
+        numero_pedido_externo: chamadoAlmoxarifado,
+        justificativa: justificativaAtualizada,
+        itens_entrega: Object.keys(entregas).map(id => ({
+          solicitacao_item_id: Number(id),
+          status_entrega: entregas[Number(id)]
+        }))
+      });
+      onUpdate();
+      setModalFeedback({ show: true, title: 'Sucesso', message: 'Alterações guardadas com sucesso!', variant: 'success' });
+    } catch (error) {
+      setModalFeedback({ show: true, title: 'Erro', message: 'Erro ao salvar as alterações da Solicitação.', variant: 'danger' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // AÇÃO DO TÉCNICO: Marcar OS Inteira como Pronta para Vistoria
+  const handleProntaParaVistoria = async () => {
+    setModalConfirmVistoria(false);
+    setIsSaving(true);
+    try {
+      await solicitacaoService.updateSolicitacao(solicitacao.id, { status: 'PRONTA PARA VISTORIA' });
+      
+      // Exemplo de notificação gerada para o gestor:
+      // await notificacaoService.createNotificacao({ titulo: `Vistoria: OS GLPI ${solicitacao.numero_glpi}`, mensagem: `O técnico informou que a máquina está pronta para vistoria.`, roleAlvo: 'admin' });
+
+      onUpdate();
+      setModalFeedback({ show: true, title: 'Sucesso', message: 'Status atualizado para Pronta para Vistoria com sucesso!', variant: 'success' });
+    } catch (error) {
+      setModalFeedback({ show: true, title: 'Erro', message: 'Erro ao atualizar o status para vistoria.', variant: 'danger' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // AÇÃO DO TÉCNICO: Confirmar que recebeu a peça fisicamente
+  const handleReceberPeca = async (itemId: number, nomeItem: string) => {
+    setIsSaving(true);
+    try {
+       handleEntregaChange(itemId, 'Recebida pelo Técnico');
+       
+       // Notificação para o Gestor (opcional conforme estrutura)
+       // await notificacaoService.createNotificacao({ titulo: `Peça Recebida: OS GLPI ${solicitacao.numero_glpi}`, mensagem: `O técnico confirmou o recebimento físico do item: ${nomeItem}.`, roleAlvo: 'admin' });
+       
+       setModalFeedback({ show: true, title: 'Recebimento Confirmado', message: `O recebimento de "${nomeItem}" foi registado. O gestor foi notificado.`, variant: 'success' });
+    } catch {
+       setModalFeedback({ show: true, title: 'Erro', message: 'Não foi possível registrar o recebimento.', variant: 'danger' });
+    } finally {
+       setIsSaving(false);
+    }
+  };
+
+  // AÇÃO DO TÉCNICO: Confirmar Devolução via Modal
+  const confirmarDevolucaoPeca = async () => {
+    if (!motivoDefeito.trim() || modalDevolucao.itemId === null) return;
+    
+    const itemId = modalDevolucao.itemId;
+    setIsSaving(true);
+    try {
+       handleEntregaChange(itemId, 'Devolvida');
+       
+       // Notificação para o Gestor / Almoxarifado
+       // await notificacaoService.createNotificacao({ titulo: `Peça com Defeito! OS GLPI ${solicitacao.numero_glpi}`, mensagem: `O item ${modalDevolucao.nomeItem} foi devolvido. Motivo: ${motivoDefeito}`, roleAlvo: 'admin' });
+       
+       setModalDevolucao({ show: false, itemId: null, nomeItem: '' });
+       setMotivoDefeito('');
+       setModalFeedback({ show: true, title: 'Devolução Registada', message: 'A devolução por defeito foi comunicada ao almoxarifado.', variant: 'info' });
+    } catch {
+       setModalFeedback({ show: true, title: 'Erro', message: 'Erro ao processar a devolução da peça.', variant: 'danger' });
+    } finally {
+       setIsSaving(false);
+    }
+  };
+
+  const resumo = `
+OS #${solicitacao.id} - GLPI: ${solicitacao.numero_glpi}
+Status: ${solicitacao.status}
+Unidade: ${solicitacao.unidades_organizacionais?.nome || 'N/A'}
+Técnico: ${solicitacao.usuarios_solicitacoes_usuario_idTousuarios?.nome_completo || 'N/A'}
+Responsável (Unidade): ${solicitacao.usuarios_solicitacoes_responsavel_usuario_idTousuarios?.nome_completo || 'N/A'}
+Itens Solicitados:
+${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.itens?.descricao} (${i.status_entrega})`).join('\n')}
+  `.trim();
+
+  const isVistoria = solicitacao.status === 'PRONTA PARA VISTORIA';
 
   return (
-    <Accordion.Item eventKey={String(solicitacao.id)} className="floating-card mb-3 border-0 shadow-sm overflow-hidden">
-      <Accordion.Header className="bg-white">
-        <Stack direction="horizontal" gap={3} className="w-100 me-2 align-items-center">
-          <Badge bg="primary" className="px-3 py-2 rounded-pill fs-6 shadow-sm">REQ #{solicitacao.id}</Badge>
+    <>
+      <Accordion.Item eventKey={solicitacao.id.toString()} className={`mb-3 border-0 shadow-sm rounded overflow-hidden ${isVistoria ? 'border-start border-warning border-4' : ''}`}>
+        <Accordion.Header className={isVistoria ? 'bg-light-warning' : ''}>
+          <div className="d-flex justify-content-between align-items-center w-100 me-3">
+            <div className="d-flex flex-column">
+              <div className="d-flex align-items-center gap-2 mb-1">
+                <span className="fw-bold fs-6 text-dark">OS #{solicitacao.id}</span>
+                <span className="text-muted fw-bold">|</span>
+                <span className="text-primary fw-bold">GLPI: {solicitacao.numero_glpi}</span>
+              </div>
+              <div className="small text-muted fw-medium d-flex align-items-center">
+                 <BoxSeamFill className="me-1 text-secondary"/> {solicitacao.unidades_organizacionais?.sigla || solicitacao.unidades_organizacionais?.nome} 
+                 <span className="mx-2">•</span> 
+                 🧑‍🔧 {solicitacao.usuarios_solicitacoes_usuario_idTousuarios?.nome_completo}
+              </div>
+            </div>
+            <div>
+              {getStatusBadge(solicitacao.status)}
+            </div>
+          </div>
+        </Accordion.Header>
+        <Accordion.Body className="bg-light pt-4 border-top">
           
-          <div className="d-flex flex-column">
-            <span className="fw-bold text-dark">{nomeTecnico}</span>
-            <span className="text-muted small">🕒 {dataHoraSolicitacao}</span>
-          </div>
-          
-          <div className="ms-auto">
-            <StatusBadge status={solicitacao.status} />
-          </div>
-        </Stack>
-      </Accordion.Header>
-      
-      <Accordion.Body className="bg-light pt-4 px-4">
-        
-        {solicitacao.justificativa && (
-          <div className="mb-4 p-3 bg-white rounded shadow-sm border-start border-warning border-4">
-            <h6 className="fw-bold text-dark mb-2">📋 Justificativa Técnica:</h6>
-            <p className="mb-0 text-muted" style={{ whiteSpace: 'pre-line' }}>{solicitacao.justificativa}</p>
-          </div>
-        )}
+          {/* BANNER TÉCNICO: Botão de Vistoria */}
+          {isTecnico && solicitacao.status === 'EM ATENDIMENTO' && (
+             <div className="bg-warning bg-opacity-10 border border-warning rounded p-3 d-flex justify-content-between align-items-center shadow-sm mb-4">
+                <div>
+                   <strong>Tudo pronto?</strong> Se já concluiu a manutenção, avise a gerência.
+                </div>
+                <Button variant="warning" size="sm" className="fw-bold shadow-sm" onClick={() => setModalConfirmVistoria(true)} disabled={isSaving}>
+                   <EyeFill className="me-2"/> Informar Pronta para Vistoria
+                </Button>
+             </div>
+          )}
 
-        <Row className="mb-4 g-3">
-          <Col md={4}>
-            <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: '#e0f2fe' }}>
-              <Card.Body className="text-center p-3">
-                <div className="small text-uppercase fw-bold mb-1" style={{ color: '#0284c7' }}>Nº GLPI</div>
-                <div className="fs-5 fw-bold text-dark">{solicitacao.numero_glpi || 'N/A'}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={4}>
-            <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: '#f3e8ff' }}>
-              <Card.Body className="text-center p-3">
-                <div className="small text-uppercase fw-bold mb-1" style={{ color: '#9333ea' }}>Patrimônio</div>
-                <div className="fs-5 fw-bold text-dark">{solicitacao.patrimonio || 'N/A'}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={4}>
-            <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: '#ffedd5' }}>
-              <Card.Body className="text-center p-3">
-                <div className="small text-uppercase fw-bold mb-1" style={{ color: '#ea580c' }}>Setor / Local</div>
-                <div className="fs-5 fw-bold text-dark text-uppercase">{solicitacao.setor_equipamento || 'N/A'}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-        
-        <h6 className="fw-bold text-secondary text-uppercase mb-3">
-          Gestão de Peças Solicitadas ({solicitacao.solicitacao_itens.length})
-        </h6>
+          {/* CARD GESTOR: Inserir Número de Chamado do Almoxarifado */}
+          {isGestor && (
+             <div className="bg-white p-3 rounded border mb-4 shadow-sm">
+               <Form.Group>
+                  <Form.Label className="small fw-bold text-secondary text-uppercase mb-1">
+                    Nº do Chamado Almoxarifado (Num/Ano)
+                  </Form.Label>
+                  <InputGroup>
+                    <Form.Control 
+                      type="text" 
+                      placeholder="Ex: 124/2026" 
+                      value={chamadoAlmoxarifado} 
+                      onChange={(e) => setChamadoAlmoxarifado(e.target.value)}
+                      className="bg-light"
+                    />
+                  </InputGroup>
+                  <Form.Text className="text-muted" style={{fontSize: '0.75rem'}}>
+                    A alteração deste campo regista automaticamente a data/hora no histórico da OS.
+                  </Form.Text>
+               </Form.Group>
+             </div>
+          )}
 
-        <Card className="border-0 shadow-sm mb-4 overflow-hidden">
-          <div className="table-responsive">
-            <table className="table mb-0 align-middle table-hover bg-white">
-              <thead className="table-light">
+          <Row className="mb-4">
+            <Col md={6}>
+              <h6 className="fw-bold text-secondary text-uppercase small mb-3">Detalhes da Requisição</h6>
+              <p className="mb-1 small"><strong className="text-dark">Data de Criação:</strong> {formatarData(solicitacao.data_solicitacao)}</p>
+              <p className="mb-1 small"><strong className="text-dark">Responsável pela Máquina:</strong> {solicitacao.usuarios_solicitacoes_responsavel_usuario_idTousuarios?.nome_completo}</p>
+              <p className="mb-1 small"><strong className="text-dark">Patrimônio / Tombo:</strong> {solicitacao.patrimonio || 'Não informado'}</p>
+              <p className="mb-1 small"><strong className="text-dark">Setor Físico:</strong> {solicitacao.setor_equipamento || 'Não informado'}</p>
+              <p className="mb-1 small"><strong className="text-dark">Documento Emitido Em:</strong> {formatarData(solicitacao.documento_emitido_em)}</p>
+              {solicitacao.numero_pedido_externo && (
+                <p className="mb-1 small"><strong className="text-dark">Chamado Almoxarifado Atual:</strong> <Badge bg="secondary">{solicitacao.numero_pedido_externo}</Badge></p>
+              )}
+            </Col>
+            <Col md={6}>
+               {isGestor ? (
+                  <>
+                    <h6 className="fw-bold text-secondary text-uppercase small mb-3">Gerir Status da OS</h6>
+                    <Form.Select 
+                      value={statusOS} 
+                      onChange={(e) => setStatusOS(e.target.value as StatusSolicitacao)} 
+                      className="mb-3 shadow-sm border-secondary fw-medium"
+                    >
+                      <option value="PENDENTE">⏳ Pendente</option>
+                      <option value="EM ATENDIMENTO">🛠️ Em Atendimento</option>
+                      <option value="PRONTA PARA VISTORIA">👀 Pronta para Vistoria</option>
+                      <option value="CONCLUIDA">✅ Concluída</option>
+                      <option value="CANCELADA">❌ Cancelada</option>
+                    </Form.Select>
+                  </>
+               ) : (
+                  <div className="p-3 bg-white rounded border border-dashed">
+                    <h6 className="fw-bold text-secondary small text-uppercase">Aviso de Gestão</h6>
+                    <p className="text-muted small mb-0">O status geral da Ordem de Serviço é controlado exclusivamente pela gerência.</p>
+                  </div>
+               )}
+            </Col>
+          </Row>
+
+          <h6 className="fw-bold text-secondary text-uppercase small mb-3">Peças Solicitadas ({solicitacao.solicitacao_itens.length})</h6>
+          <div className="table-responsive bg-white rounded border shadow-sm mb-4">
+            <Table hover className="align-middle mb-0 text-sm">
+              <thead className="bg-light">
                 <tr>
-                  <th className="border-0 ps-3">Peça / Material</th>
-                  <th className="border-0 text-center">Quantidade</th>
-                  <th className="border-0 text-center">Entrega</th>
-                  <th className="border-0 text-end pe-3">Ações Individuais</th>
+                  <th className="border-0 small text-secondary">Peça / Insumo</th>
+                  <th className="border-0 small text-secondary text-center">Qtd.</th>
+                  <th className="border-0 small text-secondary">Status Gestão</th>
+                  {isTecnico && <th className="border-0 small text-secondary text-center">Ações do Técnico</th>}
                 </tr>
               </thead>
               <tbody>
-                {solicitacao.solicitacao_itens.map(item => (
-                  <tr key={item.id} className={(item.status_entrega as string) === 'Cancelado' ? 'opacity-50' : ''}>
-                    <td className="ps-3 fw-medium text-dark text-uppercase">{item.itens?.descricao || 'Peça Indefinida'}</td>
-                    <td className="text-center fw-bold text-primary">{item.quantidade_solicitada}</td>
-                    
-                    <td className="text-center">
-                      {(item.status_entrega as string) === 'Cancelado' ? (
-                        <Badge bg="secondary">Cancelado</Badge>
-                      ) : (item.status_entrega as string) === 'Defeito' ? (
-                        <Badge bg="danger">Com Defeito</Badge>
-                      ) : canManageStatusAndDelivery ? (
-                        //  Switch interativo APENAS para Admin e Gerente
-                        <Form.Check 
-                          type="switch"
-                          id={`item-${item.id}`}
-                          label={itemStatus[item.id] ? <span className="text-success fw-bold small">Entregue</span> : <span className="text-muted small">Pendente</span>}
-                          checked={itemStatus[item.id]}
-                          onChange={(e) => handleItemCheckChange(item.id, e.target.checked)}
-                          className="d-inline-block text-start"
-                        />
-                      ) : (
-                        // 👁️ Visualização estática para técnicos/outros perfis
-                        <Badge bg={itemStatus[item.id] ? "success" : "light"} text={itemStatus[item.id] ? "light" : "dark"}>
-                          {itemStatus[item.id] ? 'Entregue' : 'Pendente'}
-                        </Badge>
+                {solicitacao.solicitacao_itens.map((item) => {
+                   const itemStatus = entregas[item.id] || item.status_entrega;
+                   
+                   return (
+                    <tr key={item.id}>
+                      <td className="fw-medium text-dark">{item.itens?.descricao} <br/><span className="text-muted small">Cód: {item.itens?.codigo_sipac}</span></td>
+                      <td className="text-center fw-bold">{item.quantidade_solicitada}</td>
+                      
+                      <td>
+                        {isGestor ? (
+                          <Form.Select 
+                            size="sm" 
+                            value={itemStatus} 
+                            onChange={(e) => handleEntregaChange(item.id, e.target.value)}
+                            className={itemStatus === 'Entregue' ? 'border-success text-success' : itemStatus === 'Devolvida' ? 'border-danger text-danger' : ''}
+                          >
+                            <option value="Pendente">Pendente Almoxarifado</option>
+                            <option value="Entregue">Disponível para Retirada</option>
+                            <option value="Recebida pelo Técnico">Em posse do Técnico</option>
+                            <option value="Devolvida">Devolvida (Defeito/Erro)</option>
+                          </Form.Select>
+                        ) : (
+                          getEntregaStatusBadge(itemStatus)
+                        )}
+                      </td>
+
+                      {isTecnico && (
+                        <td className="text-center">
+                           <div className="d-flex justify-content-center gap-2">
+                             {itemStatus === 'Entregue' && (
+                               <Button variant="outline-success" size="sm" title="Confirmar Recebimento Físico" onClick={() => handleReceberPeca(item.id, item.itens?.descricao || 'Peça')}>
+                                 <CheckCircleFill /> Recebi
+                               </Button>
+                             )}
+                             
+                             {(itemStatus === 'Entregue' || itemStatus === 'Recebida pelo Técnico') && (
+                               <Button variant="outline-danger" size="sm" title="Devolver por Defeito" onClick={() => setModalDevolucao({ show: true, itemId: item.id, nomeItem: item.itens?.descricao || 'Peça' })}>
+                                 <ArrowReturnLeft /> Devolver
+                               </Button>
+                             )}
+                           </div>
+                        </td>
                       )}
-                    </td>
-
-                    <td className="text-end pe-3">
-                      <div className="d-flex justify-content-end gap-2">
-                        {canManageStatusAndDelivery && itemStatus[item.id] && (item.status_entrega as string) !== 'Defeito' && (
-                          <Button 
-                            variant="outline-danger" size="sm" title="Reportar Defeito e Devolver"
-                            onClick={() => handleSinalizarDefeito(item.id)}
-                            disabled={loadingItemId === item.id}
-                          >
-                            {loadingItemId === item.id ? <Spinner size="sm" animation="border" /> : <ExclamationTriangleFill />}
-                          </Button>
-                        )}
-
-                        {/*  Cancelar item individual liberado para todos (se não estiver entregue/cancelado) */}
-                        {!itemStatus[item.id] && (item.status_entrega as string) !== 'Cancelado' && (
-                          <Button 
-                            variant="outline-secondary" size="sm" title="Cancelar Pedido da Peça"
-                            onClick={() => handleCancelarItemUnico(item.id)}
-                            disabled={loadingItemId === item.id}
-                          >
-                            {loadingItemId === item.id ? <Spinner size="sm" animation="border" /> : <TrashFill />}
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                    </tr>
+                  );
+                })}
               </tbody>
-            </table>
+            </Table>
           </div>
-        </Card>
 
-        <div className="d-flex flex-wrap gap-3 align-items-center bg-white p-3 rounded shadow-sm border-top border-3 border-primary">
-          <div className="fw-bold me-2 text-dark">Status da OS:</div>
-          
-          {/*  Select de Status geral: Interativo para Admin/Gerente, desativado/estático para os demais */}
-          <Form.Select 
-            style={{ maxWidth: '220px' }} 
-            className={`fw-bold border-0 ${canManageStatusAndDelivery ? 'bg-light' : 'bg-light text-muted'}`}
-            value={solicitacao.status.toUpperCase()} 
-            onChange={handleStatusChange}
-            disabled={!canManageStatusAndDelivery}
-            title={!canManageStatusAndDelivery ? "Apenas Administradores e Gerentes podem alterar o status geral" : ""}
-          >
-              <option value="PENDENTE">⏳ Pendente</option>
-              <option value="EM ATENDIMENTO">🛠️ Em Atendimento</option>
-              <option value="CONCLUIDA">✅ Concluída</option>
-              <option value="CANCELADA">❌ Cancelada</option>
-          </Form.Select>
-          
-          {/*  Botão de Salvar Alterações Gerais visível e funcional apenas para Admin e Gerente */}
-          {canManageStatusAndDelivery && (
-            <PrimaryButton 
-              onClick={() => handleSaveChanges()} 
-              disabled={!hasChanges || isSubmitting} 
-              isLoading={isSubmitting}
-            >
-              💾 Salvar Alterações Gerais
-            </PrimaryButton>
+          {solicitacao.justificativa && (
+            <div className="mb-4 bg-white p-3 border rounded shadow-sm">
+              <h6 className="fw-bold text-secondary text-uppercase small mb-2">Justificativa / Histórico:</h6>
+              <p className="small text-dark mb-0" style={{ whiteSpace: 'pre-wrap' }}>{solicitacao.justificativa}</p>
+            </div>
           )}
-          
-          {/*  Copiar Resumo visível para TODOS */}
-          <Button variant="light" onClick={handleCopy} className="ms-auto border shadow-sm fw-medium text-muted">
-            <Clipboard className="me-2" /> Copiar Resumo
+
+          <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <CopyToClipboard text={resumo} onCopy={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
+              <Button variant="outline-secondary" size="sm" className="fw-bold d-flex align-items-center shadow-sm">
+                <Clipboard className="me-2" /> {copied ? 'Copiado!' : 'Copiar Resumo'}
+              </Button>
+            </CopyToClipboard>
+            
+            {isGestor && (
+               <PrimaryButton onClick={handleSaveChanges} isLoading={isSaving} disabled={isSaving} className="px-4 py-2">
+                 💾 Guardar Alterações
+               </PrimaryButton>
+            )}
+          </div>
+        </Accordion.Body>
+      </Accordion.Item>
+
+      {/* ========================================================= */}
+      {/* MODAL DE FEEDBACK (Substitui os alerts nativos)            */}
+      {/* ========================================================= */}
+      <Modal show={modalFeedback.show} onHide={() => setModalFeedback(prev => ({ ...prev, show: false }))} centered>
+        <Modal.Header closeButton className={`bg-${modalFeedback.variant} text-white`}>
+          <Modal.Title className="fs-6 fw-bold">{modalFeedback.title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="py-4">
+          <p className="mb-0 text-dark">{modalFeedback.message}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" size="sm" onClick={() => setModalFeedback(prev => ({ ...prev, show: false }))}>
+            Fechar
           </Button>
-        </div>
-      </Accordion.Body>
-    </Accordion.Item>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ========================================================= */}
+      {/* MODAL DE CONFIRMAÇÃO DE VISTORIA (Substitui window.confirm)*/}
+      {/* ========================================================= */}
+      <Modal show={modalConfirmVistoria} onHide={() => setModalConfirmVistoria(false)} centered>
+        <Modal.Header closeButton className="bg-warning text-dark">
+          <Modal.Title className="fs-6 fw-bold">⚠️ Confirmar Vistoria</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="py-4">
+          <p className="mb-0">Deseja marcar esta máquina como <strong>Pronta para Vistoria</strong>? Os gestores serão imediatamente notificados.</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" size="sm" onClick={() => setModalConfirmVistoria(false)}>
+            Cancelar
+          </Button>
+          <Button variant="warning" size="sm" onClick={handleProntaParaVistoria} className="fw-bold">
+            Sim, Marcar como Pronta
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ========================================================= */}
+      {/* MODAL DE DEVOLUÇÃO DE PEÇA (Substitui o window.prompt)     */}
+      {/* ========================================================= */}
+      <Modal show={modalDevolucao.show} onHide={() => setModalDevolucao({ show: false, itemId: null, nomeItem: '' })} centered>
+        <Modal.Header closeButton className="bg-danger text-white">
+          <Modal.Title className="fs-6 fw-bold">↩️ Devolver Peça com Defeito</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="py-4">
+          <p className="small text-muted mb-2">Informe o defeito apresentado pela peça: <strong>{modalDevolucao.nomeItem}</strong></p>
+          <Form.Group>
+            <Form.Control 
+              as="textarea" 
+              rows={3} 
+              placeholder="Descreva o motivo da devolução..." 
+              value={motivoDefeito}
+              onChange={(e) => setMotivoDefeito(e.target.value)}
+              className="bg-light"
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" size="sm" onClick={() => setModalDevolucao({ show: false, itemId: null, nomeItem: '' })}>
+            Cancelar
+          </Button>
+          <Button variant="danger" size="sm" onClick={confirmarDevolucaoPeca} disabled={!motivoDefeito.trim()}>
+            Confirmar Devolução
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 }
 

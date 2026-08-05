@@ -1,4 +1,4 @@
-export type StatusSolicitacao = 'Pendente' | 'Em atendimento' | 'Concluída' | 'Cancelada';
+export type StatusSolicitacao = 'PENDENTE' | 'EM ATENDIMENTO' | 'PRONTA PARA VISTORIA' | 'CONCLUIDA' | 'CANCELADA';
 
 export interface Solicitacao {
   id: number;
@@ -12,6 +12,8 @@ export interface Solicitacao {
   responsavel_usuario_id: number; 
   unidade_id: number;
   justificativa: string;
+  numero_pedido_externo?: string | null;
+  documento_emitido_em?: string | null;
 }
 
 export interface SolicitacaoCreateItem {
@@ -32,18 +34,31 @@ export interface SolicitacaoDetalhada extends Solicitacao {
   responsavel?: { 
     nome_completo: string;
   };
+  unidades_organizacionais?: {
+    id: number;
+    nome: string;
+    sigla?: string;
+  };
+  usuarios_solicitacoes_usuario_idTousuarios?: {
+    id: number;
+    nome_completo: string;
+  };
+  usuarios_solicitacoes_responsavel_usuario_idTousuarios?: {
+    id: number;
+    nome_completo: string;
+  };
   solicitacao_itens: {
     id: number;
     quantidade_solicitada: number;
-    status_entrega: 'Pendente' | 'Entregue' | 'Cancelado' | 'Defeito';
+    status_entrega: 'Pendente' | 'Entregue' | 'Cancelado' | 'Defeito' | 'Recebida pelo Técnico' | 'Devolvida';
     data_entrega: string | null;
     itens: {
       id: number;
       descricao: string;
+      codigo_sipac?: string | null;
     };
   }[];
 }
-
 export interface PaginacaoMeta {
   total: number;
   page: number;

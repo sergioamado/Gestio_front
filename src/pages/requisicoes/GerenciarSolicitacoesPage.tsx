@@ -15,13 +15,11 @@ function GerenciarSolicitacoesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados de Paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const ITEMS_PER_PAGE = 10;
 
-  
   const [filters, setFilters] = useState({
     status: 'ATIVAS',
     tecnico_id_filtro: '',
@@ -40,7 +38,6 @@ function GerenciarSolicitacoesPage() {
     }
   }, [user]);
 
-  // Adicionado flag isSilent para o Auto-Refresh não piscar a tela
   const fetchSolicitacoes = useCallback((isSilent = false) => {
     if (!user) return;
     
@@ -54,10 +51,9 @@ function GerenciarSolicitacoesPage() {
     
     if (user.role !== 'admin') params.unidade_id = user.unidade_id;
     
-    // Lógica para traduzir 'ATIVAS' num array para o Backend
     if (filters.status) {
       if (filters.status === 'ATIVAS') {
-        params.status = ['PENDENTE', 'EM ATENDIMENTO'];
+        params.status = ['PENDENTE', 'EM ATENDIMENTO', 'PRONTA PARA VISTORIA']; // 🚀 Adicionado à lista de "ativas"
       } else {
         params.status = filters.status;
       }
@@ -90,15 +86,10 @@ function GerenciarSolicitacoesPage() {
     fetchTecnicos();
   }, [fetchTecnicos]);
 
-  // Auto-Refresh configurado para a cada 1 minuto (60000ms)
   useEffect(() => {
-    fetchSolicitacoes(false); // Carga inicial com Loading visual
-    
-    const intervalId = setInterval(() => {
-      fetchSolicitacoes(true); // Carga silenciosa em background
-    }, 60000);
-
-    return () => clearInterval(intervalId); // Previne memory leaks ao sair da página
+    fetchSolicitacoes(false); 
+    const intervalId = setInterval(() => fetchSolicitacoes(true), 60000);
+    return () => clearInterval(intervalId); 
   }, [fetchSolicitacoes]);
 
   const handleFilterChange = (e: React.ChangeEvent<any>) => {
@@ -128,11 +119,7 @@ function GerenciarSolicitacoesPage() {
   
   return (
     <MainLayout pageTitle="📋 Gerenciar Ordens de Serviço">
-      {error && (
-        <Alert variant="danger" onClose={() => setError(null)} dismissible className="shadow-sm border-0">
-          {error}
-        </Alert>
-      )}
+      {error && <Alert variant="danger" onClose={() => setError(null)} dismissible className="shadow-sm border-0">{error}</Alert>}
 
       <Card className="floating-card border-0 shadow-sm mb-4 bg-white border-start border-primary border-4">
         <Card.Body className="p-4">
@@ -141,15 +128,12 @@ function GerenciarSolicitacoesPage() {
             <Col md={4}>
               <Form.Group>
                 <Form.Label className="small fw-bold text-secondary text-uppercase">Status da OS</Form.Label>
-                <Form.Select 
-                  name="status" 
-                  value={filters.status} 
-                  onChange={handleFilterChange}
-                  className="bg-light border-0 shadow-none fw-medium"
-                >
+                <Form.Select name="status" value={filters.status} onChange={handleFilterChange} className="bg-light border-0 shadow-none fw-medium">
                   <option value="">📋 Todos os Status</option>
+                  <option value="ATIVAS">🔥 Em Aberto (Ativas)</option>
                   <option value="PENDENTE">⏳ Pendente (Aprovação)</option>
                   <option value="EM ATENDIMENTO">🛠️ Em Atendimento</option>
+                  <option value="PRONTA PARA VISTORIA">👀 Pronta para Vistoria</option>
                   <option value="CONCLUIDA">✅ Concluída</option>
                   <option value="CANCELADA">❌ Cancelada</option>
                 </Form.Select>
@@ -159,16 +143,9 @@ function GerenciarSolicitacoesPage() {
             <Col md={4}>
               <Form.Group>
                 <Form.Label className="small fw-bold text-secondary text-uppercase">Técnico Responsável</Form.Label>
-                <Form.Select 
-                  name="tecnico_id_filtro" 
-                  value={filters.tecnico_id_filtro} 
-                  onChange={handleFilterChange}
-                  className="bg-light border-0 shadow-none fw-medium"
-                >
+                <Form.Select name="tecnico_id_filtro" value={filters.tecnico_id_filtro} onChange={handleFilterChange} className="bg-light border-0 shadow-none fw-medium">
                   <option value="">Toda a Equipe</option>
-                  {tecnicos.map(t => (
-                    <option key={t.id} value={t.id}>{t.nome_completo}</option>
-                  ))}
+                  {tecnicos.map(t => <option key={t.id} value={t.id}>{t.nome_completo}</option>)}
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -178,14 +155,7 @@ function GerenciarSolicitacoesPage() {
                 <Form.Label className="small fw-bold text-secondary text-uppercase">Buscar por Nº GLPI</Form.Label>
                 <InputGroup className="shadow-sm">
                   <InputGroup.Text className="bg-light border-0 text-muted fw-bold">#</InputGroup.Text>
-                  <Form.Control 
-                    type="number" 
-                    name="numero_glpi" 
-                    value={filters.numero_glpi} 
-                    onChange={handleFilterChange} 
-                    placeholder="Ex: 12345" 
-                    className="bg-light border-0 shadow-none fw-medium"
-                  />
+                  <Form.Control type="number" name="numero_glpi" value={filters.numero_glpi} onChange={handleFilterChange} placeholder="Ex: 12345" className="bg-light border-0 shadow-none fw-medium" />
                 </InputGroup>
               </Form.Group>
             </Col>
@@ -215,7 +185,7 @@ function GerenciarSolicitacoesPage() {
                     key={s.id} 
                     solicitacao={s} 
                     onUpdate={fetchSolicitacoes}
-                    currentUserRole={user?.role} // Passamos o cargo do usuário logado para o item
+                    currentUserRole={user?.role} 
                   />
               ))}
               </Accordion>
@@ -226,9 +196,7 @@ function GerenciarSolicitacoesPage() {
               <Pagination className="shadow-sm">
                 <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
                 <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                
                 {renderPaginationItems()}
-                
                 <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
                 <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
               </Pagination>

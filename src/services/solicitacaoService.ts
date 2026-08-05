@@ -35,3 +35,8 @@ export const sinalizarDefeitoItem = async (itemId: number) => {
   const response = await api.put(`/solicitacoes/itens/${itemId}/defeito`);
   return response.data;
 };
+
+export const updateSolicitacao = async (id: number, data: any) => {
+  const response = await api.put(`/solicitacoes/${id}`, data);
+  return response.data;
+};
