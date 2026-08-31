@@ -26,11 +26,11 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [isCancelingAll, setIsCancelingAll] = useState(false);
 
-  // 🚀 INICIALIZAÇÃO DOS MOTORES UI
+  //  INICIALIZAÇÃO DOS MOTORES UI
   const { confirmar } = useConfirm();
   const { mostrarCard } = useToast();
 
-  // 1. Cancelar um item individualmente
+  //  Cancelar um item individualmente
   const handleCancelarItem = async (itemId: number) => {
     const confirmou = await confirmar({
       titulo: '🗑️ Cancelar Peça',
@@ -57,7 +57,7 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
     }
   };
 
-  // 2. Sinalizar peça com defeito
+  // Sinalizar peça com defeito
   const handleSinalizarDefeito = async (itemId: number) => {
     const confirmou = await confirmar({
       titulo: '⚠️ Sinalizar Defeito',
@@ -84,7 +84,7 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
     }
   };
 
-  // 3. Cancelar a solicitação inteira (todos os itens pendentes)
+  // Cancelar a solicitação inteira (todos os itens pendentes)
   const handleCancelarTudo = async () => {
     const confirmou = await confirmar({
       titulo: '🗑️ Cancelar Toda a Solicitação',

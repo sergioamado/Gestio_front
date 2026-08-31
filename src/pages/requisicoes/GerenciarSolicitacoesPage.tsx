@@ -53,7 +53,7 @@ function GerenciarSolicitacoesPage() {
     
     if (filters.status) {
       if (filters.status === 'ATIVAS') {
-        params.status = ['PENDENTE', 'EM ATENDIMENTO', 'PRONTA PARA VISTORIA']; // 🚀 Adicionado à lista de "ativas"
+        params.status = ['PENDENTE', 'EM ATENDIMENTO', 'PRONTA PARA VISTORIA']; // Adicionado à lista de "ativas"
       } else {
         params.status = filters.status;
       }

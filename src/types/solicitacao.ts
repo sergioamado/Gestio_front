@@ -47,11 +47,13 @@ export interface SolicitacaoDetalhada extends Solicitacao {
     id: number;
     nome_completo: string;
   };
+  
   solicitacao_itens: {
     id: number;
     quantidade_solicitada: number;
-    status_entrega: 'Pendente' | 'Entregue' | 'Cancelado' | 'Defeito' | 'Recebida pelo Técnico' | 'Devolvida';
+    status_entrega: 'Pendente' | 'Entregue' | 'Cancelado' | 'Defeito' | 'Recebida pelo Técnico' | 'Devolvida' | 'Aguardando Devolução' | 'Devolução Aceite';
     data_entrega: string | null;
+    tipo_uso?: string;
     itens: {
       id: number;
       descricao: string;

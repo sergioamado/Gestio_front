@@ -40,3 +40,8 @@ export const updateSolicitacao = async (id: number, data: any) => {
   const response = await api.put(`/solicitacoes/${id}`, data);
   return response.data;
 };
+
+export const converterTesteEmConsumo = async (itemId: number) => {
+  const response = await api.post(`/solicitacoes/item/${itemId}/converter-consumo`);
+  return response.data;
+};
