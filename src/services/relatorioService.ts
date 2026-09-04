@@ -26,3 +26,15 @@ export const getLatestSolicitacoes = async (): Promise<SolicitacaoRecente[]> => 
   const response = await api.get('/solicitacoes/latest');
   return response.data;
 };
+
+export const relatoriosService = {
+  getDashboardProducao: async (dataInicial?: string, dataFinal?: string) => {
+    // Monta os parâmetros de data na URL 
+    const params = new URLSearchParams();
+    if (dataInicial) params.append('dataInicial', dataInicial);
+    if (dataFinal) params.append('dataFinal', dataFinal);
+    
+    const response = await api.get(`/relatorios/producao-dashboard?${params.toString()}`);
+    return response.data;
+  }
+};

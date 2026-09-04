@@ -95,7 +95,7 @@ export interface AtendimentoImpressora {
     modelo: string;
     localizacao: string;
   };
-  tecnico_responsavel?: {
+  tecnico?: {
     nome_completo: string;
   };
   unidades_organizacionais?: {

@@ -9,3 +9,4 @@ export * from './manutencao';
 export * from './impressora';
 export * from './patrimonio';
 export * from './relatorio';
+export * from './servico';

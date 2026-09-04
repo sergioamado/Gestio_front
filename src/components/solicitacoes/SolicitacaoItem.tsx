@@ -77,7 +77,7 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
   });
   const [motivoDefeito, setMotivoDefeito] = useState('');
 
-  // 🚀 Novo Modal de Conversão Teste -> Consumo
+  // Novo Modal de Conversão Teste -> Consumo
   const [modalConversao, setModalConversao] = useState<{ show: boolean; itemId: number | null; nomeItem: string }>({
     show: false, itemId: null, nomeItem: ''
   });
@@ -161,7 +161,7 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     }
   };
 
-  // 🚀 AÇÃO DO TÉCNICO: Confirmar Conversão (Teste -> Consumo)
+  // AÇÃO DO TÉCNICO: Confirmar Conversão (Teste -> Consumo)
   const confirmarConversaoTesteParaConsumo = async () => {
     if (modalConversao.itemId === null) return;
     setIsSaving(true);
@@ -324,11 +324,11 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
         <option value="Recebida pelo Técnico">Em posse do Técnico</option>
         <option value="Aguardando Devolução">Aguardando Devolução (Teste)</option>
         <option value="Devolvida">Devolvida (Técnico)</option>
-        {/* 🚀 NOVO STATUS PARA O GESTOR: */}
+        {/* NOVO STATUS PARA O GESTOR: */}
         <option value="Devolução Aceite">Devolução Aceite (Almoxarifado)</option>
       </Form.Select>
       
-      {/* 🚀 NOVO BOTÃO RÁPIDO PARA O GESTOR: Aceitar Devolução Física */}
+      {/* NOVO BOTÃO RÁPIDO PARA O GESTOR: Aceitar Devolução Física */}
       {(itemStatus === 'Aguardando Devolução' || itemStatus === 'Devolvida') && (
         <Button 
           variant="outline-success" 
@@ -360,7 +360,7 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
          </Button>
        )}
        
-       {/* 🚀 CORREÇÃO DO BOTÃO DE DEVOLVER:
+       {/* CORREÇÃO DO BOTÃO DE DEVOLVER:
            O técnico PODE devolver se a peça estiver 'Entregue' (ainda lá no balcão) OU 'Recebida pelo Técnico' (já na bancada dele) 
            E não pode devolver se já a devolveu. 
        */}
@@ -480,7 +480,7 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
         </Modal.Footer>
       </Modal>
 
-      {/* 🚀 MODAL DE CONVERSÃO: TESTE -> CONSUMO */}
+      {/* MODAL DE CONVERSÃO: TESTE -> CONSUMO */}
       <Modal show={modalConversao.show} onHide={() => setModalConversao({ show: false, itemId: null, nomeItem: '' })} centered>
         <Modal.Header closeButton className="bg-primary text-white">
           <Modal.Title className="fs-6 fw-bold">✅ Solicitar Peça Definitiva</Modal.Title>

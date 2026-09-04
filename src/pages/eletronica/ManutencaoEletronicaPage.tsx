@@ -95,7 +95,7 @@ function ManutencaoEletronicaPage() {
     return filtrado.sort((a, b) => new Date(b.data_entrada).getTime() - new Date(a.data_entrada).getTime());
   }, [filaCompleta, filters]);
   
-  if (!user || (!user.role.startsWith('tecnico') && user.role !== 'admin')) {
+  if (!user || (!user.role.startsWith('tecnico') && user.role !== 'admin' && user.role !== 'gerente')) {
     return (
       <MainLayout pageTitle="Acesso Negado">
         <Alert variant="danger" className="shadow-sm">Você não tem permissão para acessar esta página.</Alert>
@@ -111,7 +111,7 @@ function ManutencaoEletronicaPage() {
         <Card.Header className="bg-white border-bottom-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
           <h5 className="fw-bold text-dark mb-0">Filtros de Pesquisa</h5>
           
-          {/* 🚀 Botão de Novo Registro oculto para o Administrador */}
+          {/*  Botão de Novo Registro oculto para o Administrador */}
           {!isAdmin && (
             <PrimaryButton onClick={() => setShowCreateModal(true)}>
               + Novo Registro

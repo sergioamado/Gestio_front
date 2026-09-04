@@ -46,10 +46,10 @@ function AtendimentosTable({ atendimentos, onDetails, onEdit }: AtendimentosTabl
                   </Badge>
                 </td>
                 <td>
-                  {item.tecnico_responsavel?.nome_completo ? (
+                  {item.tecnico?.nome_completo ? (
                     <span className="d-flex align-items-center">
                       <span className="me-2 text-primary">👤</span> 
-                      {item.tecnico_responsavel.nome_completo}
+                      {item.tecnico.nome_completo}
                     </span>
                   ) : (
                     <span className="fst-italic text-muted">Não Atribuído</span>

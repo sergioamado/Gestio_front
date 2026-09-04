@@ -22,6 +22,10 @@ import AtendimentosPage from './pages/impressoras/AtendimentosPage';
 import ListaBensPage from './pages/Patrimonio/ListaBensPage';
 import LevantamentoPage from './pages/Patrimonio/LevantamentoPage';
 import ImportarSipacPage from './pages/Patrimonio/ImportarSipacPage';
+import CatalogoServicosPage from './pages/servicos/CatalogoServicosPage';
+import ProducaoServicosPage from './pages/servicos/ProducaoServicosPage';
+import RelatoriosProducaoPage from './pages/servicos/RelatoriosProducaoPage';
+import AnalisesDashboardPage from './pages/AnalisesDashboardPage';
 
 function App() {
   return (
@@ -51,6 +55,10 @@ function App() {
                   <Route path="/levantamento" element={<LevantamentoPage/>} />
                   <Route path="/lista-bens" element={<ListaBensPage/>} />
                   <Route path="/importar-sipac" element={<ImportarSipacPage/>} />
+                  <Route path="/catalogo-servicos" element={<CatalogoServicosPage/>} />
+                  <Route path="/producao-servicos" element={<ProducaoServicosPage/>} />
+                  <Route path="/relatorios-producao" element={<RelatoriosProducaoPage/>} />
+                  <Route path="/analises-bi" element={<AnalisesDashboardPage/>} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/dashboard" />} />          

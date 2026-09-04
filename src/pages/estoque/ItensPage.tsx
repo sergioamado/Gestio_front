@@ -32,7 +32,7 @@ function ItensPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingItem, setViewingItem] = useState<Item | null>(null);
 
-  // 🚀 Regra de Ouro: Apenas Admin e Gerente podem gerir e ver quantidades
+  //  Regra de Ouro: Apenas Admin e Gerente podem gerir e ver quantidades
   const canManageItems = user?.role === 'admin' || user?.role === 'gerente';
 
   // Estados de Paginação e Filtros
@@ -118,7 +118,7 @@ function ItensPage() {
     return items;
   };
 
-  // 🚀 Travas de segurança nas ações
+  //  Travas de segurança nas ações
   const handleShowCreateModal = () => {
     if (!canManageItems) return;
     setEditingItem(null);
@@ -231,11 +231,11 @@ function ItensPage() {
           ) : itens.length > 0 ? (
              <ItensTable 
               itens={itens} 
-              // 🚀 Passa null/undefined se não puder editar/excluir
+              //  Passa null/undefined se não puder editar/excluir
               onEdit={canManageItems ? handleShowEditModal : undefined} 
               onDelete={canManageItems ? handleShowDeleteModal : undefined}
               onDetails={handleShowDetailsModal}
-              canManageItems={canManageItems} // 🚀 Passamos a permissão para a tabela esconder a coluna "Quantidade"
+              canManageItems={canManageItems} //  Passamos a permissão para a tabela esconder a coluna "Quantidade"
             />
           ) : (
              <div className="text-center text-muted p-5 border border-dashed rounded bg-light my-3">

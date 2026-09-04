@@ -10,6 +10,10 @@ export interface Item {
   preco_unitario: number;
   unidade_id: number;
   is_permanente: boolean;
+  quantidade_estoque: number;
+  quantidade_teste: number;
+  quantidade_defeito: number;
+  localizacao_teste?: string | null;
   patrimonio_item?: string;
   unidades_organizacionais?: {
     nome: string;
