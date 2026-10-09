@@ -11,6 +11,7 @@ import ManutencaoEletronicaForm from '../../components/manutencao/ManutencaoElet
 import ManutencaoCard from '../../components/manutencao/ManutencaoCard';
 import DetalhesManutencaoModal from '../../components/manutencao/DetalhesManutencaoModal';
 import { useAuth } from '../../hooks/useAuth';
+import { socket } from '../../services/socket'; // Antena de Rádio!
 
 function ManutencaoEletronicaPage() {
   const { user } = useAuth();
@@ -23,10 +24,8 @@ function ManutencaoEletronicaPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedManutencao, setSelectedManutencao] = useState<ManutencaoEletronica | null>(null);
 
-  // Verificação se é Administrador
   const isAdmin = user?.role === 'admin';
 
-  // Filtros atualizados: 'ATIVAS' como padrão e inclusão do buscaGlpi
   const [filters, setFilters] = useState({ 
     status: 'ATIVAS', 
     tecnicoId: '', 
@@ -35,7 +34,6 @@ function ManutencaoEletronicaPage() {
     buscaGlpi: '' 
   });
 
-  // Modificado para aceitar isSilent (evita que a tela pisque a cada 1 minuto)
   const fetchData = useCallback((isSilent = false) => {
     if (!isSilent) setLoading(true);
     setError(null);
@@ -52,14 +50,26 @@ function ManutencaoEletronicaPage() {
     });
   }, []);
 
-  // Motor de Auto-Refresh (60 segundos)
+
+  // MOTOR DE TEMPO REAL (WebSockets)
+  
   useEffect(() => {
-    fetchData(false); // Carga inicial
-    const intervalId = setInterval(() => {
-      fetchData(true); // Carga silenciosa
-    }, 60000);
-    return () => clearInterval(intervalId); // Limpa ao desmontar
+    fetchData(false); // Carga inicial com Spinner
+
+    const lidarComAtualizacaoTempoReal = () => {
+      console.log("🔄 O Servidor avisou: Fila de Eletrônica atualizada! Recarregando silenciosamente...");
+      fetchData(true); 
+    };
+
+    // Fica à escuta do evento específico da Manutenção
+    socket.on('atualizar_manutencao', lidarComAtualizacaoTempoReal);
+
+    return () => {
+      socket.off('atualizar_manutencao', lidarComAtualizacaoTempoReal);
+    };
   }, [fetchData]);
+  
+
 
   const handleShowDetails = (item: ManutencaoEletronica) => {
     setSelectedManutencao(item);
@@ -72,7 +82,6 @@ function ManutencaoEletronicaPage() {
 
   const filteredFila = useMemo(() => {
     const filtrado = filaCompleta.filter(item => {
-      // Lógica do Status Ocultando Concluídos (Eletrônica #6)
       let matchStatus = true;
       if (filters.status === 'ATIVAS') {
         matchStatus = item.status === 'Pendente' || item.status === 'Em_manutencao';
@@ -84,14 +93,12 @@ function ManutencaoEletronicaPage() {
       const matchDataInicio = !filters.dataInicio || new Date(item.data_entrada) >= new Date(filters.dataInicio);
       const matchDataFim = !filters.dataFim || new Date(item.data_entrada) <= new Date(filters.dataFim);
       
-      // Tratativa segura para o GLPI
       const glpiValue = (item as any).numero_glpi || (item as any).glpi || (item as any).chamado_glpi || '';
       const matchGlpi = !filters.buscaGlpi || String(glpiValue).includes(filters.buscaGlpi.trim());
 
       return matchStatus && matchTecnico && matchDataInicio && matchDataFim && matchGlpi;
     });
 
-    // Ordenação do mais recente para o mais antigo
     return filtrado.sort((a, b) => new Date(b.data_entrada).getTime() - new Date(a.data_entrada).getTime());
   }, [filaCompleta, filters]);
   
@@ -110,8 +117,6 @@ function ManutencaoEletronicaPage() {
       <Card className="floating-card border-0 shadow-sm mb-4">
         <Card.Header className="bg-white border-bottom-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
           <h5 className="fw-bold text-dark mb-0">Filtros de Pesquisa</h5>
-          
-          {/*  Botão de Novo Registro oculto para o Administrador */}
           {!isAdmin && (
             <PrimaryButton onClick={() => setShowCreateModal(true)}>
               + Novo Registro
@@ -141,7 +146,6 @@ function ManutencaoEletronicaPage() {
                 </Form.Select>
               </Form.Group>
             </Col>
-            {/* Novo Campo de Busca GLPI */}
             <Col md={2}>
               <Form.Group>
                 <Form.Label className="fw-bold text-secondary small text-uppercase">Nº GLPI</Form.Label>
@@ -178,7 +182,6 @@ function ManutencaoEletronicaPage() {
                   manutencao={item} 
                   onDetailsClick={handleShowDetails} 
                   onUpdate={fetchData} 
-                  
                 />
               </Col>
             ))
@@ -216,7 +219,6 @@ function ManutencaoEletronicaPage() {
           onHide={() => setSelectedManutencao(null)}
           manutencao={selectedManutencao}
           onUpdate={fetchData}
-           
         />
       )}
     </MainLayout>

@@ -26,3 +26,16 @@ export interface ProducaoServico {
   servico?: { nome_servico: string; categoria: string; };
   tecnico?: { nome_completo: string; };
 }
+
+
+export interface ProducaoFormProps {
+  catalogo: CatalogoServico[];
+  historico: ProducaoServico[];
+  user: any;
+  onSubmit: (data: any) => void;
+  isLoading: boolean;
+  onCancel: () => void;
+  defaultTipoVinculo?: 'pecas' | 'impressora' | 'eletronica' | 'glpi';
+  defaultVinculoId?: string;
+  defaultPatrimonio?: string;
+}

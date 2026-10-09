@@ -7,6 +7,7 @@ import * as solicitacaoService from '../../services/solicitacaoService';
 import * as usuarioService from '../../services/usuarioService';
 import type { SolicitacaoDetalhada, User } from '../../types';
 import SolicitacaoItem from '../../components/solicitacoes/SolicitacaoItem';
+import { socket } from '../../services/socket'; //  A Antena de Rádio!
 
 function GerenciarSolicitacoesPage() {
   const { user } = useAuth();
@@ -26,6 +27,7 @@ function GerenciarSolicitacoesPage() {
     numero_glpi: '' 
   });
 
+  // Busca os Técnicos para o Filtro
   const fetchTecnicos = useCallback(async () => {
     if (user) {
       try {
@@ -38,6 +40,7 @@ function GerenciarSolicitacoesPage() {
     }
   }, [user]);
 
+  // Busca as Ordens de Serviço (isSilent = true evita que a tela pisque)
   const fetchSolicitacoes = useCallback((isSilent = false) => {
     if (!user) return;
     
@@ -53,7 +56,7 @@ function GerenciarSolicitacoesPage() {
     
     if (filters.status) {
       if (filters.status === 'ATIVAS') {
-        params.status = ['PENDENTE', 'EM ATENDIMENTO', 'PRONTA PARA VISTORIA']; // Adicionado à lista de "ativas"
+        params.status = ['PENDENTE', 'EM ATENDIMENTO', 'PRONTA PARA VISTORIA']; 
       } else {
         params.status = filters.status;
       }
@@ -82,15 +85,37 @@ function GerenciarSolicitacoesPage() {
       });
   }, [user, filters, currentPage]);
 
+
+  
+  //  MOTORES DE ARRANQUE E TEMPO REAL
+  
+
+  //  Carrega os técnicos apenas 1x ao entrar na tela
   useEffect(() => {
     fetchTecnicos();
   }, [fetchTecnicos]);
 
+  //  Carrega as OS e escuta o Servidor!
   useEffect(() => {
+    // Carrega a primeira vez de forma normal (mostrando o Spinner)
     fetchSolicitacoes(false); 
-    const intervalId = setInterval(() => fetchSolicitacoes(true), 60000);
-    return () => clearInterval(intervalId); 
-  }, [fetchSolicitacoes]);
+
+    // Define a função que o rádio vai disparar quando ouvir o grito
+    const lidarComAtualizacaoTempoReal = () => {
+      console.log("🔄 O Servidor avisou: Há uma OS nova ou atualizada! Recarregando silenciosamente...");
+      fetchSolicitacoes(true); // Atualiza os dados sem piscar a tela toda
+    };
+
+    // Fica  ouvindo!
+    socket.on('atualizar_tabelas_os', lidarComAtualizacaoTempoReal);
+
+    // Quando o usuario sair da página, desliga a escuta desta tabela
+    return () => {
+      socket.off('atualizar_tabelas_os', lidarComAtualizacaoTempoReal);
+    };
+  }, [fetchSolicitacoes]); 
+  
+
 
   const handleFilterChange = (e: React.ChangeEvent<any>) => {
     setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));

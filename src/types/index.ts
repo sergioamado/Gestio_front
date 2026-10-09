@@ -10,3 +10,5 @@ export * from './impressora';
 export * from './patrimonio';
 export * from './relatorio';
 export * from './servico';
+export * from './dashboard';
+export * from './notificacao';

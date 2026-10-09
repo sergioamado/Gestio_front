@@ -1,11 +1,10 @@
-// src/components/solicitacoes/GerenciarItensSolicitacao.tsx
 import { useState } from 'react';
 import { Table, Badge, Button, Spinner } from 'react-bootstrap';
-import { TrashFill, ExclamationTriangleFill, CheckCircleFill, XCircleFill } from 'react-bootstrap-icons';
+import { TrashFill, ExclamationTriangleFill, CheckCircleFill, XCircleFill, Tools } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useToast } from '../../contexts/ToastContext';
 
-// Tipagem baseada na nova estrutura granular
 export interface SolicitacaoItemDetalhe {
   id: number;
   item_id: number;
@@ -18,7 +17,7 @@ interface GerenciarItensProps {
   solicitacaoId: number;
   itensIniciais: SolicitacaoItemDetalhe[];
   statusGeralSolicitacao: string;
-  onUpdate: () => void; // Função para recarregar os dados da página
+  onUpdate: () => void;
 }
 
 function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSolicitacao, onUpdate }: GerenciarItensProps) {
@@ -26,11 +25,13 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [isCancelingAll, setIsCancelingAll] = useState(false);
 
-  //  INICIALIZAÇÃO DOS MOTORES UI
+  const navigate = useNavigate();
   const { confirmar } = useConfirm();
   const { mostrarCard } = useToast();
 
-  //  Cancelar um item individualmente
+  // VARIÁVEL INTELIGENTE: Verifica se a OS está trancada
+  const isOsFechada = statusGeralSolicitacao === 'CONCLUIDA' || statusGeralSolicitacao === 'CANCELADA';
+
   const handleCancelarItem = async (itemId: number) => {
     const confirmou = await confirmar({
       titulo: '🗑️ Cancelar Peça',
@@ -44,9 +45,7 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
     
     setLoadingId(itemId);
     try {
-      // Simulação da chamada à API: await api.put(`/solicitacoes/${solicitacaoId}/itens/${itemId}/cancelar`);
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulando API
       setItens(itens.map(i => i.id === itemId ? { ...i, status: 'CANCELADO' } : i));
       mostrarCard('Peça Cancelada', 'Item cancelado com sucesso.', 'sucesso');
       onUpdate();
@@ -57,7 +56,6 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
     }
   };
 
-  // Sinalizar peça com defeito
   const handleSinalizarDefeito = async (itemId: number) => {
     const confirmou = await confirmar({
       titulo: '⚠️ Sinalizar Defeito',
@@ -71,9 +69,7 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
 
     setLoadingId(itemId);
     try {
-      // Simulação: await api.post(`/solicitacoes/${solicitacaoId}/itens/${itemId}/defeito`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulando API
       setItens(itens.map(i => i.id === itemId ? { ...i, status: 'DEFEITO' } : i));
       mostrarCard('Defeito Registado', 'Peça isolada com defeito no sistema.', 'alerta');
       onUpdate();
@@ -84,7 +80,6 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
     }
   };
 
-  // Cancelar a solicitação inteira (todos os itens pendentes)
   const handleCancelarTudo = async () => {
     const confirmou = await confirmar({
       titulo: '🗑️ Cancelar Toda a Solicitação',
@@ -98,9 +93,7 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
 
     setIsCancelingAll(true);
     try {
-      // Simulação: await api.put(`/solicitacoes/${solicitacaoId}/cancelar-tudo`);
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      
+      await new Promise(resolve => setTimeout(resolve, 1200)); // Simulando API
       setItens(itens.map(i => i.status === 'PENDENTE' ? { ...i, status: 'CANCELADO' } : i));
       mostrarCard('Solicitação Cancelada', 'Todos os itens pendentes foram cancelados.', 'sucesso');
       onUpdate();
@@ -129,17 +122,34 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
         <h6 className="fw-bold text-dark text-uppercase mb-0" style={{ letterSpacing: '0.5px' }}>
           Lista de Peças Solicitadas
         </h6>
-        {hasPendentes && statusGeralSolicitacao !== 'FINALIZADA' && (
-          <Button 
-            variant="outline-danger" 
-            size="sm" 
-            className="fw-bold rounded-pill px-3 shadow-sm"
-            onClick={handleCancelarTudo}
-            disabled={isCancelingAll}
-          >
-            {isCancelingAll ? <Spinner size="sm" animation="border" /> : <><TrashFill className="me-1"/> Cancelar Toda a Solicitação</>}
-          </Button>
-        )}
+        
+        <div className="d-flex gap-2">
+          {/* BOTÃO DE ATALHO PARA PRODUÇÃO (Aparece apenas quando a OS for Concluída) */}
+          {statusGeralSolicitacao === 'CONCLUIDA' && (
+            <Button 
+              variant="success" 
+              size="sm" 
+              className="fw-bold rounded-pill px-3 shadow-sm d-flex align-items-center"
+              onClick={() => navigate('/producao', { 
+                state: { vinculo_id: solicitacaoId, tipo_vinculo: 'pecas' } 
+              })}
+            >
+              <Tools className="me-2"/> Lançar Produção Desta OS
+            </Button>
+          )}
+
+          {hasPendentes && !isOsFechada && (
+            <Button 
+              variant="outline-danger" 
+              size="sm" 
+              className="fw-bold rounded-pill px-3 shadow-sm"
+              onClick={handleCancelarTudo}
+              disabled={isCancelingAll}
+            >
+              {isCancelingAll ? <Spinner size="sm" animation="border" /> : <><TrashFill className="me-1"/> Cancelar Solicitação</>}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="table-responsive rounded border shadow-sm">
@@ -161,33 +171,30 @@ function GerenciarItensSolicitacao({ solicitacaoId, itensIniciais, statusGeralSo
                 <td className="text-end pe-3">
                   <div className="d-flex justify-content-end gap-2">
                     
-                    {/* Ação: Sinalizar Defeito (Aparece apenas se a peça foi aprovada/entregue) */}
                     {item.status === 'APROVADO' && (
                       <Button 
                         variant="outline-danger" 
                         size="sm" 
-                        title="Sinalizar que a peça apresentou defeito"
+                        title={isOsFechada ? "OS Fechada. Não é possível alterar." : "Sinalizar que a peça apresentou defeito"}
                         onClick={() => handleSinalizarDefeito(item.id)}
-                        disabled={loadingId === item.id}
+                        disabled={loadingId === item.id || isOsFechada} // BLINDA O BOTÃO SE A OS ESTIVER FECHADA
                       >
                         {loadingId === item.id ? <Spinner size="sm" animation="border" /> : <ExclamationTriangleFill />}
                       </Button>
                     )}
 
-                    {/* Ação: Cancelar Item Específico (Aparece se estiver pendente) */}
                     {item.status === 'PENDENTE' && (
                       <Button 
                         variant="outline-secondary" 
                         size="sm" 
-                        title="Cancelar apenas este item"
+                        title={isOsFechada ? "OS Fechada. Não é possível alterar." : "Cancelar apenas este item"}
                         onClick={() => handleCancelarItem(item.id)}
-                        disabled={loadingId === item.id}
+                        disabled={loadingId === item.id || isOsFechada} // BLINDA O BOTÃO
                       >
                         {loadingId === item.id ? <Spinner size="sm" animation="border" /> : <TrashFill />}
                       </Button>
                     )}
 
-                    {/* Feedback visual se o item não tiver ações disponíveis */}
                     {item.status === 'CANCELADO' && <span className="text-muted small fst-italic">Sem ações</span>}
                     {item.status === 'DEFEITO' && <span className="text-danger small fw-bold">Isolada</span>}
                   </div>

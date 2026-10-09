@@ -1,45 +1,42 @@
 // src/components/servicos/ProducaoForm.tsx
 import React, { useState, useMemo } from 'react';
-import { Form, Row, Col, Badge, InputGroup, Button, Alert } from 'react-bootstrap';
-import { Search, StarFill, PcDisplay } from 'react-bootstrap-icons';
-import { useForm } from 'react-hook-form';
-import PrimaryButton from '../PrimaryButton';
+import { Form, Row, Col, Badge, InputGroup, Button, Card, Table, Alert } from 'react-bootstrap';
+import { Search, CheckCircleFill, TrashFill, StarFill, InfoCircleFill } from 'react-bootstrap-icons';
 import type { CatalogoServico, ProducaoServico } from '../../types';
 
-interface ProducaoFormData {
-  servico_id: number;
-  tipo_vinculo: 'pecas' | 'impressora' | 'eletronica' | 'glpi';
-  vinculo_id: string;
-  patrimonio_serie?: string; // 🚀 NOVO CAMPO
-  observacoes: string;
-}
-
-interface ProducaoFormProps {
-  catalogo: CatalogoServico[];
-  historico: ProducaoServico[];
+export interface ProducaoFormProps {
+  catalogo?: CatalogoServico[];
+  historico?: ProducaoServico[];
   user: any;
   onSubmit: (data: any) => void;
   isLoading: boolean;
   onCancel: () => void;
+  defaultTipoVinculo?: 'pecas' | 'impressora' | 'eletronica' | 'glpi';
+  defaultVinculoId?: string;
+  defaultPatrimonio?: string;
 }
 
-export default function ProducaoForm({ catalogo, historico, user, onSubmit, isLoading, onCancel }: ProducaoFormProps) {
-  const [buscaServico, setBuscaServico] = useState('');
+export default function ProducaoForm({ 
+  catalogo = [], 
+  historico = [], 
+  user, 
+  onSubmit, 
+  isLoading, 
+  onCancel, 
+  defaultTipoVinculo, 
+  defaultVinculoId, 
+  defaultPatrimonio 
+}: ProducaoFormProps) {
   
   const isGestor = user?.role === 'admin' || user?.role === 'gerente';
 
-  const getDefaultVinculo = (): 'pecas' | 'impressora' | 'eletronica' | 'glpi' => {
-    if (user?.role === 'tecnico_impressora') return 'impressora';
-    if (user?.role === 'tecnico_eletronica') return 'eletronica';
-    return 'pecas'; 
-  };
+  const [tipoVinculo, setTipoVinculo] = useState(defaultTipoVinculo || (user?.role === 'tecnico_impressora' ? 'impressora' : user?.role === 'tecnico_eletronica' ? 'eletronica' : 'pecas'));
+  const [vinculoId, setVinculoId] = useState(defaultVinculoId || '');
+  const [patrimonioSerie, setPatrimonioSerie] = useState(defaultPatrimonio || '');
+  const [observacoes, setObservacoes] = useState('');
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProducaoFormData>({
-    defaultValues: { tipo_vinculo: getDefaultVinculo() }
-  });
-
-  const tipoSelecionado = watch('tipo_vinculo');
-  const servicoSelecionadoId = watch('servico_id');
+  const [buscaServico, setBuscaServico] = useState('');
+  const [carrinho, setCarrinho] = useState<CatalogoServico[]>([]);
 
   const categoriasPermitidas = useMemo(() => {
     if (isGestor) return null; 
@@ -49,16 +46,17 @@ export default function ProducaoForm({ catalogo, historico, user, onSubmit, isLo
   }, [user, isGestor]);
 
   const servicosMaisFrequentes = useMemo(() => {
-    if (!user) return [];
+    if (!user || !historico.length || !catalogo.length) return [];
     const contagem: Record<number, number> = {};
     historico.filter(h => h.tecnico_id === user.id).forEach(h => {
       contagem[h.servico_id] = (contagem[h.servico_id] || 0) + 1;
     });
-    const topIds = Object.entries(contagem).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => Number(e[0]));
+    const topIds = Object.entries(contagem).sort((a, b) => b[1] - a[1]).slice(0, 4).map(e => Number(e[0]));
     return catalogo.filter(c => topIds.includes(c.id));
   }, [historico, catalogo, user]);
 
   const catalogoFiltrado = useMemo(() => {
+    if (!catalogo.length) return [];
     return catalogo.filter(svc => {
       const matchCat = categoriasPermitidas ? categoriasPermitidas.includes(svc.categoria) : true;
       const matchBusca = svc.nome_servico.toLowerCase().includes(buscaServico.toLowerCase()) || svc.categoria.toLowerCase().includes(buscaServico.toLowerCase());
@@ -66,145 +64,196 @@ export default function ProducaoForm({ catalogo, historico, user, onSubmit, isLo
     });
   }, [catalogo, categoriasPermitidas, buscaServico]);
 
-  const handleFormSubmit = (data: ProducaoFormData) => {
+  const adicionarAoCarrinho = (servico: CatalogoServico) => {
+    if (!carrinho.find(c => c.id === servico.id)) {
+      setCarrinho([...carrinho, servico]);
+    }
+  };
+
+  const removerDoCarrinho = (id: number) => {
+    setCarrinho(carrinho.filter(c => c.id !== id));
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (carrinho.length === 0) return;
+
     const payload: any = { 
-      servico_id: Number(data.servico_id), 
-      observacoes: data.observacoes || null,
-      patrimonio_serie: data.patrimonio_serie || null // 🚀 ENVIANDO O PATRIMÔNIO
+      servicos: carrinho.map(c => c.id),
+      observacoes: observacoes || null,
+      patrimonio_serie: patrimonioSerie || null,
+      tipo_vinculo: tipoVinculo,
+      vinculo_id: vinculoId
     };
 
-    if (data.tipo_vinculo === 'glpi') {
-      payload.numero_glpi = String(data.vinculo_id);
+    if (tipoVinculo === 'glpi') {
+      payload.numero_glpi = String(vinculoId);
     } else {
-      const idVinculo = Number(data.vinculo_id);
-      if (data.tipo_vinculo === 'pecas') payload.solicitacao_peca_id = idVinculo;
-      if (data.tipo_vinculo === 'impressora') payload.atendimento_impr_id = idVinculo;
-      if (data.tipo_vinculo === 'eletronica') payload.manutencao_eletr_id = idVinculo;
+      const idNumerico = Number(vinculoId);
+      if (tipoVinculo === 'pecas') payload.solicitacao_peca_id = idNumerico;
+      if (tipoVinculo === 'impressora') payload.atendimento_impr_id = idNumerico;
+      if (tipoVinculo === 'eletronica') payload.manutencao_eletr_id = idNumerico;
     }
+
     onSubmit(payload);
   };
 
   return (
-    <Form onSubmit={handleSubmit(handleFormSubmit)}>
-      <input type="hidden" {...register("servico_id", { required: "Selecione um serviço na lista." })} />
+    <Form onSubmit={handleFormSubmit}>
+      <Card className="border-0 shadow-sm mb-4 border-start border-primary border-4 bg-light">
+        <Card.Body className="p-3">
+          <Row className="g-3 align-items-end">
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label className="fw-bold text-secondary small text-uppercase mb-1">Módulo / Origem</Form.Label>
+                <Form.Select value={tipoVinculo} onChange={e => setTipoVinculo(e.target.value as any)} disabled={!!defaultTipoVinculo} className="fw-bold shadow-sm border-0">
+                  <option value="pecas">OS de Peças (Estoque)</option>
+                  <option value="impressora">Atendimento Impressora</option>
+                  <option value="eletronica">Manutenção Eletrônica</option>
+                  <option value="glpi">GLPI</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label className="fw-bold text-secondary small text-uppercase mb-1">Nº do Chamado/OS</Form.Label>
+                <Form.Control type="text" value={vinculoId} onChange={e => setVinculoId(e.target.value)} disabled={!!defaultVinculoId} required placeholder="Ex: 152" className="fw-bold text-primary shadow-sm border-0"/>
+              </Form.Group>
+            </Col>
 
-      {/* SEÇÃO 1: SERVIÇO */}
-      <div className="mb-4 bg-light p-3 rounded border">
-        <Form.Label className="fw-bold text-dark">1. Qual serviço executou?</Form.Label>
-        
-        {servicosMaisFrequentes.length > 0 && (
-          <div className="mb-3">
-            <span className="small text-muted fw-bold d-block mb-2"><StarFill className="text-warning me-1"/> Frequentes:</span>
-            <div className="d-flex flex-wrap gap-2">
-              {servicosMaisFrequentes.map(svc => (
-                <Badge key={svc.id} bg={servicoSelecionadoId === svc.id ? 'primary' : 'white'} text={servicoSelecionadoId === svc.id ? 'white' : 'dark'}
-                  className={`px-3 py-2 border shadow-sm ${servicoSelecionadoId === svc.id ? 'border-primary' : 'border-secondary'}`}
-                  style={{ cursor: 'pointer' }} onClick={() => setValue('servico_id', svc.id, { shouldValidate: true })}>
-                  {svc.nome_servico}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        <InputGroup className="mb-2 shadow-sm">
-          <InputGroup.Text className="bg-white text-muted"><Search /></InputGroup.Text>
-          <Form.Control placeholder="Pesquisar catálogo..." value={buscaServico} onChange={(e) => setBuscaServico(e.target.value)} />
-        </InputGroup>
-        
-        <div className="list-group shadow-sm" style={{ maxHeight: '180px', overflowY: 'auto' }}>
-          {catalogoFiltrado.map(svc => (
-            <button key={svc.id} type="button" onClick={() => setValue('servico_id', svc.id, { shouldValidate: true })}
-              className={`list-group-item list-group-item-action py-2 ${servicoSelecionadoId === svc.id ? 'bg-primary bg-opacity-10 border-primary' : ''}`}>
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <strong className={servicoSelecionadoId === svc.id ? 'text-primary' : 'text-dark'}>{svc.nome_servico}</strong>
-                  <small className="d-block text-muted">{svc.categoria}</small>
-                </div>
-                <Badge bg="success">R$ {Number(svc.valor_estimado).toFixed(2)}</Badge>
-              </div>
-            </button>
-          ))}
-          {catalogoFiltrado.length === 0 && (
-            <div className="p-3 text-center text-muted small bg-white border">Nenhum serviço encontrado.</div>
-          )}
-        </div>
-        {errors.servico_id && <div className="text-danger small fw-bold mt-2">{errors.servico_id.message}</div>}
-      </div>
-
-      {/* SEÇÃO 2: VÍNCULO */}
-      <div className="mb-4">
-        <Form.Label className="fw-bold text-dark">2. Vínculo do Chamado</Form.Label>
-        <Row>
-          <Col md={6}>
-            <Form.Select {...register("tipo_vinculo")} className="shadow-sm border-primary mb-3">
-              {(isGestor || (user?.role !== 'tecnico_impressora' && user?.role !== 'tecnico_eletronica')) && (
-                <option value="pecas">Ordem de Serviço (Peças/Estoque)</option>
-              )}
-              {(isGestor || user?.role === 'tecnico_impressora') && (
-                <option value="impressora">Atendimento Impressora</option>
-              )}
-              {(isGestor || user?.role === 'tecnico_eletronica') && (
-                <option value="eletronica">Manutenção Eletrônica</option>
-              )}
-              <option value="glpi" className="fw-bold text-primary">Sem Peças (Apenas GLPI)</option>
-            </Form.Select>
-          </Col>
-          <Col md={6}>
-            <Form.Control 
-              type={tipoSelecionado === 'glpi' ? 'text' : 'number'} 
-              placeholder={tipoSelecionado === 'glpi' ? 'Nº do Ticket (Ex: 245123)' : 'Nº da OS (Ex: 152)'}
-              {...register("vinculo_id", { required: true })} 
-              isInvalid={!!errors.vinculo_id} 
-              className="shadow-sm" 
-            />
-          </Col>
-        </Row>
-
-        {/* 🚀 LÓGICA DE EXIBIÇÃO DO PATRIMÔNIO (SÓ APARECE NO GLPI) */}
-        {tipoSelecionado === 'glpi' ? (
-          <Row className="mt-2">
-            <Col md={12}>
-              <div className="bg-primary bg-opacity-10 p-3 rounded border border-primary border-opacity-25">
-                <Form.Group>
-                  <Form.Label className="fw-bold small text-primary d-flex align-items-center mb-1">
-                    <PcDisplay className="me-2" /> Patrimônio / Nº de Série do Equipamento
+            {tipoVinculo === 'glpi' ? (
+              <Col md={6}>
+                 <Form.Group>
+                  <Form.Label className="fw-bold text-secondary small text-uppercase mb-1 d-flex align-items-center">
+                    Patrimônio do Equipamento
                   </Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    placeholder="Ex: 123456 ou BR12345 (Opcional)"
-                    {...register("patrimonio_serie")} 
-                    className="shadow-sm" 
-                  />
-                  <Form.Text className="text-muted" style={{ fontSize: '0.75rem' }}>
-                    Sendo um chamado externo, informe o patrimônio para podermos rastrear o índice de reincidência desta máquina.
-                  </Form.Text>
+                  <Form.Control type="text" value={patrimonioSerie} onChange={e => setPatrimonioSerie(e.target.value)} placeholder="Ex: 123456" className="shadow-sm border-0"/>
+                </Form.Group>
+              </Col>
+            ) : (
+              <Col md={6}>
+                 <Alert variant="secondary" className="border-0 shadow-sm py-2 px-3 small d-flex align-items-center mb-0 h-100">
+                  <InfoCircleFill className="me-2 text-muted" />
+                  <span className="text-muted">O Patrimônio será extraído automaticamente da OS.</span>
+                </Alert>
+              </Col>
+            )}
+          </Row>
+        </Card.Body>
+      </Card>
+
+      <Row className="g-4">
+        <Col lg={7}>
+          <Card className="border-0 shadow-sm h-100 bg-white">
+            <Card.Body className="p-3">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6 className="fw-bold mb-0 fs-5 text-dark">📚 Catálogo de Serviços</h6>
+                  <Badge bg="primary" className="rounded-pill px-3">{catalogoFiltrado.length} disponíveis</Badge>
+              </div>
+              
+              {servicosMaisFrequentes.length > 0 && (
+                <div className="mb-3 d-flex gap-2 overflow-auto custom-scrollbar pb-1">
+                  {servicosMaisFrequentes.map(svc => (
+                     <Badge key={`freq-${svc.id}`} bg="warning" text="dark" className="px-3 py-2 shadow-sm" style={{ cursor: 'pointer' }} onClick={() => adicionarAoCarrinho(svc)}>
+                       <StarFill className="me-1"/> {svc.nome_servico}
+                     </Badge>
+                  ))}
+                </div>
+              )}
+
+              <InputGroup className="mb-3 shadow-sm">
+                <InputGroup.Text className="bg-white border-end-0"><Search /></InputGroup.Text>
+                <Form.Control className="border-start-0 bg-white" placeholder="Pesquisar serviço..." value={buscaServico} onChange={(e) => setBuscaServico(e.target.value)} />
+              </InputGroup>
+
+              <div style={{ maxHeight: '550px', overflowY: 'auto' }} className="pe-2 custom-scrollbar">
+                <Row className="g-2">
+                  {catalogoFiltrado.length === 0 ? (
+                      <div className="text-center text-muted mt-4 w-100">Nenhum serviço encontrado.</div>
+                  ) : (
+                      catalogoFiltrado.map(svc => {
+                        const noCarrinho = carrinho.some(c => c.id === svc.id);
+                        return (
+                          <Col md={12} key={svc.id}>
+                              <Card className={`border shadow-sm ${noCarrinho ? 'border-success bg-success bg-opacity-10' : 'bg-white'}`}>
+                                  <Card.Body className="d-flex justify-content-between align-items-center p-2">
+                                      <div>
+                                          <strong className="d-block text-dark lh-sm">{svc.nome_servico}</strong>
+                                          <small className="text-muted">{svc.categoria}</small>
+                                      </div>
+                                      <div className="d-flex align-items-center gap-3">
+                                          <Badge bg="success" className="fs-6">R$ {Number(svc.valor_estimado).toFixed(2)}</Badge>
+                                          {noCarrinho ? (
+                                            <Button variant="success" size="sm" disabled className="rounded-circle px-2 py-1"><CheckCircleFill/></Button>
+                                          ) : (
+                                            <Button variant="outline-primary" size="sm" className="fw-bold px-3" onClick={() => adicionarAoCarrinho(svc)}>+ Lançar</Button>
+                                          )}
+                                      </div>
+                                  </Card.Body>
+                              </Card>
+                          </Col>
+                      )})
+                  )}
+                </Row>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col lg={5}>
+          <Card className="border-0 shadow-sm h-100 border-start border-success border-4 bg-light">
+            <Card.Body className="d-flex flex-column p-3">
+              <h6 className="fw-bold mb-3 fs-5 text-dark">✅ Serviços Executados</h6>
+              
+              {carrinho.length === 0 ? (
+                <div className="text-center text-muted p-4 bg-white rounded shadow-sm border flex-grow-1 d-flex flex-column justify-content-center">
+                  <h5 className="fw-bold">Lista Vazia</h5>
+                  <p className="small mb-0">Selecione os serviços que você realizou.</p>
+                </div>
+              ) : (
+                <div className="flex-grow-1 bg-white rounded shadow-sm border" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                  <Table hover className="align-middle mb-0 small">
+                    <tbody>
+                      {carrinho.map(item => (
+                        <tr key={item.id}>
+                          <td className="ps-3 fw-bold text-dark">{item.nome_servico}</td>
+                          <td className="text-end pe-3">
+                            <Button variant="link" className="text-danger p-0 fs-5 text-decoration-none" onClick={() => removerDoCarrinho(item.id)}><TrashFill /></Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              )}
+
+              <div className="mt-3">
+                <Form.Group>
+                  <Form.Label className="fw-bold text-secondary small">Observações da Execução (Opcional)</Form.Label>
+                  <Form.Control as="textarea" rows={2} value={observacoes} onChange={e => setObservacoes(e.target.value)} className="shadow-sm border-0"/>
                 </Form.Group>
               </div>
-            </Col>
-          </Row>
-        ) : (
-          <Row className="mt-2">
-            <Col md={12}>
-              <Alert variant="secondary" className="border-0 shadow-sm py-2 px-3 small d-flex align-items-center mb-0">
-                <i className="bi bi-info-circle-fill me-2 text-muted"></i>
-                <span className="text-muted">O Patrimônio deste equipamento será extraído automaticamente da OS selecionada.</span>
-              </Alert>
-            </Col>
-          </Row>
-        )}
-      </div>
 
-      {/* SEÇÃO 3: OBSERVAÇÕES */}
-      <Form.Group className="mb-4">
-        <Form.Label className="fw-bold text-dark">3. Observações (Opcional)</Form.Label>
-        <Form.Control as="textarea" rows={2} {...register("observacoes")} className="shadow-sm" />
-      </Form.Group>
+              <div className="mt-3 pt-3 border-top">
+                  <div className="d-flex justify-content-between align-items-center mb-3 px-1">
+                      <span className="text-muted fw-bold text-uppercase small">Total Produzido</span>
+                      <span className="fs-4 fw-bold text-success">
+                          R$ {carrinho.reduce((acc, curr) => acc + Number(curr.valor_estimado), 0).toFixed(2)}
+                      </span>
+                  </div>
 
-      <div className="d-flex justify-content-end gap-2 pt-3 border-top">
-        <Button variant="secondary" onClick={onCancel} className="fw-bold px-4">Cancelar</Button>
-        <PrimaryButton type="submit" isLoading={isLoading} className="fw-bold px-4">Gravar Produção</PrimaryButton>
-      </div>
+                  <div className="d-flex gap-2">
+                    <Button variant="secondary" onClick={onCancel} className="fw-bold px-4 shadow-sm">Cancelar</Button>
+                    <Button variant="success" type="submit" disabled={isLoading || carrinho.length === 0} className="fw-bold flex-grow-1 shadow-sm">
+                      {isLoading ? 'Gravando...' : 'Gravar Produção'}
+                    </Button>
+                  </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
     </Form>
   );
 }

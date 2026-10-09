@@ -1,17 +1,14 @@
 // src/pages/ProducaoServicosPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Card, Spinner, Alert } from 'react-bootstrap';
+import { Card, Spinner, Alert, Modal } from 'react-bootstrap';
 import { PlusCircle, Tools } from 'react-bootstrap-icons';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { servicosService } from '../../services/servicosService';
 
-// Componentes Padronizados do Sistema
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
-import ModalForm from '../../components/ModalForm';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
-
-// Componentes Específicos deste Módulo
 import ProducaoTable from '../../components/servicos/ProducaoTable';
 import ProducaoForm from '../../components/servicos/ProducaoForm';
 
@@ -19,14 +16,17 @@ import type { CatalogoServico, ProducaoServico } from '../../types';
 
 function ProducaoServicosPage() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   
+  const prefillData = location.state || {};
+
   const [historico, setHistorico] = useState<ProducaoServico[]>([]);
   const [catalogo, setCatalogo] = useState<CatalogoServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   
-  // Estados dos Modais (Padrão do Sistema)
   const [showFormModal, setShowFormModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -38,6 +38,12 @@ function ProducaoServicosPage() {
 
   useEffect(() => {
     carregarDados();
+
+    if (prefillData && prefillData.defaultVinculoId) {
+       setShowFormModal(true);
+       // Limpa o estado usando o React Router de forma segura
+       navigate(location.pathname, { replace: true, state: {} });
+    }
   }, []);
 
   const carregarDados = async () => {
@@ -48,8 +54,8 @@ function ProducaoServicosPage() {
         servicosService.getHistorico(),
         servicosService.getCatalogo()
       ]);
-      setHistorico(historicoData);
-      setCatalogo(catalogoData.filter(c => c.ativo));
+      setHistorico(historicoData || []);
+      setCatalogo((catalogoData || []).filter(c => c.ativo));
     } catch (error) {
       setError("Falha ao carregar os dados. Verifique a sua conexão.");
     } finally {
@@ -66,6 +72,10 @@ function ProducaoServicosPage() {
       await carregarDados();
       setSuccessMsg("Produção registada com sucesso!");
       setShowFormModal(false);
+      
+      if (prefillData.defaultVinculoId) {
+         setTimeout(() => navigate('/gerenciar-solicitacoes'), 1500);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "Erro ao registar produção. O ID do chamado pode estar incorreto.");
     } finally {
@@ -76,8 +86,6 @@ function ProducaoServicosPage() {
   const handleConfirmDelete = async () => {
     if (!deletingItem) return;
     setIsDeleting(true);
-    setError(null);
-    setSuccessMsg(null);
     try {
       await servicosService.deleteProducao(deletingItem.id);
       await carregarDados();
@@ -114,37 +122,38 @@ function ProducaoServicosPage() {
           {isLoading ? (
             <div className="text-center my-5 py-5"><Spinner animation="border" variant="primary" /></div>
           ) : (
-            <ProducaoTable 
-              historico={historico} 
-              isGestor={isGestor} 
-              onDelete={(item) => { setDeletingItem(item); setShowDeleteModal(true); }} 
-            />
+            <ProducaoTable historico={historico} isGestor={isGestor} onDelete={(item) => { setDeletingItem(item); setShowDeleteModal(true); }} />
           )}
         </Card.Body>
       </Card>
 
-      {/* Modais Padronizados do Sistema */}
-      <ModalForm 
-        show={showFormModal} 
-        onHide={() => setShowFormModal(false)}
-        title="Lançar Fechamento de Serviço"
-      >
-        <ProducaoForm 
-          catalogo={catalogo}
-          historico={historico}
-          user={user}
-          onSubmit={handleFormSubmit}
-          isLoading={isSubmitting}
-          onCancel={() => setShowFormModal(false)}
-        />
-      </ModalForm>
+      <Modal show={showFormModal} onHide={() => setShowFormModal(false)} size="xl" centered backdrop="static">
+        <Modal.Header closeButton className="bg-light border-0 pb-4">
+          <Modal.Title className="fw-bold fs-5 text-dark d-flex align-items-center">
+            <Tools className="me-2 text-primary" /> Lançar Fechamento de Serviço
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4 pt-0 bg-light">
+          <ProducaoForm 
+            catalogo={catalogo}
+            historico={historico}
+            user={user}
+            onSubmit={handleFormSubmit}
+            isLoading={isSubmitting}
+            onCancel={() => setShowFormModal(false)}
+            defaultTipoVinculo={prefillData.defaultTipoVinculo}
+            defaultVinculoId={prefillData.defaultVinculoId}
+            defaultPatrimonio={prefillData.defaultPatrimonio}
+          />
+        </Modal.Body>
+      </Modal>
 
       <DeleteConfirmationModal 
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
         onConfirm={handleConfirmDelete}
         title="Confirmar Exclusão"
-        body="Tem certeza que deseja apagar este registo de produção? O valor será removido do histórico financeiro."
+        body="Tem certeza que deseja apagar este registo de produção? O valor será removido do histórico."
         isDeleting={isDeleting}
         confirmButtonText="Apagar Registo"
       />

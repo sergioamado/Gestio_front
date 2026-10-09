@@ -29,7 +29,7 @@ function SuprimentoForm({ impressoras, onSubmit, isLoading }: SuprimentoFormProp
     }
   }, [impressoraId, impressoras]);
 
-  // 🚀 Validação inteligente antes de enviar para o Pai
+  //  Validação inteligente antes de enviar para o Pai
   const onSubmitWrapper = (data: ControleSuprimentosCreateData) => {
     const totalSolicitado = 
       (data.unidade_imagem_solicitadas || 0) + 
@@ -177,7 +177,7 @@ function SuprimentoForm({ impressoras, onSubmit, isLoading }: SuprimentoFormProp
 
       <div className="d-flex justify-content-end mt-4 pt-2 border-top">
         <PrimaryButton type="submit" isLoading={isLoading} className="px-4 fw-bold shadow-sm">
-          🚀 Registar Requisitação
+           Registar Requisitação
         </PrimaryButton>
       </div>
     </Form>

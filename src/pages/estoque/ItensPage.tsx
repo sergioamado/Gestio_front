@@ -12,6 +12,7 @@ import ItemDetailsModal from '../../components/itens/ItemDetailsModal';
 import * as itemService from '../../services/itemService';
 import * as unidadeService from '../../services/unidadeService';
 import type { Item, ItemCreateData, Unidade } from '../../types';
+import { socket } from '../../services/socket'; // Antena de Rádio!
 
 function ItensPage() {
   const { user } = useAuth();
@@ -20,7 +21,6 @@ function ItensPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados dos Modais
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,19 +32,19 @@ function ItensPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingItem, setViewingItem] = useState<Item | null>(null);
 
-  //  Regra de Ouro: Apenas Admin e Gerente podem gerir e ver quantidades
   const canManageItems = user?.role === 'admin' || user?.role === 'gerente';
 
-  // Estados de Paginação e Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const ITEMS_PER_PAGE = 10;
 
-  const fetchItens = useCallback(() => {
+  // 🚀 Adicionado suporte ao "isSilent" para não piscar a tela no tempo real
+  const fetchItens = useCallback((isSilent = false) => {
     if (!user) return;
-    setLoading(true);
+    
+    if (!isSilent) setLoading(true);
     setError(null);
     
     const params: any = {
@@ -84,15 +84,34 @@ function ItensPage() {
         }
       })
       .catch((err: any) => {
-        const errorMessage = err.response?.data?.message || 'Falha ao carregar o catálogo de itens.';
-        setError(errorMessage);
+        if (!isSilent) setError(err.response?.data?.message || 'Falha ao carregar o catálogo de itens.');
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!isSilent) setLoading(false);
+      });
   }, [user, currentPage, searchTerm]);
 
+
+  // ==========================================================================
+  // 🚀 MOTOR DE TEMPO REAL (WebSockets)
+  // ==========================================================================
   useEffect(() => {
-    fetchItens();
+    fetchItens(false); // Carga inicial
+
+    const lidarComAtualizacaoTempoReal = () => {
+      console.log("📦 O Servidor avisou: O Estoque mudou! Recarregando silenciosamente...");
+      fetchItens(true); 
+    };
+
+    // Fica à escuta do evento do Estoque
+    socket.on('atualizar_estoque', lidarComAtualizacaoTempoReal);
+
+    return () => {
+      socket.off('atualizar_estoque', lidarComAtualizacaoTempoReal);
+    };
   }, [fetchItens]);
+  // ==========================================================================
+
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -118,7 +137,6 @@ function ItensPage() {
     return items;
   };
 
-  //  Travas de segurança nas ações
   const handleShowCreateModal = () => {
     if (!canManageItems) return;
     setEditingItem(null);
@@ -148,10 +166,10 @@ function ItensPage() {
         await itemService.createItem(finalData);
       }
       setShowFormModal(false);
-      fetchItens();
+      // O backend agora avisa o rádio, mas forçamos localmente também por segurança da UI
+      fetchItens(true); 
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Ocorreu um erro ao salvar o item.';
-      setError(errorMessage);
+      setError(err.response?.data?.message || 'Ocorreu um erro ao salvar o item.');
     } finally {
       setIsSubmitting(false);
     }
@@ -170,7 +188,7 @@ function ItensPage() {
     try {
       await itemService.deleteItem(deletingItem.id);
       setShowDeleteModal(false);
-      fetchItens();
+      fetchItens(true);
     } catch (err: any) {
       setError('Não foi possível excluir. O item provavelmente já está associado a uma Ordem de Serviço.');
       setShowDeleteModal(false);
@@ -187,7 +205,6 @@ function ItensPage() {
         </Alert>
       )}
 
-      {/* Painel de Pesquisa e Ações */}
       <Card className="floating-card border-0 shadow-sm mb-4">
         <Card.Body className="p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
           <div className="w-100" style={{ maxWidth: '400px' }}>
@@ -210,7 +227,6 @@ function ItensPage() {
         </Card.Body>
       </Card>
       
-      {/* Tabela de Itens */}
       <Card className="floating-card border-0 shadow-sm">
         <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
           <div>
@@ -231,11 +247,10 @@ function ItensPage() {
           ) : itens.length > 0 ? (
              <ItensTable 
               itens={itens} 
-              //  Passa null/undefined se não puder editar/excluir
               onEdit={canManageItems ? handleShowEditModal : undefined} 
               onDelete={canManageItems ? handleShowDeleteModal : undefined}
               onDetails={handleShowDetailsModal}
-              canManageItems={canManageItems} //  Passamos a permissão para a tabela esconder a coluna "Quantidade"
+              canManageItems={canManageItems} 
             />
           ) : (
              <div className="text-center text-muted p-5 border border-dashed rounded bg-light my-3">
@@ -245,15 +260,12 @@ function ItensPage() {
              </div>
           )}
 
-          {/* Paginação */}
           {!loading && totalPages > 1 && (
             <div className="d-flex justify-content-center mt-4 mb-2">
               <Pagination className="shadow-sm">
                 <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
                 <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                
                 {renderPaginationItems()}
-                
                 <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
                 <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
               </Pagination>
@@ -262,7 +274,6 @@ function ItensPage() {
         </Card.Body>
       </Card>
 
-      {/* Modais de Ação */}
       {canManageItems && (
         <>
           <ModalForm 

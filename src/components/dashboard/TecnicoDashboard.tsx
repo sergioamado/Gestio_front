@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import { Row, Col, Card, Spinner, ListGroup, Alert, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import * as solicitacaoService from '../../services/solicitacaoService'; // 🚀 Importado o service correto
+import type { DashboardProps } from '../../types';
+import * as solicitacaoService from '../../services/solicitacaoService'; //  Importado o service correto
 import type { Estatisticas, TarefaRecente } from '../../types';
 
-function TecnicoDashboard() {
+function TecnicoDashboard({refreshTrigger}: DashboardProps) {
   const [stats, setStats] = useState<Estatisticas | null>(null);
   const [agenda, setAgenda] = useState<TarefaRecente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +44,7 @@ function TecnicoDashboard() {
     };
     
     fetchMinhasTarefas();
-  }, []);
+  }, [refreshTrigger]);
 
   const osConcluidas = stats?.grafico_status?.find(s => s.name === 'CONCLUIDA')?.quantidade || 0;
 

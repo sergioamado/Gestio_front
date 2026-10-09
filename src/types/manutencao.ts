@@ -24,18 +24,6 @@ export interface ManutencaoCardProps {
   onUpdate: () => void;
 }
 
-export interface GraficoStatus {
-  name: string;
-  quantidade: number;
-}
-
-export interface Estatisticas {
-  os_pendentes: number;
-  baixo_estoque: number;
-  patrimonio_ativo: number;
-  grafico_status?: GraficoStatus[];
-}
-
 export interface TarefaRecente {
   id: number;
   data_solicitacao: string;

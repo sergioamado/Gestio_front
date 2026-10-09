@@ -1,5 +1,5 @@
 // src/pages/ImpressorasPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Spinner, Alert, Row, Col, Form, Button, Stack } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
@@ -13,6 +13,7 @@ import ImpressorasTable from '../../components/impressoras/ImpressorasTable';
 import ImpressoraForm from '../../components/impressoras/ImpressoraForm';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import ImpressoraDetailsModal from '../../components/impressoras/ImpressoraDetailsModal';
+import { socket } from '../../services/socket'; //  Antena de Rádio!
 
 function ImpressorasPage() {
   const { user } = useAuth();
@@ -36,29 +37,52 @@ function ImpressorasPage() {
   
   const [filtros, setFiltros] = useState<ImpressoraFiltros>({});
 
-  //  CONTROLO DE ACESSO: Apenas Admin, Gerente e Técnico de Impressoras
+  // CONTROLO DE ACESSO
   const hasAccess = user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_impressora';
 
-  const fetchData = (currentFilters: ImpressoraFiltros = {}) => {
-    setLoading(true);
+  //  Adicionado suporte ao isSilent (evita piscar o ecrã) e os filtros atuais
+  const fetchData = useCallback((currentFilters: ImpressoraFiltros = {}, isSilent = false) => {
+    if (!isSilent) setLoading(true);
     setError(null);
     impressoraService.getFilteredImpressoras(currentFilters)
       .then(setImpressoras)
-      .catch(() => setError('Falha ao carregar a lista de impressoras.'))
-      .finally(() => setLoading(false));
-  };
+      .catch(() => {
+        if (!isSilent) setError('Falha ao carregar a lista de impressoras.');
+      })
+      .finally(() => {
+        if (!isSilent) setLoading(false);
+      });
+  }, []);
 
+  
+  //  MOTOR DE TEMPO REAL (WebSockets)
+  
   useEffect(() => {
-    //  Só tenta buscar os dados se o utilizador tiver permissão de acesso
+    // Só tenta buscar os dados e ligar o rádio se tiver permissão visual
     if (user && hasAccess) {
       if (user.role === 'admin') {
         unidadeService.getAllUnidades()
           .then(setUnidades)
           .catch(() => setError('Falha ao carregar a lista de unidades organizacionais.'));
       }
-      fetchData();
+      
+      fetchData(filtros, false); // Carga inicial com os filtros vazios
+
+      const lidarComAtualizacaoTempoReal = () => {
+        console.log("🖨️ O Servidor avisou: Parque de Impressoras alterado! Recarregando silenciosamente...");
+        fetchData(filtros, true); // Usa os filtros atuais (no escopo) para não perder a pesquisa do usuário
+      };
+
+      // Fica à escuta do evento do Parque de Impressoras
+      socket.on('atualizar_impressoras', lidarComAtualizacaoTempoReal);
+
+      return () => {
+        socket.off('atualizar_impressoras', lidarComAtualizacaoTempoReal);
+      };
     }
-  }, [user, hasAccess]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, hasAccess, fetchData]); 
+  // ==========================================================================
 
   const handleFiltroChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -66,12 +90,12 @@ function ImpressorasPage() {
   };
 
   const handleFiltrar = () => {
-    fetchData(filtros);
+    fetchData(filtros, false); // Não é silencioso, pois foi o user a clicar
   };
   
   const handleLimparFiltros = () => {
     setFiltros({});
-    fetchData();
+    fetchData({}, false);
   };
 
   const handleShowCreateModal = () => {
@@ -115,7 +139,7 @@ function ImpressorasPage() {
         mostrarCard('Sucesso', 'Nova impressora cadastrada com sucesso!', 'sucesso');
       }
       setShowFormModal(false);
-      fetchData(filtros); 
+      fetchData(filtros, true); // Recarrega silenciosamente localmente
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.message || '';
       
@@ -140,7 +164,7 @@ function ImpressorasPage() {
       await impressoraService.deleteImpressora(deletingImpressora.id);
       mostrarCard('Sucesso', 'Impressora excluída permanentemente.', 'sucesso');
       setShowDeleteModal(false);
-      fetchData(filtros);
+      fetchData(filtros, true);
     } catch (err) {
       mostrarCard('Aviso', 'Não foi possível excluir a impressora. Ela pode estar vinculada a históricos ou chamados.', 'alerta');
       setShowDeleteModal(false);
@@ -149,7 +173,6 @@ function ImpressorasPage() {
     }
   };
 
-  //  TELA DE BLOQUEIO: Exibida se o utilizador não tiver um dos 3 cargos permitidos
   if (!user || !hasAccess) {
     return (
       <MainLayout pageTitle="Acesso Restrito">

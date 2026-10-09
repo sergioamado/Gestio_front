@@ -3,46 +3,38 @@ import React, { useEffect, useState } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
 import ChartRenderer from './ChartRenderer';
 import { analiseService } from '../../services/analiseService';
+import type { WidgetContainerProps } from '../../types';
 
-interface WidgetContainerProps {
-  widget: {
-    id?: number;
-    titulo: string;
-    tipo: 'bar' | 'line' | 'pie';
-    dataset: string;
-    configuracao: {
-      dimensoes: string[];
-      metricas: string[];
-    };
-  };
-}
 
-export default function WidgetContainer({ widget }: WidgetContainerProps) {
+export default function WidgetContainer({ widget, refreshTrigger }: WidgetContainerProps) {
   const [dados, setDados] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    carregarDados();
-  }, [widget]);
+    // Colocamos a função aqui dentro para o React não reclamar de dependências perdidas
+    const carregarDados = async () => {
+      // Pequeno truque: não ativamos o isLoading se for apenas um refresh em tempo real
+      // Assim o gráfico atualiza sem ficar a piscar a bolinha de carregamento!
+      if (dados.length === 0) setIsLoading(true); 
+      setError(null);
+      
+      try {
+        const resposta = await analiseService.executarConsulta({
+          dataset: widget.dataset,
+          dimensoes: widget.configuracao.dimensoes,
+          metricas: widget.configuracao.metricas,
+        });
+        setDados(resposta);
+      } catch (err) {
+        setError("Erro ao carregar dados analíticos.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const carregarDados = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // O Frontend pede os dados passando as dimensões e métricas escolhidas
-      const resposta = await analiseService.executarConsulta({
-        dataset: widget.dataset,
-        dimensoes: widget.configuracao.dimensoes,
-        metricas: widget.configuracao.metricas,
-      });
-      setDados(resposta);
-    } catch (err) {
-      setError("Erro ao carregar dados analíticos.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    carregarDados();
+  }, [widget, refreshTrigger]); //  Escuta o gatilho!
 
   return (
     <Card className="h-100 shadow-sm border-0">

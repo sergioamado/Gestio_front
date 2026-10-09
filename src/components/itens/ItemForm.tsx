@@ -41,17 +41,13 @@ function ItemForm({ item, unidades, onSubmit, isLoading }: ItemFormProps) {
 
   return (
     // Quando o formulário for submetido, o handleSubmit valida tudo e chama a função onSubmit
-    <Form onSubmit={handleSubmit(onSubmit)}>
-      
-      
-      {/* DADOS BÁSICOS DO ITEM                                                        */}
-      
-      
+    <Form onSubmit={handleSubmit(onSubmit)}>         
+      {/* DADOS BÁSICOS DO ITEM                                                        */}         
       {/* SELEÇÃO DE UNIDADE (Apenas Admin pode escolher a unidade dona da peça) */}
-      {user?.role === 'admin' && (
+     {user?.role === 'admin' && (
         <Form.Group className="mb-3">
           <Form.Label className="fw-bold text-secondary small">Unidade Organizacional</Form.Label>
-          <Form.Select {...register("unidade_id", { valueAsNumber: true, required: "A unidade é obrigatória" })} isInvalid={!!errors.unidade_id}>
+          <Form.Select {...register("unidade_id", { required: "A unidade é obrigatória" })} isInvalid={!!errors.unidade_id}>
             <option value="">Selecione uma unidade...</option>
             {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
           </Form.Select>

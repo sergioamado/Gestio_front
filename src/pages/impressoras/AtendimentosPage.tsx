@@ -1,5 +1,5 @@
 // src/pages/AtendimentosPage.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
@@ -11,6 +11,7 @@ import type { AtendimentoImpressora, AtendimentoCreateData, AtendimentoUpdateDat
 import AtendimentosTable from '../../components/atendimentos/AtendimentosTable';
 import AtendimentoForm from '../../components/atendimentos/AtendimentoForm';
 import AtendimentoDetailsModal from '../../components/atendimentos/AtendimentoDetailsModal';
+import { socket } from '../../services/socket'; // Antena de Rádio!
 
 function AtendimentosPage() {
   const { user } = useAuth();
@@ -26,11 +27,12 @@ function AtendimentosPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingAtendimento, setViewingAtendimento] = useState<AtendimentoImpressora | null>(null);
 
-  //  CONTROLO DE ACESSO: Apenas Admin, Gerente e Técnico de Impressoras
+  // CONTROLO DE ACESSO
   const hasAccess = user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_impressora';
 
-  const fetchData = () => {
-    setLoading(true);
+  // 🚀 Agora suporta isSilent para atualizações invisíveis
+  const fetchData = useCallback((isSilent = false) => {
+    if (!isSilent) setLoading(true);
     setError(null);
     Promise.all([
       atendimentoService.getAllAtendimentos(),
@@ -38,16 +40,36 @@ function AtendimentosPage() {
     ]).then(([atendimentosData, impressorasData]) => {
       setAtendimentos(atendimentosData);
       setImpressoras(impressorasData);
-    }).catch(() => setError('Falha ao carregar os dados de atendimentos e impressoras.'))
-      .finally(() => setLoading(false));
-  };
+    }).catch(() => {
+      if (!isSilent) setError('Falha ao carregar os dados de atendimentos e impressoras.');
+    }).finally(() => {
+      if (!isSilent) setLoading(false);
+    });
+  }, []);
 
+  // ==========================================================================
+  // 🚀 MOTOR DE TEMPO REAL (WebSockets)
+  // ==========================================================================
   useEffect(() => {
-    //  Só tenta buscar os dados se tiver permissão visual
+    // Só tenta buscar os dados e ligar o rádio se tiver permissão visual
     if (user && hasAccess) {
-      fetchData();
+      fetchData(false); // Carga inicial
+
+      const lidarComAtualizacaoTempoReal = () => {
+        console.log("🖨️ O Servidor avisou: Fila de Atendimentos atualizada! Recarregando silenciosamente...");
+        fetchData(true);
+      };
+
+      // Fica à escuta do evento específico de Atendimentos
+      socket.on('atualizar_atendimentos', lidarComAtualizacaoTempoReal);
+
+      return () => {
+        socket.off('atualizar_atendimentos', lidarComAtualizacaoTempoReal);
+      };
     }
-  }, [user, hasAccess]);
+  }, [user, hasAccess, fetchData]);
+  // ==========================================================================
+
 
   const handleShowCreateModal = () => {
     setEditingAtendimento(null);
@@ -81,7 +103,8 @@ function AtendimentosPage() {
         await atendimentoService.createAtendimento(finalData);
       }
       setShowFormModal(false);
-      fetchData();
+      // Recarrega silenciosamente após sucesso local
+      fetchData(true);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao salvar os dados do atendimento.');
     } finally {
@@ -89,7 +112,6 @@ function AtendimentosPage() {
     }
   };
 
-  //  TELA DE BLOQUEIO: Se não for um dos perfis autorizados, exibe o alerta e barra a tela
   if (!user || !hasAccess) {
     return (
       <MainLayout pageTitle="🚫 Acesso Restrito">

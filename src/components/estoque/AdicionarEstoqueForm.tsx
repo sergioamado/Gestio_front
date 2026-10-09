@@ -15,7 +15,7 @@ function AdicionarEstoqueForm({ onSubmit, isLoading }: AdicionarEstoqueFormProps
   const { mostrarCard } = useToast();
   const { register, handleSubmit, reset } = useForm<Partial<EstoqueSuprimentos>>();
 
-  // 🚀 Validação inteligente para não adicionar "Zeros" ao banco de dados
+  //  Validação inteligente para não adicionar "Zeros" ao banco de dados
   const handleFormSubmit = (data: Partial<EstoqueSuprimentos>) => {
     const totalAdicionado = 
       (data.unidade_imagem_total || 0) + 

@@ -1,5 +1,5 @@
 // src/components/notificacoes/NotificacoesOffcanvas.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Offcanvas, ListGroup, Badge, Button, Spinner, Form } from 'react-bootstrap';
 import { CheckAll, BoxSeam, Tools, BellFill, ShieldExclamation, BoxArrowUpRight, GearFill, Telegram, ArrowLeft } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
@@ -7,28 +7,50 @@ import type { Notificacao } from '../../services/notificacaoService';
 import * as notificacaoService from '../../services/notificacaoService';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
+import { socket } from '../../services/socket'; //  Antena de Rádio!
+import type { User } from '../../types';
+import type { OffcanvasProps } from '../../types/notificacao';
 
-interface OffcanvasProps {
-  show: boolean;
-  onHide: () => void;
-  notificacoes: Notificacao[];
-  onUpdate: () => void;
-  loading: boolean;
-}
+
 
 function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }: OffcanvasProps) {
   const navigate = useNavigate();
   const { mostrarCard } = useToast();
   const { user, setUser } = useAuth();
   
-  // Estado para alternar entre "Lista" e "Configurações"
   const [view, setView] = useState<'lista' | 'config'>('lista');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Estados locais para os switches
   const [prefsApp, setPrefsApp] = useState(user?.notificacoes_app ?? true);
   const [prefsBot, setPrefsBot] = useState(user?.notificacoes_bot ?? true);
+
+  
+  //  MOTOR DE TEMPO REAL NO PAINEL LATERAL
+  
+  useEffect(() => {
+    if (!user) return;
+
+    // Quando o servidor gritar uma nova notificação, mandamos atualizar a lista e mostramos o card!
+    const lidarComNovaNotificacao = (novaNotif: Notificacao) => {
+      // Se a notificação for direcionada a este utilizador
+      
+        console.log("🔔 Alerta recebido no Offcanvas! Atualizando lista...");
+        onUpdate(); //  Dispara a função do pai para recarregar a lista do banco de dados
+        
+        // Dispara o Toast visual se o painel lateral estiver fechado
+        const tipoFrontend = novaNotif.tipo ? novaNotif.tipo.toLowerCase() as 'sucesso'|'erro'|'alerta'|'info' : 'info';
+        mostrarCard(novaNotif.titulo || 'Nova Atualização', novaNotif.mensagem, tipoFrontend);
+     
+    };
+
+    socket.on('nova_notificacao', lidarComNovaNotificacao);
+
+    return () => {
+      socket.off('nova_notificacao', lidarComNovaNotificacao);
+    };
+  }, [user, onUpdate, mostrarCard]);
+  // ==========================================================================
 
   const handleMarcarLida = async (id: number) => {
     await notificacaoService.marcarComoLida(id);
@@ -68,7 +90,6 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
         notificacoes_app: prefsApp,
         notificacoes_bot: prefsBot
       });
-      // Atualiza o contexto global do utilizador
       if (user) {
         setUser({ ...user, notificacoes_app: prefsApp, notificacoes_bot: prefsBot });
       }
@@ -110,7 +131,6 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
     return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(dateString));
   };
 
-  // Se fechar o Offcanvas, reseta para a view de lista
   const handleClose = () => {
     setView('lista');
     onHide();
@@ -138,7 +158,6 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
       
       <Offcanvas.Body className="p-0 bg-white">
         
-        {/* VIEW: LISTA DE NOTIFICAÇÕES */}
         {view === 'lista' && (
           <>
             <div className="p-3 border-bottom d-flex justify-content-between align-items-center bg-white sticky-top">
@@ -192,7 +211,6 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
           </>
         )}
 
-        {/* VIEW: CONFIGURAÇÕES */}
         {view === 'config' && (
           <div className="p-4">
             <h6 className="fw-bold text-dark mb-4 text-uppercase small">Canais de Recebimento</h6>

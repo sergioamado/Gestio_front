@@ -1,18 +1,13 @@
 // src/components/solicitacoes/SolicitacaoItem.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // 🚀 Importado corretamente
 import { Accordion, Badge, Button, Row, Col, Table, Form, InputGroup, Modal } from 'react-bootstrap';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { 
-  Clipboard, 
-  CheckCircleFill, 
-  XCircleFill, 
-  ClockFill, 
-  BoxSeamFill, 
-  EyeFill,
-  ArrowReturnLeft
+  Clipboard, CheckCircleFill, XCircleFill, ClockFill, 
+  BoxSeamFill, EyeFill, ArrowReturnLeft 
 } from 'react-bootstrap-icons';
 import * as solicitacaoService from '../../services/solicitacaoService';
-// import * as notificacaoService from '../../services/notificacaoService'; // Opcional, se implementado
 import PrimaryButton from '../PrimaryButton';
 import type { SolicitacaoDetalhada, StatusSolicitacao } from '../../types';
 
@@ -22,6 +17,9 @@ interface SolicitacaoItemProps {
   currentUserRole?: string;
 }
 
+// ============================================================================
+// FUNÇÕES AUXILIARES (Ficam DE FORA do componente, não podem ter "Hooks" aqui)
+// ============================================================================
 const formatarData = (dataString?: string | null) => {
   if (!dataString) return 'N/A';
   return new Date(dataString).toLocaleString('pt-BR', {
@@ -51,7 +49,12 @@ const getEntregaStatusBadge = (status: string) => {
   }
 };
 
+
 const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate, currentUserRole }) => {
+  
+  
+  const navigate = useNavigate();
+
   const isGestor = currentUserRole === 'admin' || currentUserRole === 'gerente';
   const isTecnico = currentUserRole === 'tecnico' || currentUserRole?.startsWith('tecnico');
 
@@ -77,7 +80,6 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
   });
   const [motivoDefeito, setMotivoDefeito] = useState('');
 
-  // Novo Modal de Conversão Teste -> Consumo
   const [modalConversao, setModalConversao] = useState<{ show: boolean; itemId: number | null; nomeItem: string }>({
     show: false, itemId: null, nomeItem: ''
   });
@@ -86,7 +88,6 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     setEntregas(prev => ({ ...prev, [itemId]: novoStatus }));
   };
 
-  // AÇÃO DO GESTOR: Salvar OS e Alterações
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
@@ -115,7 +116,6 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     }
   };
 
-  // AÇÃO DO TÉCNICO: Marcar OS Inteira como Pronta para Vistoria
   const handleProntaParaVistoria = async () => {
     setModalConfirmVistoria(false);
     setIsSaving(true);
@@ -130,7 +130,6 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     }
   };
 
-  // AÇÃO DO TÉCNICO: Confirmar que recebeu a peça fisicamente
   const handleReceberPeca = async (itemId: number, nomeItem: string) => {
     setIsSaving(true);
     try {
@@ -143,7 +142,6 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     }
   };
 
-  // AÇÃO DO TÉCNICO: Confirmar Devolução via Modal
   const confirmarDevolucaoPeca = async () => {
     if (!motivoDefeito.trim() || modalDevolucao.itemId === null) return;
     
@@ -161,7 +159,6 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     }
   };
 
-  // AÇÃO DO TÉCNICO: Confirmar Conversão (Teste -> Consumo)
   const confirmarConversaoTesteParaConsumo = async () => {
     if (modalConversao.itemId === null) return;
     setIsSaving(true);
@@ -170,7 +167,7 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     try {
       await solicitacaoService.converterTesteEmConsumo(modalConversao.itemId);
       setModalFeedback({ show: true, title: 'Sucesso', message: 'Peça definitiva solicitada ao almoxarifado com sucesso.', variant: 'success' });
-      onUpdate(); // Atualiza a página para mostrar a nova linha do item
+      onUpdate(); 
     } catch (e: any) {
       setModalFeedback({ show: true, title: 'Erro', message: e.response?.data?.message || 'Erro ao solicitar peça definitiva.', variant: 'danger' });
     } finally {
@@ -178,15 +175,13 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     }
   };
 
-  const resumo = `
-OS #${solicitacao.id} - GLPI: ${solicitacao.numero_glpi}
+  const resumo = `OS #${solicitacao.id} - GLPI: ${solicitacao.numero_glpi}
 Status: ${solicitacao.status}
 Unidade: ${solicitacao.unidades_organizacionais?.nome || 'N/A'}
 Técnico: ${solicitacao.usuarios_solicitacoes_usuario_idTousuarios?.nome_completo || 'N/A'}
 Responsável (Unidade): ${solicitacao.usuarios_solicitacoes_responsavel_usuario_idTousuarios?.nome_completo || 'N/A'}
 Itens Solicitados:
-${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.itens?.descricao} (${i.status_entrega})`).join('\n')}
-  `.trim();
+${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.itens?.descricao} (${i.status_entrega})`).join('\n')}`.trim();
 
   const isVistoria = solicitacao.status === 'PRONTA PARA VISTORIA';
 
@@ -214,19 +209,48 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
         </Accordion.Header>
         <Accordion.Body className="bg-light pt-4 border-top">
           
-          {/* BANNER TÉCNICO: Botão de Vistoria */}
+          {/* 🚀 O NOVO BANNER TÉCNICO COM O BOTÃO VERDE */}
           {isTecnico && solicitacao.status === 'EM ATENDIMENTO' && (
-             <div className="bg-warning bg-opacity-10 border border-warning rounded p-3 d-flex justify-content-between align-items-center shadow-sm mb-4">
-                <div>
-                   <strong>Tudo pronto?</strong> Se já concluiu a manutenção, avise a gerência.
+             <div className="bg-light border border-success rounded p-3 shadow-sm mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                   <div>
+                      <strong className="text-dark">Finalização do Chamado</strong>
+                      <p className="small text-muted mb-0">Lance os serviços prestados no sistema e envie para vistoria.</p>
+                   </div>
                 </div>
-                <Button variant="warning" size="sm" className="fw-bold shadow-sm" onClick={() => setModalConfirmVistoria(true)} disabled={isSaving}>
-                   <EyeFill className="me-2"/> Informar Pronta para Vistoria
-                </Button>
+                <div className="d-flex flex-wrap gap-2 mt-3 pt-3 border-top border-success-subtle">
+                   
+                   <Button 
+                     variant="success" 
+                     size="sm" 
+                     className="fw-bold shadow-sm flex-grow-1" 
+                     onClick={() => {
+                        navigate('/producao-servicos', { 
+                           state: { 
+                             defaultTipoVinculo: 'pecas', 
+                             defaultVinculoId: solicitacao.id.toString(),
+                             defaultPatrimonio: solicitacao.patrimonio 
+                           } 
+                        });
+                     }}
+                   >
+                      💲 Lançar Produção / Serviços
+                   </Button>
+
+                   <Button 
+                     variant="warning" 
+                     size="sm" 
+                     className="fw-bold shadow-sm flex-grow-1" 
+                     onClick={() => setModalConfirmVistoria(true)} 
+                     disabled={isSaving}
+                   >
+                      <EyeFill className="me-2"/> Pronta para Vistoria
+                   </Button>
+                </div>
              </div>
           )}
 
-          {/* CARD GESTOR: Inserir Número de Chamado do Almoxarifado */}
+          {/* CARD GESTOR */}
           {isGestor && (
              <div className="bg-white p-3 rounded border mb-4 shadow-sm">
                <Form.Group>
@@ -313,82 +337,49 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
                       <td>
                         {isGestor ? (
                          <div className="d-flex flex-column gap-2">
-      <Form.Select 
-        size="sm" 
-        value={itemStatus} 
-        onChange={(e) => handleEntregaChange(item.id, e.target.value)}
-        className={itemStatus === 'Entregue' ? 'border-success text-success' : itemStatus === 'Devolvida' ? 'border-danger text-danger' : ''}
-      >
-        <option value="Pendente">Pendente Almoxarifado</option>
-        <option value="Entregue">Disponível para Retirada</option>
-        <option value="Recebida pelo Técnico">Em posse do Técnico</option>
-        <option value="Aguardando Devolução">Aguardando Devolução (Teste)</option>
-        <option value="Devolvida">Devolvida (Técnico)</option>
-        {/* NOVO STATUS PARA O GESTOR: */}
-        <option value="Devolução Aceite">Devolução Aceite (Almoxarifado)</option>
-      </Form.Select>
-      
-      {/* NOVO BOTÃO RÁPIDO PARA O GESTOR: Aceitar Devolução Física */}
-      {(itemStatus === 'Aguardando Devolução' || itemStatus === 'Devolvida') && (
-        <Button 
-          variant="outline-success" 
-          size="sm"
-          onClick={() => {
-            if (window.confirm(`Confirma que recebeu a peça "${item.itens?.descricao}" fisicamente de volta no almoxarifado?`)) {
-              handleEntregaChange(item.id, 'Devolução Aceite');
-              // Opcional: Acionar um handleSaveChanges imediato aqui.
-            }
-          }}
-        >
-          ✅ Aceitar Devolução
-        </Button>
-      )}
-    </div>
-  ) : (
-    getEntregaStatusBadge(itemStatus)
-  )}
-</td>
+                            <Form.Select size="sm" value={itemStatus} onChange={(e) => handleEntregaChange(item.id, e.target.value)} className={itemStatus === 'Entregue' ? 'border-success text-success' : itemStatus === 'Devolvida' ? 'border-danger text-danger' : ''}>
+                              <option value="Pendente">Pendente Almoxarifado</option>
+                              <option value="Entregue">Disponível para Retirada</option>
+                              <option value="Recebida pelo Técnico">Em posse do Técnico</option>
+                              <option value="Aguardando Devolução">Aguardando Devolução (Teste)</option>
+                              <option value="Devolvida">Devolvida (Técnico)</option>
+                              <option value="Devolução Aceite">Devolução Aceite (Almoxarifado)</option>
+                            </Form.Select>
+                            
+                            {(itemStatus === 'Aguardando Devolução' || itemStatus === 'Devolvida') && (
+                              <Button variant="outline-success" size="sm" onClick={() => { if (window.confirm(`Confirma que recebeu a peça "${item.itens?.descricao}" fisicamente de volta?`)) { handleEntregaChange(item.id, 'Devolução Aceite'); }}}>
+                                ✅ Aceitar Devolução
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          getEntregaStatusBadge(itemStatus)
+                        )}
+                      </td>
 
-{/* BOTÕES DE AÇÃO DO TÉCNICO SOBRE A PEÇA */}
-{isTecnico && (
-  <td className="text-center">
-     <div className="d-flex justify-content-center gap-2 flex-wrap">
-       {/* Botão de Recebi */}
-       {itemStatus === 'Entregue' && (
-         <Button variant="outline-success" size="sm" title="Confirmar Recebimento Físico" onClick={() => handleReceberPeca(item.id, item.itens?.descricao || 'Peça')}>
-           <CheckCircleFill className="me-1"/> Recebi
-         </Button>
-       )}
-       
-       {/* CORREÇÃO DO BOTÃO DE DEVOLVER:
-           O técnico PODE devolver se a peça estiver 'Entregue' (ainda lá no balcão) OU 'Recebida pelo Técnico' (já na bancada dele) 
-           E não pode devolver se já a devolveu. 
-       */}
-       {(itemStatus === 'Entregue' || itemStatus === 'Recebida pelo Técnico') && (
-         <Button 
-            variant="outline-danger" 
-            size="sm" 
-            title="Devolver ao Almoxarifado (Defeito/Erro)" 
-            onClick={() => setModalDevolucao({ show: true, itemId: item.id, nomeItem: item.itens?.descricao || 'Peça' })}
-         >
-           <ArrowReturnLeft className="me-1"/> Devolver
-         </Button>
-       )}
+                      {isTecnico && (
+                        <td className="text-center">
+                           <div className="d-flex justify-content-center gap-2 flex-wrap">
+                             {itemStatus === 'Entregue' && (
+                               <Button variant="outline-success" size="sm" title="Confirmar Recebimento Físico" onClick={() => handleReceberPeca(item.id, item.itens?.descricao || 'Peça')}>
+                                 <CheckCircleFill className="me-1"/> Recebi
+                               </Button>
+                             )}
+                             
+                             {(itemStatus === 'Entregue' || itemStatus === 'Recebida pelo Técnico') && (
+                               <Button variant="outline-danger" size="sm" title="Devolver ao Almoxarifado (Defeito/Erro)" onClick={() => setModalDevolucao({ show: true, itemId: item.id, nomeItem: item.itens?.descricao || 'Peça' })}>
+                                 <ArrowReturnLeft className="me-1"/> Devolver
+                               </Button>
+                             )}
 
-       {/* Botão de Conversão (Teste) */}
-       {item.tipo_uso === 'TESTE' && itemStatus === 'Recebida pelo Técnico' && (
-         <Button 
-            variant="outline-primary" 
-            size="sm" 
-            title="A peça funcionou? Solicitar a definitiva."
-            onClick={() => setModalConversao({ show: true, itemId: item.id, nomeItem: item.itens?.descricao || 'Peça' })}
-         >
-           ✅ Funcionou (Pedir Definitiva)
-         </Button>
-       )}
-     </div>
-  </td>
-)}
+                             {item.tipo_uso === 'TESTE' && itemStatus === 'Recebida pelo Técnico' && (
+                               <Button variant="outline-primary" size="sm" title="A peça funcionou? Solicitar a definitiva." onClick={() => setModalConversao({ show: true, itemId: item.id, nomeItem: item.itens?.descricao || 'Peça' })}>
+                                 ✅ Funcionou (Pedir Definitiva)
+                               </Button>
+                             )}
+                           </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -419,7 +410,6 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
         </Accordion.Body>
       </Accordion.Item>
 
-      {/* MODAL DE FEEDBACK */}
       <Modal show={modalFeedback.show} onHide={() => setModalFeedback(prev => ({ ...prev, show: false }))} centered>
         <Modal.Header closeButton className={`bg-${modalFeedback.variant} text-white`}>
           <Modal.Title className="fs-6 fw-bold">{modalFeedback.title}</Modal.Title>
@@ -428,13 +418,10 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
           <p className="mb-0 text-dark">{modalFeedback.message}</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" size="sm" onClick={() => setModalFeedback(prev => ({ ...prev, show: false }))}>
-            Fechar
-          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setModalFeedback(prev => ({ ...prev, show: false }))}>Fechar</Button>
         </Modal.Footer>
       </Modal>
 
-      {/* MODAL DE CONFIRMAÇÃO DE VISTORIA */}
       <Modal show={modalConfirmVistoria} onHide={() => setModalConfirmVistoria(false)} centered>
         <Modal.Header closeButton className="bg-warning text-dark">
           <Modal.Title className="fs-6 fw-bold">⚠️ Confirmar Vistoria</Modal.Title>
@@ -443,16 +430,11 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
           <p className="mb-0">Deseja marcar esta máquina como <strong>Pronta para Vistoria</strong>? Os gestores serão imediatamente notificados.</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" size="sm" onClick={() => setModalConfirmVistoria(false)}>
-            Cancelar
-          </Button>
-          <Button variant="warning" size="sm" onClick={handleProntaParaVistoria} className="fw-bold">
-            Sim, Marcar como Pronta
-          </Button>
+          <Button variant="outline-secondary" size="sm" onClick={() => setModalConfirmVistoria(false)}>Cancelar</Button>
+          <Button variant="warning" size="sm" onClick={handleProntaParaVistoria} className="fw-bold">Sim, Marcar como Pronta</Button>
         </Modal.Footer>
       </Modal>
 
-      {/* MODAL DE DEVOLUÇÃO DE PEÇA */}
       <Modal show={modalDevolucao.show} onHide={() => setModalDevolucao({ show: false, itemId: null, nomeItem: '' })} centered>
         <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title className="fs-6 fw-bold">↩️ Devolver Peça com Defeito</Modal.Title>
@@ -460,47 +442,27 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
         <Modal.Body className="py-4">
           <p className="small text-muted mb-2">Informe o defeito apresentado pela peça: <strong>{modalDevolucao.nomeItem}</strong></p>
           <Form.Group>
-            <Form.Control 
-              as="textarea" 
-              rows={3} 
-              placeholder="Descreva o motivo da devolução..." 
-              value={motivoDefeito}
-              onChange={(e) => setMotivoDefeito(e.target.value)}
-              className="bg-light"
-            />
+            <Form.Control as="textarea" rows={3} placeholder="Descreva o motivo da devolução..." value={motivoDefeito} onChange={(e) => setMotivoDefeito(e.target.value)} className="bg-light"/>
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" size="sm" onClick={() => setModalDevolucao({ show: false, itemId: null, nomeItem: '' })}>
-            Cancelar
-          </Button>
-          <Button variant="danger" size="sm" onClick={confirmarDevolucaoPeca} disabled={!motivoDefeito.trim()}>
-            Confirmar Devolução
-          </Button>
+          <Button variant="outline-secondary" size="sm" onClick={() => setModalDevolucao({ show: false, itemId: null, nomeItem: '' })}>Cancelar</Button>
+          <Button variant="danger" size="sm" onClick={confirmarDevolucaoPeca} disabled={!motivoDefeito.trim()}>Confirmar Devolução</Button>
         </Modal.Footer>
       </Modal>
 
-      {/* MODAL DE CONVERSÃO: TESTE -> CONSUMO */}
       <Modal show={modalConversao.show} onHide={() => setModalConversao({ show: false, itemId: null, nomeItem: '' })} centered>
         <Modal.Header closeButton className="bg-primary text-white">
           <Modal.Title className="fs-6 fw-bold">✅ Solicitar Peça Definitiva</Modal.Title>
         </Modal.Header>
         <Modal.Body className="py-4">
-          <p className="mb-0">
-            Você está a confirmar que o teste com a peça <strong>{modalConversao.nomeItem}</strong> funcionou com sucesso.
-          </p>
+          <p className="mb-0">Você está a confirmar que o teste com a peça <strong>{modalConversao.nomeItem}</strong> funcionou com sucesso.</p>
           <br />
-          <p className="text-muted small mb-0">
-            Ao confirmar, esta peça de teste será marcada para devolução e o almoxarifado será notificado para separar uma peça idêntica, nova e definitiva, para instalação final. Deseja continuar?
-          </p>
+          <p className="text-muted small mb-0">Ao confirmar, esta peça de teste será marcada para devolução e o almoxarifado será notificado para separar uma peça idêntica, nova e definitiva, para instalação final. Deseja continuar?</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" size="sm" onClick={() => setModalConversao({ show: false, itemId: null, nomeItem: '' })}>
-            Cancelar
-          </Button>
-          <Button variant="primary" size="sm" onClick={confirmarConversaoTesteParaConsumo} className="fw-bold">
-            Sim, Solicitar Definitiva
-          </Button>
+          <Button variant="outline-secondary" size="sm" onClick={() => setModalConversao({ show: false, itemId: null, nomeItem: '' })}>Cancelar</Button>
+          <Button variant="primary" size="sm" onClick={confirmarConversaoTesteParaConsumo} className="fw-bold">Sim, Solicitar Definitiva</Button>
         </Modal.Footer>
       </Modal>
 

@@ -1,5 +1,5 @@
 // src/pages/ControleSuprimentosPage.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, Spinner, Alert, Button, Modal, Form, Table, Badge } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
@@ -10,6 +10,7 @@ import * as impressoraService from '../../services/impressoraService';
 import type { Impressora, ControleSuprimentos, ControleSuprimentosCreateData } from '../../types';
 import SuprimentosTable from '../../components/suprimentos/SuprimentosTable';
 import SuprimentoForm from '../../components/suprimentos/SuprimentoForm';
+import { socket } from '../../services/socket'; // Antena de Rádio!
 
 function ControleSuprimentosPage() {
   const { user } = useAuth();
@@ -48,8 +49,9 @@ function ControleSuprimentosPage() {
     variant: 'success'
   });
 
-  const fetchData = () => {
-    setLoading(true);
+  //  Adicionado suporte ao "isSilent"
+  const fetchData = useCallback((isSilent = false) => {
+    if (!isSilent) setLoading(true);
     setError(null);
 
     Promise.all([
@@ -58,15 +60,35 @@ function ControleSuprimentosPage() {
     ]).then(([registrosData, impressorasData]) => {
       setRegistros(registrosData);
       setImpressoras(impressorasData);
-    }).catch(() => setError('Falha ao carregar o histórico de suprimentos.'))
-      .finally(() => setLoading(false));
-  };
+    }).catch(() => {
+      if (!isSilent) setError('Falha ao carregar o histórico de suprimentos.');
+    }).finally(() => {
+      if (!isSilent) setLoading(false);
+    });
+  }, []);
 
+  
+  //  MOTOR DE TEMPO REAL (WebSockets)
+  
   useEffect(() => {
     if (user && hasAccess) {
-      fetchData();
+      fetchData(false); // Carga inicial
+
+      const lidarComAtualizacaoTempoReal = () => {
+        console.log("🖨️ O Servidor avisou: Estoque de Suprimentos atualizado! Recarregando silenciosamente...");
+        fetchData(true);
+      };
+
+      // Fica à escuta do evento do Estoque de Toners
+      socket.on('atualizar_suprimentos', lidarComAtualizacaoTempoReal);
+
+      return () => {
+        socket.off('atualizar_suprimentos', lidarComAtualizacaoTempoReal);
+      };
     }
-  }, [user, hasAccess]);
+  }, [user, hasAccess, fetchData]);
+  // ==========================================================================
+
   
   const handleFormSubmit = async (data: ControleSuprimentosCreateData) => {
     setIsSubmitting(true);
@@ -74,7 +96,7 @@ function ControleSuprimentosPage() {
     try {
       await suprimentosService.createControleSuprimentos(data);
       setShowFormModal(false);
-      fetchData();
+      fetchData(true); //  Recarga silenciosa
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao registrar a requisição de suprimento.');
     } finally {
@@ -82,7 +104,6 @@ function ControleSuprimentosPage() {
     }
   };
 
-  // 1. Técnico Reporta Inconsistência
   const handleReportarErro = async () => {
     if (!mensagemReporte.trim()) return;
     setIsSubmitting(true);
@@ -110,7 +131,6 @@ function ControleSuprimentosPage() {
     }
   };
 
-  // 2. Gestor Corrige Estoque Manualmente
   const handleCorrigirEstoque = async () => {
     if (!corCorrecao || novaQuantidade === '' || !justificativaCorrecao.trim()) return;
     setIsSubmitting(true);
@@ -124,7 +144,7 @@ function ControleSuprimentosPage() {
       setCorCorrecao('');
       setNovaQuantidade('');
       setJustificativaCorrecao('');
-      fetchData();
+      fetchData(true); //  Recarga silenciosa
       setFeedback({
         show: true,
         title: 'Estoque Atualizado',
@@ -143,7 +163,6 @@ function ControleSuprimentosPage() {
     }
   };
 
-  // 3. Gestor Visualiza Histórico de Entradas
   const handleAbrirHistorico = async () => {
     setShowModalHistorico(true);
     setLoadingHistorico(true);
@@ -184,7 +203,6 @@ function ControleSuprimentosPage() {
         </Alert>
       )}
       
-      {/* Barra de Ações Operacionais */}
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <div className="d-flex flex-wrap gap-2">
           {isTecnicoImpressora && (
@@ -232,7 +250,6 @@ function ControleSuprimentosPage() {
         </Card.Body>
       </Card>
 
-      {/* Modal Nova Requisição */}
       <ModalForm 
         show={showFormModal} 
         onHide={() => setShowFormModal(false)}
@@ -245,7 +262,6 @@ function ControleSuprimentosPage() {
         />
       </ModalForm>
 
-      {/* MODAL 1: Técnico de Impressora Reportar Erro */}
       <Modal show={showModalReporte} onHide={() => setShowModalReporte(false)} centered>
         <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title className="fs-6 fw-bold">⚠️ Reportar Inconsistência de Estoque</Modal.Title>
@@ -284,7 +300,6 @@ function ControleSuprimentosPage() {
         </Modal.Footer>
       </Modal>
 
-      {/* MODAL 2: Gestor Corrigir Estoque */}
       <Modal show={showModalCorrecao} onHide={() => setShowModalCorrecao(false)} centered>
         <Modal.Header closeButton className="bg-warning text-dark">
           <Modal.Title className="fs-6 fw-bold">✏️ Ajuste Manual de Estoque de Suprimentos</Modal.Title>
@@ -294,6 +309,7 @@ function ControleSuprimentosPage() {
             <Form.Label className="small fw-bold text-secondary">Suprimento / Cor</Form.Label>
             <Form.Select value={corCorrecao} onChange={(e) => setCorCorrecao(e.target.value)}>
               <option value="">Selecione o suprimento...</option>
+               <option value="unidade_imagem">Unidade de Imagem</option>
               <option value="Preto">Preto</option>
               <option value="Cyan">Cyan</option>
               <option value="Magenta">Magenta</option>
@@ -335,7 +351,6 @@ function ControleSuprimentosPage() {
         </Modal.Footer>
       </Modal>
 
-      {/* MODAL 3: Gestor Histórico de Entradas / Entradas por Período */}
       <Modal show={showModalHistorico} onHide={() => setShowModalHistorico(false)} size="lg" centered>
         <Modal.Header closeButton className="bg-info text-white">
           <Modal.Title className="fs-6 fw-bold">🕒 Histórico de Entradas e Ajustes de Suprimentos</Modal.Title>
@@ -388,7 +403,6 @@ function ControleSuprimentosPage() {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal Feedback */}
       <Modal show={feedback.show} onHide={() => setFeedback(prev => ({ ...prev, show: false }))} centered>
         <Modal.Header closeButton className={`bg-${feedback.variant} text-white`}>
           <Modal.Title className="fs-6 fw-bold">{feedback.title}</Modal.Title>

@@ -37,7 +37,7 @@ export default function ProducaoTable({ historico, isGestor, onDelete }: Produca
             {isGestor && <th>Técnico</th>}
             <th>Serviço Realizado</th>
             <th>Ref. Chamado</th>
-            <th className="text-end">Mão de Obra</th>
+            <th className="text-end">Valor do Serviço</th>
             <th className="text-end">Custo Peças</th>
             <th className="text-end fw-bold text-primary">Custo Total</th>
             <th className="text-center pe-4">Ações</th>

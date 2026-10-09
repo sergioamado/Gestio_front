@@ -7,6 +7,7 @@ import NotificacoesOffcanvas from './notificacoes/NotificacoesOffcanvas';
 import ConfigurarNotificacoesModal from './notificacoes/ConfigurarNotificacoesModal';
 import * as notificacaoService from '../services/notificacaoService';
 import type { Notificacao } from '../services/notificacaoService';
+import { socket } from '../services/socket'; 
 
 interface HeaderProps {
   title: string;
@@ -16,39 +17,60 @@ interface HeaderProps {
 function Header({ title, onToggleSidebar }: HeaderProps) {
   const { user } = useAuth();
   
-  // Estados para as Notificações
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const fetchNotificacoes = useCallback(async () => {
+  // isSilent para a tela não piscar quando o Socket atualizar os dados
+  const fetchNotificacoes = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       const data = await notificacaoService.getNotificacoes();
       setNotificacoes(data);
-
-      // Lógica nativa do navegador para OS novas
-      const naoLidas = data.filter(n => !n.lida);
-      if (naoLidas.length > 0 && Notification.permission === 'granted') {
-        // Mostra a notificação mais recente no sistema operacional (Windows/Mac/Linux)
-        new Notification('COSUP+', { body: naoLidas[0].mensagem });
-      }
     } catch (error) {
       console.error("Erro ao buscar notificações", error);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, []);
 
-  // Busca as notificações quando o Header carrega e fica checando a cada 30 segundos (Polling)
+  // 1. Carrega as notificações iniciais ao abrir o sistema
   useEffect(() => {
     fetchNotificacoes();
-    const interval = setInterval(() => {
-      fetchNotificacoes();
-    }, 30000); 
-    return () => clearInterval(interval);
+    
+    // Pede permissão ao navegador para notificações nativas, se ainda não tiver
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
   }, [fetchNotificacoes]);
+
+  // A ANTENA DO SININHO E DA BARRA LATERAL
+  useEffect(() => {
+    if (!user) return;
+
+    const lidarComNovaNotificacao = (novaNotif: Notificacao) => {
+      console.log("🔔 O Rádio tocou no Header! Atualizando o sininho...");
+      
+      // Atualiza a lista de notificações silenciosamente (a bolinha vermelha sobe sozinha)
+      fetchNotificacoes(true);
+
+      // Dispara a notificação nativa do sistema (Windows/Mac) apenas no momento em que ela chega!
+      if (Notification.permission === 'granted') {
+        new Notification('COSUP+', { 
+            body: novaNotif.mensagem,
+            icon: '/favicon.ico' // Opcional: coloque o caminho do seu logo aqui
+        });
+      }
+    };
+
+    socket.on('nova_notificacao', lidarComNovaNotificacao);
+
+    return () => {
+      socket.off('nova_notificacao', lidarComNovaNotificacao);
+    };
+  }, [user, fetchNotificacoes]);
+  // ==========================================================================
 
   const unreadCount = notificacoes.filter(n => !n.lida).length;
 
@@ -83,9 +105,7 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
               </div>
               
               <div className="d-flex align-items-center gap-4">
-                 {/* BLOCO DE NOTIFICAÇÕES */}
                  <div className="d-flex align-items-center gap-2">
-                    {/* Botão de Configuração de Alertas */}
                     <button 
                       className="btn btn-link text-muted p-1 border-0 shadow-none" 
                       onClick={() => setShowConfigModal(true)}
@@ -94,7 +114,6 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
                       <GearFill size={18} />
                     </button>
 
-                    {/* O Sininho de Notificações */}
                     <button 
                       className="btn btn-link text-secondary p-1 border-0 shadow-none position-relative" 
                       onClick={() => setShowOffcanvas(true)}
@@ -113,10 +132,8 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
                     </button>
                  </div>
 
-                 {/* Linha divisória vertical sutil */}
                  <div className="vr d-none d-md-block opacity-25"></div>
 
-                 {/* Perfil do Usuário */}
                  <div className="d-none d-md-flex align-items-center">
                     <div className="text-end me-3">
                       <span className="d-block fw-bold text-dark lh-1 mb-1" style={{ fontSize: '0.9rem' }}>
@@ -135,12 +152,11 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
           </div>
       </header>
 
-      {/* COMPONENTES INVISÍVEIS ATÉ SEREM CHAMADOS */}
       <NotificacoesOffcanvas 
         show={showOffcanvas} 
         onHide={() => setShowOffcanvas(false)} 
         notificacoes={notificacoes}
-        onUpdate={fetchNotificacoes}
+        onUpdate={() => fetchNotificacoes(true)} //  isSilent=true para atualizar sem Spinner
         loading={loading && notificacoes.length === 0}
       />
 

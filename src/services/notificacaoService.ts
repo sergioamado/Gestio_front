@@ -1,15 +1,7 @@
 // src/services/notificacaoService.ts
 import api from './api';
+import type { Notificacao, PreferenciasNotificacao } from '../types';
 
-export interface Notificacao {
-  id: number;
-  titulo: string;
-  mensagem: string;
-  lida: boolean;
-  data_criacao: string;
-  tipo: 'SISTEMA' | 'OS' | 'ESTOQUE' | 'ALERTA';
-  link_acao?: string |null;
-}
 
 export const getNotificacoes = async (): Promise<Notificacao[]> => {
   const response = await api.get('/notificacoes');
@@ -31,11 +23,9 @@ export const gerarLinkTelegram = async (): Promise<{ link: string }> => {
   return response.data;
 };
 
-export const salvarPreferencias = async (dados: { 
-  notificacoes_app: boolean, 
-  notificacoes_bot: boolean,
-  desvincular_telegram?: boolean
-}) => {
-  const response = await api.put('/usuarios/preferencias-notificacoes', dados);
+
+
+export const salvarPreferencias = async (payload: PreferenciasNotificacao) => {
+  const response = await api.put('/notificacoes/preferencias', payload);
   return response.data;
 };

@@ -24,11 +24,11 @@ function ImportarSipacPage() {
   const [showFormModal, setShowFormModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 🚀 CONTROLO DE ACESSO: Apenas Admin e Gerente
+  //  CONTROLO DE ACESSO: Apenas Admin e Gerente
   const hasAccess = user?.role === 'admin' || user?.role === 'gerente';
 
   useEffect(() => {
-    // 🚀 Evita chamadas à API caso o utilizador não tenha permissão
+    //  Evita chamadas à API caso o utilizador não tenha permissão
     if (user && hasAccess) {
       unidadeService.getAllUnidades().then(setUnidades).catch(console.error);
       if (user.role !== 'admin' && user.unidade_id) {
@@ -82,7 +82,7 @@ function ImportarSipacPage() {
     }
   };
 
-  // 🚀 TELA DE BLOQUEIO: Exibida se o utilizador não for Admin ou Gerente
+  //  TELA DE BLOQUEIO: Exibida se o utilizador não for Admin ou Gerente
   if (!user || !hasAccess) {
     return (
       <MainLayout pageTitle="🚫 Acesso Restrito">

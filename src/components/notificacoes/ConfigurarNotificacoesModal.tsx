@@ -4,7 +4,10 @@ import { Modal, Form, Alert, Row, Col, Card, Badge, Button } from 'react-bootstr
 import { BellFill, Telegram, InfoCircleFill } from 'react-bootstrap-icons';
 import PrimaryButton from '../PrimaryButton';
 import * as notificacaoService from '../../services/notificacaoService';
+import * as usuarioService from '../../services/usuarioService'; 
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../hooks/useAuth'; 
+import type { Notificacao} from '../../types/index';
 
 interface ConfigModalProps {
   show: boolean;
@@ -12,28 +15,38 @@ interface ConfigModalProps {
 }
 
 function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
-  const { mostrarCard } = useToast(); // 🚀 INJETADO
-  const [telegramId, setTelegramId] = useState('');
+  const { mostrarCard } = useToast(); 
+  const { user, setUser } = useAuth(); // 🚀 Essencial
+  
+  // Preenche o ID com o que já vier do banco (se existir)
+  const [telegramId, setTelegramId] = useState(user?.telegram_chat_id || '');
   const [loading, setLoading] = useState(false);
   
-  // Estado de Permissão do Navegador
   const [permissaoNavegador, setPermissaoNavegador] = useState<NotificationPermission>('default');
 
-  // Controle Granular Visual (Na interface)
   const [prefsNavegador, setPrefsNavegador] = useState({
     os: true, estoque: true, sistema: true, alertas: true
   });
   
   const [prefsTelegram, setPrefsTelegram] = useState({
-    os: true, estoque: false, sistema: false, alertas: true
+    os: user?.notificacoes_bot ?? false, 
+    estoque: user?.notificacoes_bot ?? false, 
+    sistema: user?.notificacoes_bot ?? false, 
+    alertas: user?.notificacoes_bot ?? false
   });
 
   useEffect(() => {
-    if (show && 'Notification' in window) {
-      setPermissaoNavegador(Notification.permission);
-      // Aqui pode buscar as prefs salvas no banco e popular os states acima
+    if (show) {
+      if ('Notification' in window) setPermissaoNavegador(Notification.permission);
+      setTelegramId(user?.telegram_chat_id || ''); // Atualiza o ID caso tenha mudado noutra aba
+      
+      // Ajusta os botões "mestres" com base no perfil logado
+      if (user) {
+         const boolApp = user.notificacoes_app ?? true;
+         setPrefsNavegador({ os: boolApp, estoque: boolApp, sistema: boolApp, alertas: boolApp });
+      }
     }
-  }, [show]);
+  }, [show, user]);
 
   const solicitarPermissaoNavegador = async () => {
     if (!('Notification' in window)) {
@@ -60,24 +73,34 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
     setLoading(true);
     
     try {
-      // 🚀 CORREÇÃO DO TYPESCRIPT: 
-      // O serviço espera um objeto com { notificacoes_app, notificacoes_bot, desvincular_telegram }
-      // Vamos assumir que se alguma opção granular estiver "true", a master key fica "true"
-      const payload = {
-        notificacoes_app: Object.values(prefsNavegador).some(v => v === true),
-        notificacoes_bot: Object.values(prefsTelegram).some(v => v === true),
-        desvincular_telegram: !telegramId // Se o campo estiver vazio, envia a flag para desvincular
-      };
+      const isAppActive = Object.values(prefsNavegador).some(v => v === true);
+      const isBotActive = Object.values(prefsTelegram).some(v => v === true);
+      const isDesvincular = !telegramId.trim(); // Se vazio, desvincula
+      
+      //ATUALIZAR DADOS DO USUÁRIO NA API
+      // Enviamos diretamente a chave telegram_chat_id se ela existir, ou enviamos flag de desvincular
+      await notificacaoService.salvarPreferencias({
+        notificacoes_app: isAppActive,
+        notificacoes_bot: isBotActive,
+        desvincular_telegram: isDesvincular,
+        telegram_chat_id: isDesvincular ? null : telegramId.trim()
+      });
 
-      await notificacaoService.salvarPreferencias(payload);
-
-      // Nota: Se a sua API requer que envie o "telegram_chat_id" para outro endpoint
-      // (ex: usuarioService.atualizarPerfil), você deve chamá-lo aqui.
+      // (Sessão atual) para refletir na hora sem precisar F5
+      if (user) {
+        setUser({
+          ...user,
+          notificacoes_app: isAppActive,
+          notificacoes_bot: isBotActive,
+          telegram_chat_id: isDesvincular ? undefined : telegramId.trim()
+        });
+      }
 
       mostrarCard('Sucesso!', 'As suas preferências de alerta foram salvas.', 'sucesso');
-      setTimeout(onHide, 1000);
+      setTimeout(onHide, 1000); // Aguarda o Toast piscar antes de fechar o Modal
     } catch (error) {
-      mostrarCard('Erro', 'Falha ao salvar as configurações. Tente novamente.', 'erro');
+      console.error(error);
+      mostrarCard('Erro', 'Falha ao salvar. Verifique se o seu Telegram ID está correto.', 'erro');
     } finally {
       setLoading(false);
     }

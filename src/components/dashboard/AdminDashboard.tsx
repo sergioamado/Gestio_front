@@ -4,21 +4,12 @@ import { Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api'; 
 import PrimaryButton from '../PrimaryButton';
-// Importações da biblioteca Recharts
+import type { Estatisticas } from '../../types';
+import type { DashboardProps } from '../../types';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
 
 // Atualização da tipagem para receber o gráfico
-interface GraficoStatus {
-  name: string;
-  quantidade: number;
-}
 
-interface Estatisticas {
-  os_pendentes: number;
-  baixo_estoque: number;
-  patrimonio_ativo: number;
-  grafico_status?: GraficoStatus[];
-}
 
 // Mapa de cores corporativas baseado no status
 const COLOR_MAP: Record<string, string> = {
@@ -28,7 +19,7 @@ const COLOR_MAP: Record<string, string> = {
   'CANCELADA': '#ef4444'       // Vermelho (Falha/Cancelado)
 };
 
-function AdminDashboard() {
+function AdminDashboard({refreshTrigger}: DashboardProps) {
   const [stats, setStats] = useState<Estatisticas | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +53,7 @@ function AdminDashboard() {
     };
 
     fetchEstatisticas();
-  }, []);
+  }, [refreshTrigger]);
 
   // Customizador do Tooltip (Balãozinho que aparece ao passar o mouse no gráfico)
   const CustomTooltip = ({ active, payload }: any) => {

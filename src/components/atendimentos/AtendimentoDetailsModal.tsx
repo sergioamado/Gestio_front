@@ -61,8 +61,8 @@ function AtendimentoDetailsModal({ show, onHide, atendimento }: AtendimentoDetai
             <Card className="border-0 shadow-sm h-100">
               <Card.Body className="p-3 text-center">
                 <div className="text-muted small fw-bold text-uppercase mb-1"><PersonBadge className="me-1 mb-1" /> Técnico (COSUP)</div>
-                <div className="fw-bold text-dark text-truncate" title={atendimento.tecnico_responsavel?.nome_completo}>
-                  {atendimento.tecnico_responsavel?.nome_completo || 'Não Atribuído'}
+                <div className="fw-bold text-dark text-truncate" title={atendimento.tecnico?.nome_completo}>
+                  {atendimento.tecnico?.nome_completo || 'Não Atribuído'}
                 </div>
               </Card.Body>
             </Card>

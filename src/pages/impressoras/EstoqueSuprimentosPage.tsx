@@ -9,34 +9,32 @@ import * as suprimentosService from '../../services/suprimentosService';
 import type { EstoqueSuprimentos } from '../../types';
 import EstoqueAtualCard from '../../components/estoque/EstoqueAtualCard';
 import AdicionarEstoqueForm from '../../components/estoque/AdicionarEstoqueForm';
+import { socket } from '../../services/socket'; //   Antena de Rádio!
 
 function EstoqueSuprimentosPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [estoque, setEstoque] = useState<EstoqueSuprimentos | null>(null);
-  const [historico, setHistorico] = useState<any[]>([]); // 🚀 Estado para o histórico
+  const [historico, setHistorico] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Estados dos Modais de Correção/Reporte
   const [showCorrecaoModal, setShowCorrecaoModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [correcaoData, setCorrecaoData] = useState({ cor: 'preto', novaQuantidade: 0, justificativa: '' });
   const [reportData, setReportData] = useState({ mensagem: '' });
 
-  // Permissões
   const canManageImpressoras = user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_impressora';
-  const isGestor = user?.role === 'admin' || user?.role === 'gerente'; // 🚀 Separa quem pode corrigir de quem pode só reportar
+  const isGestor = user?.role === 'admin' || user?.role === 'gerente';
 
-  const fetchData = useCallback(() => {
-    setLoading(true);
+  //  Adicionado suporte ao isSilent
+  const fetchData = useCallback((isSilent = false) => {
+    if (!isSilent) setLoading(true);
     setError(null);
     
-    // 🚀 Busca o estoque e o histórico ao mesmo tempo
     Promise.all([
       suprimentosService.getEstoqueSuprimentos(),
-      // Caso não tenha o endpoint de histórico criado no backend ainda, ele retorna array vazio para não quebrar a tela
       suprimentosService.getHistoricoEntradas ? suprimentosService.getHistoricoEntradas() : Promise.resolve([])
     ])
       .then(([estoqueData, historicoData]) => {
@@ -44,27 +42,46 @@ function EstoqueSuprimentosPage() {
         setHistorico(historicoData);
       })
       .catch((err: any) => {
-        const errorMessage = err.response?.data?.message || 'Falha ao carregar os dados de suprimentos.';
-        setError(errorMessage);
+        if (!isSilent) setError(err.response?.data?.message || 'Falha ao carregar os dados de suprimentos.');
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!isSilent) setLoading(false);
+      });
   }, []);
 
+  
+  //  MOTOR DE TEMPO REAL (WebSockets)
+  
   useEffect(() => {
     if (!isAuthLoading && canManageImpressoras) {
-      fetchData();
+      fetchData(false); // Carga inicial
+
+      const lidarComAtualizacaoTempoReal = () => {
+        console.log("🖨️ O Servidor avisou: Estoque Global de Toners atualizado! Recarregando silenciosamente...");
+        fetchData(true);
+      };
+
+      // Escuta o mesmo evento global de suprimentos!
+      socket.on('atualizar_suprimentos', lidarComAtualizacaoTempoReal);
+
+      return () => {
+        socket.off('atualizar_suprimentos', lidarComAtualizacaoTempoReal);
+      };
     }
+    
     if (!isAuthLoading && !canManageImpressoras) {
       setLoading(false);
     }
   }, [canManageImpressoras, fetchData, isAuthLoading]);
+  // ==========================================================================
 
   const handleAddEstoque = async (data: Partial<EstoqueSuprimentos>) => {
     setIsSubmitting(true);
     setError(null);
     try {
       await suprimentosService.addEstoqueSuprimentos(data);
-      fetchData(); // Atualiza tudo (estoque e histórico)
+      // O backend vai emitir o rádio, mas garantimos a recarga local
+      fetchData(true); 
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao registrar nova entrada no estoque.');
     } finally {
@@ -72,17 +89,15 @@ function EstoqueSuprimentosPage() {
     }
   };
 
-  // 🚀 Ação Exclusiva de Gestor (Corrigir Diretamente)
   const handleCorrigirEstoque = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Endpoint a ser criado: ajusta a quantidade exata e salva a justificativa/log
       if(suprimentosService.corrigirEstoque) {
          await suprimentosService.corrigirEstoque(correcaoData);
       }
       setShowCorrecaoModal(false);
-      fetchData();
+      fetchData(true); 
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao corrigir o estoque.');
     } finally {
@@ -90,12 +105,10 @@ function EstoqueSuprimentosPage() {
     }
   };
 
-  // 🚀 Ação de Técnico (Reportar Divergência)
   const handleReportarErro = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Endpoint a ser criado: envia notificação/email para os gerentes
       if(suprimentosService.reportarErroEstoque) {
          await suprimentosService.reportarErroEstoque(reportData);
       }
@@ -143,7 +156,6 @@ function EstoqueSuprimentosPage() {
     <MainLayout pageTitle="📦 Gerenciar Estoque de Suprimentos">
       {error && <Alert variant="danger" className="shadow-sm border-0 mb-4" onClose={() => setError(null)} dismissible>{error}</Alert>}
       
-      {/* Botões de Ação de Correção */}
       <div className="d-flex justify-content-end mb-3 gap-2">
         {isGestor ? (
           <Button variant="warning" className="fw-bold shadow-sm border-0" onClick={() => setShowCorrecaoModal(true)}>
@@ -162,7 +174,6 @@ function EstoqueSuprimentosPage() {
         <AdicionarEstoqueForm onSubmit={handleAddEstoque} isLoading={isSubmitting} />
       </div>
 
-      {/* 🚀 NOVA SESSÃO: HISTÓRICO DE ENTRADAS */}
       <Card className="floating-card border-0 shadow-sm mt-5">
         <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
           <h5 className="fw-bold text-dark mb-0">🕒 Histórico de Entradas</h5>
@@ -181,12 +192,12 @@ function EstoqueSuprimentosPage() {
               <tbody>
                 {historico.map((log, index) => (
                   <tr key={index}>
-                    <td className="fw-medium text-dark">{new Date(log.data).toLocaleString('pt-BR')}</td>
-                    <td className="text-muted">{log.usuario?.nome_completo || 'Sistema'}</td>
+                    <td className="fw-medium text-dark">{new Date(log.data || log.createdAt).toLocaleString('pt-BR')}</td>
+                    <td className="text-muted">{log.usuario?.nome_completo || log.usuarios?.nome_completo || 'Sistema'}</td>
                     <td>
                        <Badge bg="secondary" className="px-3 py-2 text-uppercase">{log.cor}</Badge>
                     </td>
-                    <td className="text-center fw-bold text-success">+{log.quantidade_adicionada}</td>
+                    <td className="text-center fw-bold text-success">+{log.quantidade_adicionada || log.quantidade}</td>
                   </tr>
                 ))}
               </tbody>
@@ -200,7 +211,6 @@ function EstoqueSuprimentosPage() {
         </Card.Body>
       </Card>
 
-      {/* 🚀 MODAL: CORRIGIR ESTOQUE (Admin/Gerente) */}
       <ModalForm show={showCorrecaoModal} onHide={() => setShowCorrecaoModal(false)} title="✏️ Correção Manual de Estoque">
         <Form onSubmit={handleCorrigirEstoque}>
           <Alert variant="warning" className="small border-0 shadow-sm mb-4">
@@ -211,9 +221,10 @@ function EstoqueSuprimentosPage() {
               <Form.Group>
                 <Form.Label className="fw-bold small text-uppercase text-secondary">Cor / Toner</Form.Label>
                 <Form.Select value={correcaoData.cor} onChange={(e) => setCorrecaoData({...correcaoData, cor: e.target.value})}>
+                  <option value="preto">Unidade de Imagem </option>
                   <option value="preto">Toner Preto (Black)</option>
                   <option value="ciano">Toner Ciano (Cyan)</option>
-                  <option value="magenta">Toner Magenta</option>
+                  <option value="magenta">Toner Magenta (Magenta)</option>
                   <option value="amarelo">Toner Amarelo (Yellow)</option>
                 </Form.Select>
               </Form.Group>
@@ -236,7 +247,6 @@ function EstoqueSuprimentosPage() {
         </Form>
       </ModalForm>
 
-      {/* 🚀 MODAL: REPORTAR ERRO (Técnico) */}
       <ModalForm show={showReportModal} onHide={() => setShowReportModal(false)} title="⚠️ Reportar Divergência no Estoque">
         <Form onSubmit={handleReportarErro}>
           <Alert variant="info" className="small border-0 shadow-sm mb-4">

@@ -14,7 +14,7 @@ interface ImpressorasTableProps {
 function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: ImpressorasTableProps) {
   const { confirmar } = useConfirm();
 
-  // 🚀 NOVA FUNÇÃO: Mostra o cartão de confirmação customizado antes de prosseguir
+  //  NOVA FUNÇÃO: Mostra o cartão de confirmação customizado antes de prosseguir
   const handleDeleteClick = async (impressora: Impressora) => {
     const confirmou = await confirmar({
       titulo: '🗑️ Remover Impressora',
@@ -62,7 +62,7 @@ function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: Impresso
                   <Button variant="outline-primary" size="sm" onClick={() => onEdit(item)} className="fw-bold">
                     <PencilSquare className="me-1" /> Editar
                   </Button>
-                  {/* 🚀 ALTERADO: Agora chama a nossa função de interceção */}
+                  {/* Agora chama a nossa função de interceção */}
                   <Button variant="outline-danger" size="sm" onClick={() => handleDeleteClick(item)} className="fw-bold">
                     <Trash3Fill className="me-1" /> Excluir
                   </Button>

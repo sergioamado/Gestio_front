@@ -1,5 +1,5 @@
 // src/pages/NovaSolicitacaoPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col, Card, Form, Button, Table, Badge, InputGroup, Spinner, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../../layouts/MainLayout';
@@ -10,6 +10,7 @@ import type { Item } from '../../types';
 
 import * as itemService from '../../services/itemService';
 import * as solicitacaoService from '../../services/solicitacaoService';
+import { socket } from '../../services/socket'; //  Antena de Rádio!
 
 interface ItemCarrinho extends Item {
   quantidadeSelecionada: number;
@@ -33,21 +34,41 @@ function NovaSolicitacaoPage() {
   
   const [loading, setLoading] = useState(false);
 
-  //  Verifica se o usuário logado é administrador
   const isAdmin = user?.role === 'admin';
 
- useEffect(() => {
-    const fetchItens = async () => {
-      try {
-        const res = await itemService.getAllItems();
-        const arrayItens = Array.isArray(res) ? res : (res.data || []);
-        setItensDisponiveis(arrayItens);
-      } catch (error) {
-        mostrarCard('Erro', 'Falha ao buscar itens do catálogo.', 'erro');
-      }
-    };
-    fetchItens();
+  //  Busca extraída para useCallback (silenciosa por padrão para não piscar a tela)
+  const fetchItens = useCallback(async (isInitial = false) => {
+    try {
+      const res = await itemService.getAllItems();
+      const arrayItens = Array.isArray(res) ? res : (res.data || []);
+      setItensDisponiveis(arrayItens);
+      
+      // Lógica extra: Se recarregar e um item do carrinho não tiver mais estoque, avisa o usuário (opcional/futuro)
+    } catch (error) {
+      if (isInitial) mostrarCard('Erro', 'Falha ao buscar itens do catálogo.', 'erro');
+    }
   }, [mostrarCard]);
+
+  
+  //  MOTOR DE TEMPO REAL (WebSockets)
+  
+  useEffect(() => {
+    fetchItens(true); // Carga inicial
+
+    const lidarComAtualizacaoEstoque = () => {
+      console.log("📦 O Servidor avisou: Estoque alterado! Recarregando catálogo de peças...");
+      fetchItens(false);
+    };
+
+    // Fica à escuta do evento do Estoque
+    socket.on('atualizar_estoque', lidarComAtualizacaoEstoque);
+
+    return () => {
+      socket.off('atualizar_estoque', lidarComAtualizacaoEstoque);
+    };
+  }, [fetchItens]);
+  // ==========================================================================
+
 
   const adicionarAoCarrinho = (item: Item) => {
     const itemJaExiste = carrinho.find(c => c.id === item.id);
@@ -87,7 +108,6 @@ function NovaSolicitacaoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    //  Trava de segurança extra caso o admin tente submeter por código/atalho
     if (isAdmin) {
       mostrarCard('Ação Não Permitida', 'Contas de Administrador não possuem unidade atrelada e não podem gerar solicitações.', 'alerta');
       return;
@@ -101,7 +121,6 @@ function NovaSolicitacaoPage() {
     setLoading(true);
 
     try {
-      // 1. Verificação Inteligente de Duplicidade
       try {
         const respostaBusca = await solicitacaoService.getAllSolicitacoes({ numero_glpi: glpi, status: 'PENDENTE' });
         const duplicados = respostaBusca.data ? respostaBusca.data : (Array.isArray(respostaBusca) ? respostaBusca : []);
@@ -124,7 +143,6 @@ function NovaSolicitacaoPage() {
         console.warn("Aviso: Falha não-crítica ao verificar duplicidade.", err);
       }
 
-      // 2. Salvar OS
       const payload = {
         responsavel_usuario_id: user?.id,
         unidade_id: user?.unidade_id || 1,
@@ -174,7 +192,6 @@ function NovaSolicitacaoPage() {
   return (
     <MainLayout pageTitle="Nova Solicitação de Material">
       
-      {/*  Alerta informativo exibido exclusivamente para Administradores */}
       {isAdmin && (
         <Alert variant="info" className="shadow-sm border-0 mb-4 d-flex align-items-center">
           <span className="fs-4 me-3">ℹ️</span>
@@ -370,7 +387,6 @@ function NovaSolicitacaoPage() {
                         </span>
                     </div>
 
-                    {/*  Botão desativado para o Administrador com tooltip/texto explicativo */}
                     <Button 
                       variant={isAdmin ? "secondary" : "success"}
                       size="lg" 
@@ -381,7 +397,7 @@ function NovaSolicitacaoPage() {
                     >
                         {isAdmin ? '🔒 Indisponível para Administradores' : (loading ? (
                           <><Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2"/> Registrando...</>
-                        ) : '🚀 Finalizar Solicitação')}
+                        ) : ' Finalizar Solicitação')}
                     </Button>
                 </div>
               </Card.Body>

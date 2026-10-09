@@ -1,21 +1,25 @@
 // src/pages/DashboardPage.tsx
+import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import MainLayout from '../layouts/MainLayout';
 import AdminDashboard from '../components/dashboard/AdminDashboard';
 import GerenteDashboard from '../components/dashboard/GerenteDashboard';
 import TecnicoDashboard from '../components/dashboard/TecnicoDashboard';
 import { Card } from 'react-bootstrap';
+import type { DashboardProps } from '../types';
+import { socket } from '../services/socket'; // Antena de Rádio!
 
-const renderDashboardByRole = (role?: string) => {
+//  Agora a função recebe o gatilho e passa para os painéis filhos
+const renderDashboardByRole = (role?: string, refreshTrigger: number = 0) => {
   switch (role) {
     case 'admin':
-      return <AdminDashboard />;
+      return <AdminDashboard refreshTrigger={refreshTrigger} />;
     case 'gerente':
-      return <GerenteDashboard />;
+      return <GerenteDashboard refreshTrigger={refreshTrigger} />;
     case 'tecnico':
     case 'tecnico_impressora':
     case 'tecnico_eletronica':
-      return <TecnicoDashboard />;
+      return <TecnicoDashboard refreshTrigger={refreshTrigger} />;
     default:
       return (
         <Card className="border-0 shadow-sm text-center p-5 mt-4">
@@ -29,6 +33,9 @@ const renderDashboardByRole = (role?: string) => {
 
 function DashboardPage() {
   const { user } = useAuth();
+  
+  //  O Gatilho que vai fazer os gráficos piscarem
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const primeiroNome = user?.nome_completo?.split(' ')[0] || 'Usuário';
 
@@ -39,6 +46,36 @@ function DashboardPage() {
     year: 'numeric'
   });
   const dataFormatada = dataAtual.charAt(0).toUpperCase() + dataAtual.slice(1);
+
+
+  // ==========================================================================
+  //  MOTOR DE DASHBOARD EM TEMPO REAL
+  // ==========================================================================
+  useEffect(() => {
+    // Escuta absolutamente TODAS as mudanças do sistema
+    const lidarComNovosDados = () => {
+      console.log("📊 Dashboard Real-Time: Sistema alterado. Atualizando estatísticas...");
+      setRefreshTrigger(prev => prev + 1); // Dispara a atualização dos filhos
+    };
+
+    socket.on('atualizar_tabelas_os', lidarComNovosDados);
+    socket.on('atualizar_manutencao', lidarComNovosDados);
+    socket.on('atualizar_estoque', lidarComNovosDados);
+    socket.on('atualizar_atendimentos', lidarComNovosDados);
+    socket.on('atualizar_suprimentos', lidarComNovosDados);
+    socket.on('atualizar_producao', lidarComNovosDados); 
+
+    return () => {
+      socket.off('atualizar_tabelas_os', lidarComNovosDados);
+      socket.off('atualizar_manutencao', lidarComNovosDados);
+      socket.off('atualizar_estoque', lidarComNovosDados);
+      socket.off('atualizar_atendimentos', lidarComNovosDados);
+      socket.off('atualizar_suprimentos', lidarComNovosDados);
+      socket.off('atualizar_producao', lidarComNovosDados);
+    };
+  }, []);
+  // ==========================================================================
+
 
   return (
     <MainLayout pageTitle="Painel de Controle">   
@@ -59,7 +96,8 @@ function DashboardPage() {
       </Card>
 
       <div className="animate__animated animate__fadeInUp animate__faster">
-        {renderDashboardByRole(user?.role)}
+        {/*  Passamos o gatilho para o painel renderizado */}
+        {renderDashboardByRole(user?.role, refreshTrigger)}
       </div>
     </MainLayout>
   );

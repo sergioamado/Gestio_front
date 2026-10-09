@@ -111,7 +111,7 @@ function Sidebar() {
 
           {/* MÓDULO: MANUTENÇÃO ELETRÔNICA              */}
           
-          {(user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_eletronica') && (
+          {(user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_eletronica' || user?.role == 'tecnico') && (
             <>
               <div className="sidebar-title text-uppercase text-white-50 small fw-bold mt-4 mb-2 px-3" style={{ fontSize: '0.75rem', letterSpacing: '1px' }}>
                 Eletrônica
