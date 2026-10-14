@@ -14,7 +14,6 @@ interface ImpressorasTableProps {
 function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: ImpressorasTableProps) {
   const { confirmar } = useConfirm();
 
-  //  NOVA FUNÇÃO: Mostra o cartão de confirmação customizado antes de prosseguir
   const handleDeleteClick = async (impressora: Impressora) => {
     const confirmou = await confirmar({
       titulo: '🗑️ Remover Impressora',
@@ -38,6 +37,8 @@ function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: Impresso
           <th>Nº de Série</th>
           <th>IP</th>
           <th>Unidade</th>
+          {/* 🚀 Coluna de Localização adicionada na tabela principal */}
+          <th>Localização / Sala</th>
           <th className="text-center">Ações</th>
         </tr>
       </thead>
@@ -54,6 +55,8 @@ function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: Impresso
                   {item.unidades_organizacionais?.nome || 'Não Definida'}
                 </Badge>
               </td>
+              {/* 🚀 Exibição da Localização */}
+              <td className="text-muted">{item.localizacao || 'Não informada'}</td>
               <td className="text-center">
                 <Stack direction="horizontal" gap={2} className="justify-content-center">
                   <Button variant="outline-info" size="sm" onClick={() => onDetails(item)} className="fw-bold text-dark">
@@ -62,7 +65,6 @@ function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: Impresso
                   <Button variant="outline-primary" size="sm" onClick={() => onEdit(item)} className="fw-bold">
                     <PencilSquare className="me-1" /> Editar
                   </Button>
-                  {/* Agora chama a nossa função de interceção */}
                   <Button variant="outline-danger" size="sm" onClick={() => handleDeleteClick(item)} className="fw-bold">
                     <Trash3Fill className="me-1" /> Excluir
                   </Button>
@@ -72,7 +74,7 @@ function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: Impresso
           ))
         ) : (
           <tr>
-            <td colSpan={6} className="text-center py-4 text-muted fst-italic">Nenhuma impressora encontrada.</td>
+            <td colSpan={7} className="text-center py-4 text-muted fst-italic">Nenhuma impressora encontrada.</td>
           </tr>
         )}
       </tbody>

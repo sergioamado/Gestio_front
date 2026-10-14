@@ -1,3 +1,5 @@
+import type { Unidade } from './index';
+
 export interface Impressora {
   id: number;
   nome: string;
@@ -10,6 +12,7 @@ export interface Impressora {
   status_verificacao: string;
   unidade_id: number;
   is_colorida: boolean;
+  ativo: boolean;
   unidades_organizacionais?: {
     nome: string;
   };
@@ -90,6 +93,7 @@ export interface AtendimentoImpressora {
   unidade_id: number;
   impressora_id: number;
   tecnico_id: number;
+  ativo: boolean;
   impressora?: {
     nome: string;
     modelo: string;
@@ -110,4 +114,17 @@ export interface AtendimentosTableProps {
   atendimentos: AtendimentoImpressora[];
   onDetails: (atendimento: AtendimentoImpressora) => void; 
   onEdit: (atendimento: AtendimentoImpressora) => void;  
+}
+
+export interface ImpressoraFormProps {
+  impressora?: Impressora | null;
+  unidades: Unidade[];
+  onSubmit: (data: any) => void;
+  isLoading: boolean;
+}
+
+export interface ImpressoraDetailsModalProps {
+  show: boolean;
+  onHide: () => void;
+  impressora: Impressora | null;
 }

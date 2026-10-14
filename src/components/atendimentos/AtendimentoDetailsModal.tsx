@@ -1,8 +1,7 @@
 // src/components/atendimentos/AtendimentoDetailsModal.tsx
-import { Modal, Row, Col, Badge, Card } from 'react-bootstrap';
-import { Printer, GeoAlt, PersonBadge, CalendarEvent, Hash, Tools, Check2All, ShieldCheck } from 'react-bootstrap-icons';
+import { Modal, ListGroup, Row, Col, Badge } from 'react-bootstrap';
+import { Tools, InfoCircleFill } from 'react-bootstrap-icons';
 import type { AtendimentoImpressora } from '../../types';
-import { statusMap } from './AtendimentosTable';
 
 interface AtendimentoDetailsModalProps {
   show: boolean;
@@ -10,112 +9,99 @@ interface AtendimentoDetailsModalProps {
   atendimento: AtendimentoImpressora | null;
 }
 
-const formatDate = (dateString?: string | null) => {
-    if (!dateString) return 'Não informado';
-    return new Intl.DateTimeFormat('pt-BR', { 
-      timeZone: 'America/Sao_Paulo',
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    }).format(new Date(dateString));
-};
-
 function AtendimentoDetailsModal({ show, onHide, atendimento }: AtendimentoDetailsModalProps) {
   if (!atendimento) return null;
 
-  const statusConfig = statusMap[atendimento.status] || { variant: 'secondary', text: atendimento.status };
+  // 🚀 Função de data ajustada para aceitar strings ou objetos Date
+  const formatDate = (dateString?: string | Date | null) => {
+    if (!dateString) return 'Não informada';
+    return new Date(dateString).toLocaleString('pt-BR');
+  };
 
   return (
     <Modal show={show} onHide={onHide} centered size="lg">
-      <Modal.Header closeButton className="bg-light border-bottom-0 pb-4">
-        <Modal.Title className="fw-bold text-dark d-flex align-items-center gap-3">
-          <span className="fs-5">📋 Detalhes do Chamado</span>
-          <Badge 
-            className={`bg-${statusConfig.variant} bg-opacity-10 text-${statusConfig.variant === 'warning' ? 'dark' : statusConfig.variant} border border-${statusConfig.variant} px-3 py-2 rounded-pill shadow-sm fs-6`}
-          >
-            {statusConfig.text}
-          </Badge>
+      <Modal.Header closeButton className="bg-light border-bottom-0 pb-0">
+        <Modal.Title className="fw-bold fs-5 text-dark d-flex align-items-center">
+           <InfoCircleFill className="me-2 text-info" /> Detalhes do Atendimento #{atendimento.id}
         </Modal.Title>
       </Modal.Header>
-      
-      <Modal.Body className="p-4 pt-0 bg-light">
+      <Modal.Body className="p-4 pt-3">
         
-        {/* CARTOES DE TOPO (Métricas Rápidas) */}
-        <Row className="g-3 mb-4 mt-1">
-          <Col md={4}>
-            <Card className="border-0 shadow-sm h-100">
-              <Card.Body className="p-3 text-center">
-                <div className="text-muted small fw-bold text-uppercase mb-1"><Hash className="me-1 mb-1" /> Nº GLPI</div>
-                <div className="fs-5 fw-bold text-primary">{atendimento.numero_glpi}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={4}>
-            <Card className="border-0 shadow-sm h-100">
-              <Card.Body className="p-3 text-center">
-                <div className="text-muted small fw-bold text-uppercase mb-1"><CalendarEvent className="me-1 mb-1" /> Abertura</div>
-                <div className="fw-bold text-dark">{formatDate(atendimento.data)}</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={4}>
-            <Card className="border-0 shadow-sm h-100">
-              <Card.Body className="p-3 text-center">
-                <div className="text-muted small fw-bold text-uppercase mb-1"><PersonBadge className="me-1 mb-1" /> Técnico (COSUP)</div>
-                <div className="fw-bold text-dark text-truncate" title={atendimento.tecnico?.nome_completo}>
-                  {atendimento.tecnico?.nome_completo || 'Não Atribuído'}
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+        <div className="d-flex align-items-center mb-4 pb-3 border-bottom">
+           <div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3 shadow-sm">
+              <Tools size={28} className="text-primary" />
+           </div>
+           <div>
+              <h4 className="fw-bold mb-0 text-dark">OS GLPI: {atendimento.numero_glpi}</h4>
+              <p className="text-muted mb-0 fw-medium">Técnico Responsável: {atendimento.tecnico?.nome_completo}</p>
+           </div>
+        </div>
+
+        <Row className="g-4 mb-4">
+           <Col md={6}>
+              <h6 className="fw-bold text-secondary text-uppercase small mb-2">Dados da Impressora</h6>
+              <ListGroup className="shadow-sm border-0">
+                <ListGroup.Item className="border-0 border-bottom py-2">
+                  <strong className="small">Impressora:</strong> {atendimento.impressora?.nome} ({atendimento.impressora?.modelo})
+                </ListGroup.Item>
+                {/* 🚀 CORREÇÃO: Força o TypeScript a aceitar a unidade_dona do backend */}
+                <ListGroup.Item className="border-0 border-bottom py-2 bg-light border-start border-primary border-4">
+                  <strong className="small">Setor/Unidade:</strong> <span className="text-primary fw-bold">{(atendimento as any).unidade_dona || atendimento.unidades_organizacionais?.nome || 'Não informada'}</span>
+                </ListGroup.Item>
+                <ListGroup.Item className="border-0 border-bottom py-2">
+                  <strong className="small">Localização/Sala:</strong> {atendimento.impressora?.localizacao || 'Não informada'}
+                </ListGroup.Item>
+                <ListGroup.Item className="border-0 py-2">
+                  <strong className="small">Setor Visitado?</strong> {atendimento.setor_visitado ? '✅ Sim' : '⏳ Não'}
+                </ListGroup.Item>
+              </ListGroup>
+           </Col>
+
+           <Col md={6}>
+              <h6 className="fw-bold text-secondary text-uppercase small mb-2">Evolução do Chamado</h6>
+              <ListGroup className="shadow-sm border-0">
+                <ListGroup.Item className="border-0 border-bottom py-2">
+                  <strong className="small">Status Atual:</strong> <Badge bg="secondary">{atendimento.status}</Badge>
+                </ListGroup.Item>
+                {/* 🚀 CORREÇÃO: "data_abertura" alterado para "data" */}
+                <ListGroup.Item className="border-0 border-bottom py-2">
+                  <strong className="small">Abertura:</strong> {formatDate(atendimento.data)}
+                </ListGroup.Item>
+                <ListGroup.Item className="border-0 border-bottom py-2">
+                  <strong className="small">Data da Visita:</strong> {formatDate(atendimento.data_visita)}
+                </ListGroup.Item>
+                <ListGroup.Item className="border-0 py-2">
+                  <strong className="small">Concluído?</strong> {atendimento.assistencia_concluiu ? '✅ Sim' : '❌ Não'}
+                </ListGroup.Item>
+              </ListGroup>
+           </Col>
         </Row>
 
-        {/* DETALHES DA IMPRESSORA */}
-        <Card className="border-0 shadow-sm mb-4">
-          <Card.Header className="bg-white border-bottom-0 pt-3 pb-0">
-            <h6 className="fw-bold text-secondary text-uppercase mb-0"><Printer className="me-2 mb-1" /> Equipamento Afetado</h6>
-          </Card.Header>
-          <Card.Body>
-            <Row>
-              <Col sm={6} className="mb-2 mb-sm-0">
-                <div className="text-muted small">Nome / Modelo</div>
-                <div className="fw-bold text-dark fs-6">{atendimento.impressora?.nome} <span className="text-muted fw-normal">({atendimento.impressora?.modelo})</span></div>
-              </Col>
-              <Col sm={6}>
-                <div className="text-muted small"><GeoAlt className="me-1" /> Localização / Setor</div>
-                <div className="fw-bold text-dark">{atendimento.impressora?.localizacao || 'Não especificada'}</div>
-              </Col>
-            </Row>
-          </Card.Body>
-        </Card>
+        {atendimento.necessita_pecas && (
+          <div className="mb-4 p-3 bg-danger bg-opacity-10 rounded border border-danger shadow-sm">
+             <h6 className="fw-bold text-danger text-uppercase small mb-2">📦 Necessidade de Peças</h6>
+             <p className="small mb-0 text-dark fw-medium">{atendimento.descricao_pecas || 'Sem descrição'}</p>
+          </div>
+        )}
 
-        {/* PARECERES TÉCNICOS */}
-        <Row className="g-4">
-          <Col md={6}>
-            <Card className="border-0 shadow-sm h-100 border-start border-4 border-warning">
-              <Card.Body className="p-3">
-                <h6 className="fw-bold text-dark mb-2 d-flex align-items-center">
-                  <Tools className="me-2 text-warning" /> Parecer Técnico Inicial
-                </h6>
-                <p className="text-muted small mb-0" style={{ whiteSpace: 'pre-line' }}>
-                  {atendimento.parecer_tecnico || <span className="fst-italic">Nenhum parecer técnico inicial registado.</span>}
-                </p>
-              </Card.Body>
-            </Card>
-          </Col>
+        {atendimento.parecer_tecnico && (
+          <div className="mb-4 p-3 bg-light rounded border shadow-sm">
+             <h6 className="fw-bold text-secondary text-uppercase small mb-2">📝 Parecer Técnico</h6>
+             <p className="small mb-0 text-dark" style={{ whiteSpace: 'pre-wrap' }}>{atendimento.parecer_tecnico}</p>
+          </div>
+        )}
 
-          <Col md={6}>
-            <Card className="border-0 shadow-sm h-100 border-start border-4 border-success">
-              <Card.Body className="p-3">
-                <h6 className="fw-bold text-dark mb-2 d-flex align-items-center">
-                  <Check2All className="me-2 text-success" /> Parecer Final (Assistência)
-                </h6>
-                <p className="text-muted small mb-0" style={{ whiteSpace: 'pre-line' }}>
-                  {atendimento.parecer_final_assistencia || <span className="fst-italic">Nenhum parecer final registado.</span>}
-                </p>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+        {atendimento.necessita_backup && (
+          <div className="mb-4 p-3 bg-warning bg-opacity-10 rounded border border-warning shadow-sm">
+             <h6 className="fw-bold text-dark text-uppercase small mb-2">🖨️ Equipamento de Backup Fornecido</h6>
+             <Row className="small">
+               <Col md={6}><strong className="text-muted">Nome:</strong> {atendimento.backup_impressora_nome}</Col>
+               <Col md={6}><strong className="text-muted">Série:</strong> {atendimento.backup_numero_serie}</Col>
+               <Col md={6}><strong className="text-muted">Fornecido Em:</strong> {formatDate(atendimento.backup_data_disponibilizacao)}</Col>
+               <Col md={6}><strong className="text-muted">Retirado Em:</strong> {formatDate(atendimento.backup_data_retirada)}</Col>
+             </Row>
+          </div>
+        )}
 
       </Modal.Body>
     </Modal>

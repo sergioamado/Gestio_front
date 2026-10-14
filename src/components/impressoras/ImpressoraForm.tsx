@@ -6,19 +6,22 @@ import PrimaryButton from '../PrimaryButton';
 import type { Impressora, Unidade, ImpressoraCreateData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../contexts/ToastContext';
-
-interface ImpressoraFormProps {
-  impressora?: Impressora | null;
-  unidades: Unidade[];
-  onSubmit: (data: any) => void;
-  isLoading: boolean;
-}
+import type { ImpressoraFormProps } from '../../types/impressora';
 
 function ImpressoraForm({ impressora, unidades, onSubmit, isLoading }: ImpressoraFormProps) {
   const { user } = useAuth();
   const { mostrarCard } = useToast();
   
-  const { register, handleSubmit, formState: { errors } } = useForm<ImpressoraCreateData>({
+  // Quem pode escolher a unidade da impressora
+  const canSelectUnidade = user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_impressora';
+  
+  //  Tratamento de segurança para o TypeScript não reclamar do "null"
+  const defaultUnidadeId = impressora?.unidade_id 
+    ? impressora.unidade_id 
+    : (!canSelectUnidade && user?.unidade_id ? user.unidade_id : undefined);
+
+  //  Usamos <any> aqui para o React Hook Form não entrar em conflito de tipagem com a API
+  const { register, handleSubmit, formState: { errors } } = useForm<any>({
     defaultValues: {
       nome: impressora?.nome || '',
       modelo: impressora?.modelo || '',
@@ -28,41 +31,40 @@ function ImpressoraForm({ impressora, unidades, onSubmit, isLoading }: Impressor
       servidor: impressora?.servidor || '',
       politicas_aplicadas: impressora?.politicas_aplicadas || false,
       is_colorida: impressora?.is_colorida || false,
-      unidade_id: impressora?.unidade_id ?? (user?.role !== 'admin' ? (user?.unidade_id ?? undefined) : undefined),
+      unidade_id: defaultUnidadeId,
     },
   });
 
-  //Lógica de Validação Inteligente antes de Enviar
-  const onSubmitWrapper = (data: ImpressoraCreateData) => {
-    // Verifica se o IP foi preenchido, mas não tem pontos (formato claramente inválido)
+  // Lógica de Validação Inteligente antes de Enviar
+  const onSubmitWrapper = (data: any) => {
     if (data.ip && !data.ip.includes('.')) {
       mostrarCard('Formato Inválido', 'O Endereço IP inserido parece estar incorreto. Verifique os pontos.', 'alerta');
       return;
     }
-
     onSubmit(data);
   };
 
   return (
     <Form onSubmit={handleSubmit(onSubmitWrapper)} className="px-2">
       
-      {user?.role === 'admin' && (
+      {/*  CORREÇÃO: Agora usa o canSelectUnidade para mostrar a todos os técnicos autorizados */}
+      {canSelectUnidade && (
         <Card className="border-0 shadow-sm mb-4 bg-light">
           <Card.Body className="p-3">
             <Form.Group>
               <Form.Label className="small fw-bold text-secondary text-uppercase mb-1">
-                <Building className="me-1 mb-1" /> Unidade Organizacional *
+                <Building className="me-1 mb-1" /> Unidade Organizacional (Setor/Prédio) *
               </Form.Label>
               <Form.Select 
                 className="border-0 shadow-none py-2 fw-medium"
                 {...register("unidade_id", { valueAsNumber: true, required: "A unidade é obrigatória" })} 
                 isInvalid={!!errors.unidade_id}
               >
-                <option value="">Selecione uma unidade...</option>
+                <option value="">Selecione a unidade onde a impressora está...</option>
                 {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
               </Form.Select>
               <Form.Control.Feedback type="invalid" className="fw-bold mt-1">
-                {errors.unidade_id?.message}
+                {errors.unidade_id?.message as string}
               </Form.Control.Feedback>
             </Form.Group>
           </Card.Body>
@@ -191,7 +193,7 @@ function ImpressoraForm({ impressora, unidades, onSubmit, isLoading }: Impressor
 
       <div className="d-flex justify-content-end mt-4 pt-3 border-top">
         <PrimaryButton type="submit" isLoading={isLoading} className="px-4 fw-bold shadow-sm">
-          {impressora ? '💾 Salvar Alterações' : '🚀 Registar Impressora'}
+          {impressora ? '💾 Salvar Alterações' : ' Registar Impressora'}
         </PrimaryButton>
       </div>
     </Form>
