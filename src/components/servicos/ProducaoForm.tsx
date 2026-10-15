@@ -97,7 +97,7 @@ export default function ProducaoForm({
     e.preventDefault();
     if (carrinho.length === 0) return;
 
-    // 🚀 Agora envia um Array de objetos (id e quantidade) em vez de apenas IDs
+    //  Agora envia um Array de objetos (id e quantidade) em vez de apenas IDs
     const payload: any = { 
       servicos: carrinho.map(c => ({ id: c.id, quantidade: c.quantidade })),
       observacoes: observacoes || null,
@@ -221,7 +221,7 @@ export default function ProducaoForm({
           </Card>
         </Col>
 
-        {/* 🚀 Coluna dos Serviços Executados ajustada para suportar a QTD */}
+        {/*  Coluna dos Serviços Executados ajustada para suportar a QTD */}
         <Col lg={6}>
           <Card className="border-0 shadow-sm h-100 border-start border-success border-4 bg-light">
             <Card.Body className="d-flex flex-column p-3">
@@ -247,7 +247,7 @@ export default function ProducaoForm({
                         <tr key={item.id}>
                           <td className="ps-3 fw-bold text-dark lh-sm">{item.nome_servico}</td>
                           <td className="text-center">
-                            {/* 🚀 CONTROLADOR DE QUANTIDADE */}
+                            {/*  CONTROLADOR DE QUANTIDADE */}
                             <InputGroup size="sm" className="flex-nowrap justify-content-center">
                               <Button variant="outline-secondary" onClick={() => alterarQuantidade(item.id, -1)} className="px-2" disabled={item.quantidade <= 1}>
                                 <Dash />
