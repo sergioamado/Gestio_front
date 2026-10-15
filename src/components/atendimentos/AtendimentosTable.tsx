@@ -11,7 +11,7 @@ interface AtendimentosTableProps {
 
 function AtendimentosTable({ atendimentos, onDetails, onEdit }: AtendimentosTableProps) {
   
-  // 🚀 STATUS ORIGINAIS RESTAURADOS EXATAMENTE COMO NO TYPE!
+  
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Aguardando_Assistencia': return <Badge bg="warning" text="dark">⏳ Aguardando</Badge>;
@@ -49,7 +49,7 @@ function AtendimentosTable({ atendimentos, onDetails, onEdit }: AtendimentosTabl
             </td>
             <td>
               <Badge className="bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1 rounded-pill shadow-sm">
-                {/* 🚀 Usamos (item as any) aqui caso o TS reclame da unidade_dona que foi injetada no Backend */}
+                {/* Usamos (item as any) aqui caso o TS reclame da unidade_dona que foi injetada no Backend */}
                 {(item as any).unidade_dona || item.unidades_organizacionais?.nome || 'Não Definida'}
               </Badge>
             </td>
@@ -63,7 +63,7 @@ function AtendimentosTable({ atendimentos, onDetails, onEdit }: AtendimentosTabl
                   <InfoCircleFill className="me-1" /> Detalhes
                 </Button>
                 
-                {/* 🚀 Só permite editar se NÃO estiver Concluído nem Cancelado */}
+                {/* Só permite editar se NÃO estiver Concluído nem Cancelado */}
                 {item.status !== 'Concluido' && item.status !== 'Cancelado' && (
                   <Button variant="outline-primary" size="sm" onClick={() => onEdit(item)} className="fw-bold">
                     <PencilSquare className="me-1" /> Atualizar

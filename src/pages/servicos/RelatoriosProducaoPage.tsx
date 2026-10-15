@@ -1,6 +1,6 @@
 // src/pages/RelatoriosProducaoPage.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Row, Col, Table, Form, Spinner, Alert, Button } from 'react-bootstrap';
+import { Card, Row, Col, Table, Form, Spinner, Button } from 'react-bootstrap';
 import { PrinterFill, GraphUpArrow, CashCoin, Tools, Laptop, CalendarCheck } from 'react-bootstrap-icons';
 import { useReactToPrint } from 'react-to-print';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -8,11 +8,14 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
 import { relatoriosService } from '../../services/relatorioService';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function RelatoriosProducaoPage() {
   const [dados, setDados] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  
+  // Usamos o nosso Toast Global em vez de alertas fixos
+  const { mostrarCard } = useToast();
 
   // Filtros de Data
   const [dataInicial, setDataInicial] = useState('');
@@ -28,16 +31,17 @@ export default function RelatoriosProducaoPage() {
 
   useEffect(() => {
     carregarDashboard();
-  }, []); // Carrega tudo ao iniciar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const carregarDashboard = async () => {
     setIsLoading(true);
-    setError(null);
     try {
+      //  CORREÇÃO: Chamando o serviço correto (relatoriosService)
       const resposta = await relatoriosService.getDashboardProducao(dataInicial, dataFinal);
       setDados(resposta);
     } catch (err) {
-      setError("Falha ao carregar os dados do relatório.");
+      mostrarCard('Erro no Relatório', 'Falha ao carregar os dados. Verifique a sua conexão.', 'erro');
     } finally {
       setIsLoading(false);
     }
@@ -79,14 +83,13 @@ export default function RelatoriosProducaoPage() {
         </Card.Body>
       </Card>
 
-      {error && <Alert variant="danger">{error}</Alert>}
-      {isLoading && <div className="text-center my-5"><Spinner animation="border" variant="primary" /></div>}
+      {isLoading && <div className="text-center my-5 py-5"><Spinner animation="border" variant="primary" /></div>}
 
       {/* ÁREA QUE VAI PARA O PDF */}
       {!isLoading && dados && (
-        <div ref={componentRef} className="pdf-container p-1">
+        <div ref={componentRef} className="pdf-container p-2">
           
-          {/* Cabeçalho do PDF (Só aparece na impressão se quiser, ou deixamos visível sempre) */}
+          {/* Cabeçalho do PDF */}
           <div className="d-none d-print-block text-center mb-4 pb-3 border-bottom">
             <h2 className="fw-bold text-dark">Relatório Executivo de TI</h2>
             <p className="text-muted mb-0">
@@ -132,7 +135,6 @@ export default function RelatoriosProducaoPage() {
 
           {/* 2. GRÁFICOS */}
           <Row className="mb-4 g-3">
-            {/* Evolução Mensal */}
             <Col md={8}>
               <Card className="border-0 shadow-sm h-100">
                 <Card.Header className="bg-white border-0 pt-4 pb-0">
@@ -154,7 +156,6 @@ export default function RelatoriosProducaoPage() {
               </Card>
             </Col>
             
-            {/* Top Serviços */}
             <Col md={4}>
               <Card className="border-0 shadow-sm h-100">
                 <Card.Header className="bg-white border-0 pt-4 pb-0">
@@ -175,7 +176,7 @@ export default function RelatoriosProducaoPage() {
             </Col>
           </Row>
 
-          {/* 3. TABELAS (Ranking e Reincidência) */}
+          {/* 3. TABELAS */}
           <Row className="g-3">
             <Col md={6}>
               <Card className="border-0 shadow-sm h-100">
@@ -230,7 +231,6 @@ export default function RelatoriosProducaoPage() {
                           <tr key={index}>
                             <td className="ps-4 fw-bold">{eq.patrimonio}</td>
                             <td className="text-center">
-                              {/* Se quebrou mais de 2 vezes, pinta de vermelho */}
                               <span className={`badge ${eq.qtd >= 3 ? 'bg-danger' : 'bg-warning text-dark'} rounded-pill`}>{eq.qtd}x</span>
                             </td>
                             <td className="text-end pe-4 fw-bold text-danger">{formatarMoeda(eq.custoTotal)}</td>

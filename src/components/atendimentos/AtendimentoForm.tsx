@@ -6,7 +6,6 @@ import { InfoCircle, Tools, PrinterFill, Check2All, Hash, CardText, Cpu, Calenda
 import PrimaryButton from '../PrimaryButton';
 import { useToast } from '../../contexts/ToastContext';
 import type { AtendimentoImpressora, Impressora, StatusAtendimento, AtendimentoCreateData, AtendimentoUpdateData } from '../../types';
-import { statusMap } from './AtendimentosTable';
 
 interface AtendimentoFormProps {
   atendimento?: AtendimentoImpressora | null;
@@ -15,10 +14,21 @@ interface AtendimentoFormProps {
   isLoading: boolean;
 }
 
+// O statusMap movido para dentro do formulário para evitar erros de importação
+const statusMap: Record<StatusAtendimento, { text: string }> = {
+  'Aguardando_Assistencia': { text: '⏳ Aguardando Assistência Externa' },
+  'Em_Atendimento': { text: '🛠️ Em Atendimento Técnico' },
+  'Aguardando_Peca': { text: '📦 Aguardando Peças (Garantia/Fornecedor)' },
+  'Aguardando_Peca_Com_Backup': { text: '📦 Peça Aguardada (Com Backup Ativo)' },
+  'Aguardando_Peca_Impressao_Redirecionada': { text: '📦 Peça Aguardada (Impressão Redirecionada)' },
+  'Concluido': { text: '✅ Chamado Concluído com Sucesso' },
+  'Cancelado': { text: '❌ Chamado Cancelado' }
+};
+
 const statusOptions = Object.keys(statusMap) as StatusAtendimento[];
 
 // Função auxiliar para formatar datas para o input type="date"
-const formatDateForInput = (dateString?: string | null) => {
+const formatDateForInput = (dateString?: string | Date | null) => {
     if (!dateString) return '';
     try {
         return new Date(dateString).toISOString().split('T')[0];
@@ -31,7 +41,6 @@ function AtendimentoForm({ atendimento, impressoras, onSubmit, isLoading }: Aten
   const isEditMode = !!atendimento;
   const { mostrarCard } = useToast();
   
-  // 🚀 Adicionado setValue para manipular campos programaticamente
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
       ...atendimento,
@@ -44,29 +53,23 @@ function AtendimentoForm({ atendimento, impressoras, onSubmit, isLoading }: Aten
   const necessitaBackup = watch('necessita_backup');
   const assistenciaConcluiu = watch('assistencia_concluiu');
 
-  // 🚀 Automação de Status (Impressoras #3)
-  // Se o switch "assistência concluiu" for ativado, o status muda automaticamente para Concluído.
   useEffect(() => {
     if (assistenciaConcluiu) {
       setValue('status', 'Concluido');
     }
   }, [assistenciaConcluiu, setValue]);
 
-  // Validação Inteligente das Fases do Chamado
   const onSubmitWrapper = (data: any) => {
-    // Regra 1: Se exigiu backup, tem de dizer qual foi a máquina
     if (data.necessita_backup && (!data.backup_impressora_modelo || !data.backup_numero_serie)) {
       mostrarCard('Aviso de Backup', 'Como informou que há uma impressora de backup, é obrigatório preencher o Modelo e o Nº de Série da mesma.', 'alerta');
       return;
     }
 
-    // Regra 2: Se concluiu a assistência, tem de ter um parecer
     if (data.assistencia_concluiu && (!data.parecer_final_assistencia || data.parecer_final_assistencia.trim() === '')) {
       mostrarCard('Parecer Obrigatório', 'Para finalizar o chamado da assistência, por favor, redija o Parecer Final.', 'alerta');
       return;
     }
 
-    // Regra 3 (Garantia Extra de Backend): Força o envio do status correto
     if (data.assistencia_concluiu) {
       data.status = 'Concluido';
     }
@@ -82,7 +85,7 @@ function AtendimentoForm({ atendimento, impressoras, onSubmit, isLoading }: Aten
         <Accordion.Item eventKey="0" className="border-0 mb-3 rounded overflow-hidden">
           <Accordion.Header className="bg-white">
             <span className="fw-bold text-primary d-flex align-items-center">
-              <InfoCircle className="me-2" size={18} /> 1. Informações do Chamado
+               <InfoCircle className="me-2" size={18} /> 1. Informações do Chamado
             </span>
           </Accordion.Header>
           <Accordion.Body className="bg-white border-top">
@@ -299,7 +302,7 @@ function AtendimentoForm({ atendimento, impressoras, onSubmit, isLoading }: Aten
 
       <div className="d-flex justify-content-end mt-4 pt-3 border-top">
         <PrimaryButton type="submit" isLoading={isLoading} className="px-4 fw-bold shadow-sm" variant={isEditMode ? "primary" : "success"}>
-          {isEditMode ? '💾 Salvar Evolução do Chamado' : '🚀 Abrir Chamado de Atendimento'}
+          {isEditMode ? '💾 Salvar Evolução do Chamado' : 'Abrir Chamado de Atendimento'}
         </PrimaryButton>
       </div>
     </Form>

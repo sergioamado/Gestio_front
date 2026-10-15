@@ -1,7 +1,7 @@
 // src/components/servicos/ProducaoForm.tsx
 import React, { useState, useMemo } from 'react';
 import { Form, Row, Col, Badge, InputGroup, Button, Card, Table, Alert } from 'react-bootstrap';
-import { Search, CheckCircleFill, TrashFill, StarFill, InfoCircleFill } from 'react-bootstrap-icons';
+import { Search, CheckCircleFill, TrashFill, StarFill, InfoCircleFill, Plus, Dash } from 'react-bootstrap-icons';
 import type { CatalogoServico, ProducaoServico } from '../../types';
 
 export interface ProducaoFormProps {
@@ -14,6 +14,11 @@ export interface ProducaoFormProps {
   defaultTipoVinculo?: 'pecas' | 'impressora' | 'eletronica' | 'glpi';
   defaultVinculoId?: string;
   defaultPatrimonio?: string;
+}
+
+// Nova interface local para o Carrinho suportar a Quantidade
+interface ItemCarrinho extends CatalogoServico {
+  quantidade: number;
 }
 
 export default function ProducaoForm({ 
@@ -36,7 +41,9 @@ export default function ProducaoForm({
   const [observacoes, setObservacoes] = useState('');
 
   const [buscaServico, setBuscaServico] = useState('');
-  const [carrinho, setCarrinho] = useState<CatalogoServico[]>([]);
+  
+  // O carrinho agora guarda objetos do tipo ItemCarrinho
+  const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
 
   const categoriasPermitidas = useMemo(() => {
     if (isGestor) return null; 
@@ -64,9 +71,10 @@ export default function ProducaoForm({
     });
   }, [catalogo, categoriasPermitidas, buscaServico]);
 
+  // Adiciona ao carrinho com quantidade = 1
   const adicionarAoCarrinho = (servico: CatalogoServico) => {
     if (!carrinho.find(c => c.id === servico.id)) {
-      setCarrinho([...carrinho, servico]);
+      setCarrinho([...carrinho, { ...servico, quantidade: 1 }]);
     }
   };
 
@@ -74,12 +82,24 @@ export default function ProducaoForm({
     setCarrinho(carrinho.filter(c => c.id !== id));
   };
 
+  // Nova função para alterar a quantidade de um item no carrinho
+  const alterarQuantidade = (id: number, delta: number) => {
+    setCarrinho(prev => prev.map(item => {
+      if (item.id === id) {
+        const novaQtd = Math.max(1, item.quantidade + delta); // Não deixa baixar de 1
+        return { ...item, quantidade: novaQtd };
+      }
+      return item;
+    }));
+  };
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (carrinho.length === 0) return;
 
+    // 🚀 Agora envia um Array de objetos (id e quantidade) em vez de apenas IDs
     const payload: any = { 
-      servicos: carrinho.map(c => c.id),
+      servicos: carrinho.map(c => ({ id: c.id, quantidade: c.quantidade })),
       observacoes: observacoes || null,
       patrimonio_serie: patrimonioSerie || null,
       tipo_vinculo: tipoVinculo,
@@ -144,7 +164,7 @@ export default function ProducaoForm({
       </Card>
 
       <Row className="g-4">
-        <Col lg={7}>
+        <Col lg={6}>
           <Card className="border-0 shadow-sm h-100 bg-white">
             <Card.Body className="p-3">
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -201,7 +221,8 @@ export default function ProducaoForm({
           </Card>
         </Col>
 
-        <Col lg={5}>
+        {/* 🚀 Coluna dos Serviços Executados ajustada para suportar a QTD */}
+        <Col lg={6}>
           <Card className="border-0 shadow-sm h-100 border-start border-success border-4 bg-light">
             <Card.Body className="d-flex flex-column p-3">
               <h6 className="fw-bold mb-3 fs-5 text-dark">✅ Serviços Executados</h6>
@@ -214,10 +235,34 @@ export default function ProducaoForm({
               ) : (
                 <div className="flex-grow-1 bg-white rounded shadow-sm border" style={{ maxHeight: '350px', overflowY: 'auto' }}>
                   <Table hover className="align-middle mb-0 small">
+                    <thead className="table-light">
+                      <tr>
+                        <th className="ps-3">Serviço</th>
+                        <th className="text-center" style={{ width: '120px' }}>Qtd.</th>
+                        <th className="text-end pe-3" style={{ width: '50px' }}></th>
+                      </tr>
+                    </thead>
                     <tbody>
                       {carrinho.map(item => (
                         <tr key={item.id}>
-                          <td className="ps-3 fw-bold text-dark">{item.nome_servico}</td>
+                          <td className="ps-3 fw-bold text-dark lh-sm">{item.nome_servico}</td>
+                          <td className="text-center">
+                            {/* 🚀 CONTROLADOR DE QUANTIDADE */}
+                            <InputGroup size="sm" className="flex-nowrap justify-content-center">
+                              <Button variant="outline-secondary" onClick={() => alterarQuantidade(item.id, -1)} className="px-2" disabled={item.quantidade <= 1}>
+                                <Dash />
+                              </Button>
+                              <Form.Control 
+                                value={item.quantidade} 
+                                readOnly 
+                                className="text-center fw-bold bg-white" 
+                                style={{ maxWidth: '45px' }} 
+                              />
+                              <Button variant="outline-secondary" onClick={() => alterarQuantidade(item.id, 1)} className="px-2">
+                                <Plus />
+                              </Button>
+                            </InputGroup>
+                          </td>
                           <td className="text-end pe-3">
                             <Button variant="link" className="text-danger p-0 fs-5 text-decoration-none" onClick={() => removerDoCarrinho(item.id)}><TrashFill /></Button>
                           </td>
@@ -239,7 +284,8 @@ export default function ProducaoForm({
                   <div className="d-flex justify-content-between align-items-center mb-3 px-1">
                       <span className="text-muted fw-bold text-uppercase small">Total Produzido</span>
                       <span className="fs-4 fw-bold text-success">
-                          R$ {carrinho.reduce((acc, curr) => acc + Number(curr.valor_estimado), 0).toFixed(2)}
+                          {/* Total agora é a soma de (Preço * Quantidade) */}
+                          R$ {carrinho.reduce((acc, curr) => acc + (Number(curr.valor_estimado) * curr.quantidade), 0).toFixed(2)}
                       </span>
                   </div>
 

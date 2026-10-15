@@ -1,5 +1,5 @@
 // src/services/servicosService.ts
-import api from './api'; // Ajuste o caminho do seu axios se necessário
+import api from './api'; 
 import type { CatalogoServico, ProducaoServico } from '../types';
 
 export const servicosService = {
@@ -20,17 +20,18 @@ export const servicosService = {
   },
 
   // --- PRODUÇÃO ---
-  getHistorico: async (): Promise<ProducaoServico[]> => {
-    const response = await api.get('/servicos/producao');
+  //  URL ajustada para apontar direto para '/producao' igual ao backend
+getHistorico: async (): Promise<ProducaoServico[]> => {
+    const response = await api.get('/producao/producao');
     return response.data;
   },
 
   registrarProducao: async (data: any) => {
-    const response = await api.post('/servicos/producao', data);
+    const response = await api.post('/producao/producao', data);
     return response.data;
   },
 
   deleteProducao: async (id: number) => {
-    await api.delete(`/servicos/producao/${id}`);
+    await api.delete(`/producao/producao/${id}`);
   }
 };

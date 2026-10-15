@@ -4,11 +4,12 @@ import { Card, Spinner, Alert, Modal } from 'react-bootstrap';
 import { PlusCircle, Tools } from 'react-bootstrap-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { servicosService } from '../../services/servicosService';
+import { useToast } from '../../contexts/ToastContext'; // Import do Toast
+import { useConfirm } from '../../contexts/ConfirmContext'; // Import do Confirm
 
+import { servicosService } from '../../services/servicosService';
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
-import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import ProducaoTable from '../../components/servicos/ProducaoTable';
 import ProducaoForm from '../../components/servicos/ProducaoForm';
 
@@ -18,6 +19,8 @@ function ProducaoServicosPage() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { mostrarCard } = useToast();
+  const { confirmar } = useConfirm();
   
   const prefillData = location.state || {};
 
@@ -25,14 +28,9 @@ function ProducaoServicosPage() {
   const [catalogo, setCatalogo] = useState<CatalogoServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   
   const [showFormModal, setShowFormModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletingItem, setDeletingItem] = useState<ProducaoServico | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const isGestor = user?.role === 'admin' || user?.role === 'gerente';
 
@@ -44,6 +42,7 @@ function ProducaoServicosPage() {
        // Limpa o estado usando o React Router de forma segura
        navigate(location.pathname, { replace: true, state: {} });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const carregarDados = async () => {
@@ -65,37 +64,40 @@ function ProducaoServicosPage() {
 
   const handleFormSubmit = async (payload: any) => {
     setIsSubmitting(true);
-    setError(null);
-    setSuccessMsg(null);
     try {
       await servicosService.registrarProducao(payload);
       await carregarDados();
-      setSuccessMsg("Produção registada com sucesso!");
+      mostrarCard('Sucesso', 'Produção registada com sucesso!', 'sucesso');
       setShowFormModal(false);
       
       if (prefillData.defaultVinculoId) {
          setTimeout(() => navigate('/gerenciar-solicitacoes'), 1500);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Erro ao registar produção. O ID do chamado pode estar incorreto.");
+      mostrarCard('Erro', err.response?.data?.message || "Erro ao registar produção. Verifique os dados informados.", 'erro');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deletingItem) return;
-    setIsDeleting(true);
-    try {
-      await servicosService.deleteProducao(deletingItem.id);
-      await carregarDados();
-      setSuccessMsg("Registo apagado com sucesso.");
-      setShowDeleteModal(false);
-    } catch (err: any) {
-      setError("Não foi possível apagar o registo.");
-      setShowDeleteModal(false);
-    } finally {
-      setIsDeleting(false);
+  // Nova função de exclusão usando o useConfirm Global
+  const handleDeleteClick = async (item: ProducaoServico) => {
+    const confirmou = await confirmar({
+      titulo: '🗑️ Apagar Registo',
+      mensagem: `Tem certeza que deseja apagar o registo do serviço "${item.servico?.nome_servico}"? O valor será removido do histórico e dos relatórios.`,
+      textoConfirmar: 'Sim, Apagar',
+      textoCancelar: 'Cancelar',
+      varianteBotao: 'danger'
+    });
+
+    if (confirmou) {
+      try {
+        await servicosService.deleteProducao(item.id);
+        await carregarDados();
+        mostrarCard('Sucesso', 'Registo apagado com sucesso.', 'sucesso');
+      } catch (err: any) {
+        mostrarCard('Erro', 'Não foi possível apagar o registo de produção.', 'erro');
+      }
     }
   };
 
@@ -103,7 +105,6 @@ function ProducaoServicosPage() {
     <MainLayout pageTitle="⚙️ Registo de Produção">
       
       {error && <Alert variant="danger" className="shadow-sm border-0 mb-3" onClose={() => setError(null)} dismissible>{error}</Alert>}
-      {successMsg && <Alert variant="success" className="shadow-sm border-0 mb-3" onClose={() => setSuccessMsg(null)} dismissible>{successMsg}</Alert>}
 
       <Card className="floating-card border-0 shadow-sm mb-4">
         <Card.Body className="p-4 d-flex justify-content-between align-items-center">
@@ -122,7 +123,11 @@ function ProducaoServicosPage() {
           {isLoading ? (
             <div className="text-center my-5 py-5"><Spinner animation="border" variant="primary" /></div>
           ) : (
-            <ProducaoTable historico={historico} isGestor={isGestor} onDelete={(item) => { setDeletingItem(item); setShowDeleteModal(true); }} />
+            <ProducaoTable 
+               historico={historico} 
+               isGestor={isGestor} 
+               onDelete={handleDeleteClick} 
+            />
           )}
         </Card.Body>
       </Card>
@@ -148,15 +153,6 @@ function ProducaoServicosPage() {
         </Modal.Body>
       </Modal>
 
-      <DeleteConfirmationModal 
-        show={showDeleteModal}
-        onHide={() => setShowDeleteModal(false)}
-        onConfirm={handleConfirmDelete}
-        title="Confirmar Exclusão"
-        body="Tem certeza que deseja apagar este registo de produção? O valor será removido do histórico."
-        isDeleting={isDeleting}
-        confirmButtonText="Apagar Registo"
-      />
     </MainLayout>
   );
 }

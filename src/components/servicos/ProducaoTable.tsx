@@ -1,3 +1,4 @@
+// src/components/servicos/ProducaoTable.tsx
 import React from 'react';
 import { Table, Badge, Button } from 'react-bootstrap';
 import { WrenchAdjustable, PrinterFill, MotherboardFill, TicketDetailed, Trash } from 'react-bootstrap-icons';
@@ -36,6 +37,8 @@ export default function ProducaoTable({ historico, isGestor, onDelete }: Produca
             <th className="ps-4">Data</th>
             {isGestor && <th>Técnico</th>}
             <th>Serviço Realizado</th>
+            {/* NOVA COLUNA PARA A QUANTIDADE */}
+            <th className="text-center">Qtd</th>
             <th>Ref. Chamado</th>
             <th className="text-end">Valor do Serviço</th>
             <th className="text-end">Custo Peças</th>
@@ -54,6 +57,15 @@ export default function ProducaoTable({ historico, isGestor, onDelete }: Produca
                 <div className="fw-bold text-dark small">{prod.servico?.nome_servico || 'Serviço Excluído'}</div>
                 <div className="text-muted" style={{ fontSize: '0.7rem' }}>{prod.servico?.categoria}</div>
               </td>
+              
+              {/* EXIBIÇÃO DA QUANTIDADE COM UM BADGE */}
+              <td className="text-center">
+                <Badge bg="light" text="dark" className="border px-2 py-1 fs-6 shadow-sm">
+                  {/* Se a quantidade for undefined (registros antigos), assume 1 */}
+                  {(prod as any).quantidade || 1}x
+                </Badge>
+              </td>
+
               <td>{renderVinculo(prod)}</td>
               <td className="text-end text-muted small">R$ {Number(prod.valor_servico_aplicado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
               <td className="text-end text-muted small">R$ {Number(prod.valor_pecas_aplicado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
