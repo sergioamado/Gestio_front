@@ -5,11 +5,11 @@ import * as patrimonioService from '../../services/patrimonioService';
 import * as usuarioService from '../../services/usuarioService';
 import * as unidadeService from '../../services/unidadeService';
 import PrimaryButton from '../PrimaryButton';
-import api from '../../services/api';
+import { useAuthImage } from '../../hooks/useAuthImage';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useToast } from '../../contexts/ToastContext';
 
-import type { BemPatrimonial, User, Unidade, BemDetailsModalProps } from '../../types';
+import type { User, Unidade, BemDetailsModalProps } from '../../types';
 
 function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) {
   const [tecnicos, setTecnicos] = useState<User[]>([]);
@@ -21,15 +21,14 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
   const [unidadeDestinoId, setUnidadeDestinoId] = useState('');
   const [observacaoTransferencia, setObservacaoTransferencia] = useState('');
   
-  // Estados da Fase 3 (Cautela)
   const [tecnicoAtribuicaoId, setTecnicoAtribuicaoId] = useState('');
   const [observacaoAtribuicao, setObservacaoAtribuicao] = useState('');
 
   const [loadingAcao, setLoadingAcao] = useState(false);
 
-  // 🚀 INICIALIZAÇÃO DOS MOTORES UI
   const { confirmar } = useConfirm();
   const { mostrarCard } = useToast();
+  const { src: fotoSrc } = useAuthImage(bem?.foto_url);
 
   useEffect(() => {
     if (show && bem) {
@@ -56,18 +55,17 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
 
   if (!bem) return null;
 
+  //  FUNÇÃO DA FOTO MANTIDA, MAS AGORA TEMOS ONDE A USAR!
   const handleUploadFoto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!foto) return;
     setLoadingAcao(true);
     try {
-      const formData = new FormData();
-      formData.append('foto', foto);
-      await api.post(`/patrimonio/${bem.id}/foto`, formData);
+      await patrimonioService.uploadFoto(bem.id, foto);
       mostrarCard('Foto Atualizada', 'A foto do bem foi atualizada com sucesso!', 'sucesso');
       setFoto(null);
       onUpdate();
-    } catch (err) {
+    } catch {
       mostrarCard('Erro', 'Não foi possível atualizar a foto.', 'erro');
     } finally {
       setLoadingAcao(false);
@@ -105,7 +103,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
       setHistorico(novoHistorico);
       setUnidadeDestinoId('');
       setObservacaoTransferencia('');
-    } catch (err) {
+    } catch {
       mostrarCard('Erro', 'Não foi possível registrar a transferência.', 'erro');
     } finally {
       setLoadingAcao(false);
@@ -139,7 +137,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
       onUpdate();
       setTecnicoAtribuicaoId('');
       setObservacaoAtribuicao('');
-    } catch (err) {
+    } catch {
       mostrarCard('Erro', 'Falha ao atribuir o equipamento.', 'erro');
     } finally {
       setLoadingAcao(false);
@@ -162,16 +160,24 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
       await patrimonioService.devolverBem(bem.id);
       mostrarCard('Devolução Concluída', 'O equipamento voltou para o inventário.', 'sucesso');
       onUpdate();
-    } catch (err) {
+    } catch {
       mostrarCard('Erro', 'Falha ao registar a devolução.', 'erro');
     } finally {
       setLoadingAcao(false);
     }
   };
 
-  const formatData = (dataStr: string) => {
-    try { return new Date(dataStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } 
-    catch { return 'Data inválida'; }
+  //  CORREÇÃO DA DATA: Melhorada a extração e a formatação (Data + Hora precisas)
+  const formatData = (dataStr: string | null | undefined) => {
+    if (!dataStr) return '-';
+    try { 
+        return new Date(dataStr).toLocaleString('pt-BR', { 
+            day: '2-digit', month: '2-digit', year: 'numeric', 
+            hour: '2-digit', minute: '2-digit' 
+        }); 
+    } catch { 
+        return 'Data inválida'; 
+    }
   };
 
   return (
@@ -201,8 +207,8 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
             </div>
           </Col>
           <Col md={4} className="text-center">
-            {bem.foto_url ? (
-               <img src={`http://localhost:3001/${bem.foto_url}`} alt="Bem" className="img-thumbnail shadow-sm" style={{ maxHeight: '120px' }} />
+            {bem.foto_url && fotoSrc ? (
+               <img src={fotoSrc} alt="Bem" className="img-thumbnail shadow-sm" style={{ maxHeight: '120px' }} />
             ) : (
                <div className="bg-light border rounded d-flex align-items-center justify-content-center text-muted shadow-sm" style={{ height: '120px' }}>Sem Foto</div>
             )}
@@ -212,9 +218,47 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
         {loadingDados ? (
            <div className="text-center my-4"><Spinner animation="border" variant="primary" /></div>
         ) : (
-          <Tabs defaultActiveKey="cautela" className="mb-3 custom-tabs">
+          <Tabs defaultActiveKey="historico" className="mb-3 custom-tabs">
             
-            {/* ABA 1: CAUTELA E ATRIBUIÇÃO */}
+            <Tab eventKey="historico" title="📜 Histórico">
+              <div className="mt-3 bg-white p-3 rounded border shadow-sm">
+                {historico.length > 0 ? (
+                  <Table size="sm" hover responsive className="align-middle mb-0">
+                    <thead className="bg-light text-secondary small">
+                      <tr><th className="border-0">Data / Hora</th><th className="border-0">De ➔ Para</th><th className="border-0">Motivo</th></tr>
+                    </thead>
+                    <tbody className="small">
+                      {historico.map((mov: any) => (
+  <tr key={mov.id}>
+    <td className="fw-bold text-muted">{formatData(mov.data_registro)}</td>
+    <td>
+      {mov.unidade_origem || mov.unidade_destino ? (
+        <>
+          <Badge bg="light" text="dark" className="border text-truncate" style={{ maxWidth: '120px' }}>
+            {mov.unidade_origem?.nome || 'Externa'}
+          </Badge>
+          <span className="mx-2 text-primary">➔</span>
+          <Badge bg="light" text="dark" className="border text-truncate" style={{ maxWidth: '120px' }}>
+            {mov.unidade_destino?.nome || 'Indefinida'}
+          </Badge>
+        </>
+      ) : (
+        <Badge bg="info" text="dark" className="bg-opacity-25 border border-info">
+          {mov.acao} {mov.tecnico_alvo?.nome_completo ? `(${mov.tecnico_alvo.nome_completo})` : ''}
+        </Badge>
+      )}
+    </td>
+    <td className="text-muted fst-italic">{mov.detalhes || '-'}</td>
+  </tr>
+))}
+                    </tbody>
+                  </Table>
+                ) : (
+                  <div className="text-center text-muted p-4 bg-light rounded border-dashed">Nenhuma transferência registada no histórico.</div>
+                )}
+              </div>
+            </Tab>
+
             <Tab eventKey="cautela" title="👤 Atribuição">
               <div className="mt-3">
                 {bem.tecnico_responsavel ? (
@@ -254,33 +298,6 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
               </div>
             </Tab>
 
-            <Tab eventKey="historico" title="📜 Histórico">
-              <div className="mt-3 bg-white p-3 rounded border shadow-sm">
-                {historico.length > 0 ? (
-                  <Table size="sm" hover responsive className="align-middle mb-0">
-                    <thead className="bg-light text-secondary small">
-                      <tr><th className="border-0">Data</th><th className="border-0">De ➔ Para</th><th className="border-0">Motivo</th></tr>
-                    </thead>
-                    <tbody className="small">
-                      {historico.map((mov: any) => (
-                        <tr key={mov.id}>
-                          <td className="fw-bold text-muted">{formatData(mov.data_envio)}</td>
-                          <td>
-                            <Badge bg="light" text="dark" className="border text-truncate" style={{maxWidth: '120px'}}>{mov.unidade_origem?.nome || 'Externa'}</Badge> 
-                            <span className="mx-2 text-primary">➔</span>
-                            <Badge bg="light" text="dark" className="border text-truncate" style={{maxWidth: '120px'}}>{mov.unidade_destino?.nome || 'Indefinida'}</Badge>
-                          </td>
-                          <td className="text-muted fst-italic">{mov.subtipo || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                ) : (
-                  <div className="text-center text-muted p-4 bg-light rounded border-dashed">Nenhuma transferência registada no histórico.</div>
-                )}
-              </div>
-            </Tab>
-
             <Tab eventKey="movimentar" title="🔄 Transferir">
               <Form onSubmit={handleMovimentar} className="mt-3 p-4 bg-light rounded border shadow-sm">
                 <Form.Group className="mb-3">
@@ -299,6 +316,25 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
                     Registrar Transferência
                   </PrimaryButton>
                 </div>
+              </Form>
+            </Tab>
+
+            {/*  ABA DA FOTO (CORREÇÃO DA ISSUE) */}
+            <Tab eventKey="foto" title="📸 Imagem">
+              <Form onSubmit={handleUploadFoto} className="mt-3 p-4 bg-light rounded border shadow-sm text-center">
+                <h6 className="fw-bold text-dark mb-3">Atualizar Foto do Equipamento</h6>
+                <Form.Group className="mb-4">
+                  <Form.Control 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e: any) => setFoto(e.target.files[0])} 
+                    required 
+                    className="shadow-sm bg-white"
+                  />
+                </Form.Group>
+                <PrimaryButton type="submit" isLoading={loadingAcao} disabled={!foto} className="px-4 fw-bold">
+                  Enviar Nova Foto
+                </PrimaryButton>
               </Form>
             </Tab>
 

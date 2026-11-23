@@ -1,6 +1,6 @@
 // src/components/manutencao/DetalhesManutencaoModal.tsx
 import { useState, useEffect } from 'react';
-import { Modal, Button, ListGroup, Form, Alert, Badge } from 'react-bootstrap';
+import { Modal, Button, ListGroup, Form, Badge } from 'react-bootstrap';
 import type { ManutencaoEletronica } from '../../types';
 import PrimaryButton from '../PrimaryButton';
 import * as manutencaoService from '../../services/manutencaoEletronicaService';
@@ -19,7 +19,6 @@ function DetalhesManutencaoModal({ show, onHide, manutencao, onUpdate }: Detalhe
   const { mostrarCard } = useToast();
   const [laudo, setLaudo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
   const [copiado, setCopiado] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -37,7 +36,6 @@ function DetalhesManutencaoModal({ show, onHide, manutencao, onUpdate }: Detalhe
         laudo_tecnico: manutencao.laudo_tecnico || ''
       });
       setIsEditing(false);
-      setError('');
       setCopiado(false);
     }
   }, [show, manutencao]);
@@ -61,18 +59,17 @@ function DetalhesManutencaoModal({ show, onHide, manutencao, onUpdate }: Detalhe
 
   const handleFinalizar = async () => {
     if (!laudo) {
-      setError('O parecer técnico é obrigatório para finalizar a manutenção.');
+      mostrarCard('Atenção', 'O parecer técnico é obrigatório para finalizar a manutenção.', 'alerta');
       return;
     }
-    setError('');
     setIsSubmitting(true);
     try {
       await manutencaoService.finalizarManutencao(manutencao.id, laudo);
       mostrarCard('Manutenção Finalizada', 'O equipamento foi dado como concluído.', 'sucesso');
       onUpdate();
       onHide();
-    } catch (err) {
-      setError('Ocorreu um erro ao finalizar a manutenção.');
+    } catch {
+      mostrarCard('Erro', 'Ocorreu um erro ao finalizar a manutenção.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -80,18 +77,17 @@ function DetalhesManutencaoModal({ show, onHide, manutencao, onUpdate }: Detalhe
 
   const handleSalvarEdicao = async () => {
     if (!editData.equipamento || !editData.descricao_problema) {
-      setError('O Nome do Equipamento e a Descrição do Problema são obrigatórios.');
+      mostrarCard('Atenção', 'O Nome do Equipamento e a Descrição do Problema são obrigatórios.', 'alerta');
       return;
     }
-    setError('');
     setIsSubmitting(true);
     try {
       await manutencaoService.editarManutencao(manutencao.id, editData);
       mostrarCard('Sucesso', 'As informações da manutenção foram atualizadas.', 'sucesso');
       setIsEditing(false);
       onUpdate(); 
-    } catch (err) {
-      setError('Erro ao salvar as edições.');
+    } catch {
+      mostrarCard('Erro', 'Erro ao salvar as edições.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -119,7 +115,7 @@ function DetalhesManutencaoModal({ show, onHide, manutencao, onUpdate }: Detalhe
       try {
         document.execCommand('copy');
         onCopySuccess();
-      } catch (err) {
+      } catch {
         mostrarCard('Erro', 'Erro ao copiar para a área de transferência.', 'erro');
       }
       document.body.removeChild(textArea);
@@ -135,7 +131,6 @@ function DetalhesManutencaoModal({ show, onHide, manutencao, onUpdate }: Detalhe
       </Modal.Header>
       
       <Modal.Body className="pt-0 bg-light">
-        {error && <Alert variant="danger" className="shadow-sm border-0">{error}</Alert>}
 
         {isEditing ? (
           <Form className="bg-white p-4 rounded shadow-sm">

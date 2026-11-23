@@ -1,8 +1,9 @@
-import {io, Socket} from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
+import { SERVER_URL } from '../config';
 
-const apiUrl= import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-const socketUrl = apiUrl.replace('/api', '');
-
-export const socket: Socket = io(socketUrl, {
-    autoConnect:false,
+export const socket: Socket = io(SERVER_URL, {
+  autoConnect: false,
+  // O backend autentica o socket pelo JWT; a função é chamada a cada (re)conexão,
+  // então sempre usa o token atual.
+  auth: (cb) => cb({ token: localStorage.getItem('authToken') }),
 });

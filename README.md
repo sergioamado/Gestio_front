@@ -1,75 +1,43 @@
-# React + TypeScript + Vite
+# Gestio / COSUP+ — Front-end
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Front-end em React 18 + TypeScript + Vite + React Bootstrap para gestão de chamados, estoque de peças,
+impressoras/suprimentos, manutenção eletrônica, patrimônio e produção de serviços.
 
-Currently, two official plugins are available:
+## Rodando
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+cp .env.example .env   # ajuste VITE_API_URL para o endereço do backend
+npm run dev            # http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+| Script            | O que faz                                    |
+| ----------------- | -------------------------------------------- |
+| `npm run dev`     | Servidor de desenvolvimento (exposto na rede) |
+| `npm run build`   | Typecheck (`tsc`) + build de produção em `dist/` |
+| `npm run lint`    | ESLint (falha com qualquer aviso)            |
+| `npm run format`  | Prettier em `src/`                           |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Configuração
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- `VITE_API_URL` — URL da API **incluindo** `/api` (ex.: `http://10.110.1.69:3001/api`).
+  O socket e as fotos usam a mesma origem, sem o `/api`. Tudo é derivado em `src/config.ts`.
+
+## Estrutura
+
 ```
+src/
+  config.ts          URLs do backend (fonte única)
+  services/          chamadas HTTP (axios) e socket
+  contexts/          Auth, Toast, Confirm, Sidebar
+  routes/            ProtectedRoute (login + papéis)
+  utils/permissions  papéis por módulo, usados nas rotas e no menu
+  pages/ components/ telas e componentes por módulo
+  types/             tipos compartilhados
+```
+
+## Papéis
+
+`admin`, `gerente`, `tecnico`, `tecnico_impressora`, `tecnico_eletronica`.
+O acesso por módulo está em `src/utils/permissions.ts`. Esse controle é só de interface:
+**o backend deve validar o papel em todas as rotas**.

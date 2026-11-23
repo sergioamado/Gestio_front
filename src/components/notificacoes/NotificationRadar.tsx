@@ -1,40 +1,52 @@
 // src/components/notificacoes/NotificationRadar.tsx
+// Dono único da conexão Socket.IO. Renderizado uma vez no App (fora das páginas),
+// para que a navegação entre rotas não derrube e reabra a conexão.
 import { useEffect } from 'react';
 import { socket } from '../../services/socket';
 import { useToast } from '../../contexts/ToastContext';
 import * as notificacaoService from '../../services/notificacaoService';
 import { useAuth } from '../../hooks/useAuth';
 
+type TipoToast = 'sucesso' | 'erro' | 'alerta' | 'info';
+
+const toTipo = (tipo?: string): TipoToast => {
+  const t = tipo?.toLowerCase();
+  return t === 'sucesso' || t === 'erro' || t === 'alerta' ? t : 'info';
+};
+
 export function NotificationRadar() {
   const { mostrarCard } = useToast();
   const { user } = useAuth();
+  const userId = user?.id;
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
-    //  Liga o rádio e identifica o utilizador
-    socket.connect();
-    socket.emit('identificar_usuario', user.id);
+    // Re-identifica a cada (re)conexão, inclusive após queda de rede.
+    const identificar = () => socket.emit('identificar_usuario', userId);
 
-    //  Fica a ouvir as novidades em Tempo Real (O Grito do Backend)
-    socket.on('nova_notificacao', (notificacao) => {
-      mostrarCard(notificacao.titulo, notificacao.mensagem, notificacao.tipo.toLowerCase());
-    });
+    const onNovaNotificacao = (notificacao: { titulo: string; mensagem: string; tipo?: string }) => {
+      mostrarCard(notificacao.titulo, notificacao.mensagem, toTipo(notificacao.tipo));
+    };
 
-    // Recupera o histórico (Para mostrar o que aconteceu enquanto o utilizador estava deslogado)
+    socket.on('connect', identificar);
+    socket.on('nova_notificacao', onNovaNotificacao);
+    if (socket.connected) identificar();
+    else socket.connect();
+
+    // Mostra o que chegou enquanto o usuário estava deslogado (uma vez por login).
     const checkNotificacoesOffline = async () => {
       try {
         const notificacoes = await notificacaoService.getNotificacoes();
         const unread = notificacoes.filter(n => !n.lida);
-        
-        const storageKey = `toasts_exibidos_${user.id}`;
+
+        const storageKey = `toasts_exibidos_${userId}`;
         const exibidosAnteriormente: number[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
         let teveNovaNotificacao = false;
 
         for (const notif of unread) {
           if (!exibidosAnteriormente.includes(notif.id)) {
-            const tipoFrontend = notif.tipo ? notif.tipo.toLowerCase() as 'sucesso'|'erro'|'alerta'|'info' : 'info';
-            mostrarCard(notif.titulo || 'Mensagem Retida', notif.mensagem, tipoFrontend);
+            mostrarCard(notif.titulo || 'Mensagem Retida', notif.mensagem, toTipo(notif.tipo));
             exibidosAnteriormente.push(notif.id);
             teveNovaNotificacao = true;
           }
@@ -50,16 +62,15 @@ export function NotificationRadar() {
         console.error('Radar: Falha ao buscar notificações em background.', error);
       }
     };
-
-    // Executa a verificação retroativa APENAS UMA VEZ na montagem do componente
     checkNotificacoesOffline();
 
-    // LIMPEZA CRÍTICA: Desliga o rádio ao sair da tela para evitar vazamento de memória e notificações duplicadas
+    // Só roda no logout (userId muda) ou ao desmontar o App.
     return () => {
-      socket.off('nova_notificacao');
+      socket.off('connect', identificar);
+      socket.off('nova_notificacao', onNovaNotificacao);
       socket.disconnect();
     };
-  }, [user, mostrarCard]);
+  }, [userId, mostrarCard]);
 
-  return null; 
+  return null;
 }

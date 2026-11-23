@@ -1,5 +1,5 @@
 // src/contexts/ConfirmContext.tsx
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
@@ -29,13 +29,15 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
   const [resolver, setResolver] = useState<((value: boolean) => void) | null>(null);
 
   // Função que é chamada pelos componentes (como o ManutencaoCard)
-  const confirmar = (options: ConfirmOptions): Promise<boolean> => {
+  const confirmar = useCallback((options: ConfirmOptions): Promise<boolean> => {
     setOpcoes(options);
     setShow(true);
     return new Promise((resolve) => {
       setResolver(() => resolve);
     });
-  };
+  }, []);
+
+  const value = useMemo(() => ({ confirmar }), [confirmar]);
 
   const handleClose = () => {
     setShow(false);
@@ -48,7 +50,7 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <ConfirmContext.Provider value={{ confirmar }}>
+    <ConfirmContext.Provider value={value}>
       {children}
       
       {/* O Nosso Cartão de Confirmação Moderno */}

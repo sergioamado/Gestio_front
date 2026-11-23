@@ -1,5 +1,6 @@
 // src/components/auth/AdminResetPasswordForm.tsx
-import { Form, Alert } from 'react-bootstrap';
+import { useToast } from '../../contexts/ToastContext';
+import { Form } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import PrimaryButton from '../PrimaryButton';
@@ -9,19 +10,18 @@ import type { AdminResetPasswordFormProps } from '../../types';
 
 
 function AdminResetPasswordForm({ users, onSuccess }: AdminResetPasswordFormProps) {
+  const { mostrarCard } = useToast();
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
-    setApiError(null);
     try {
       const response = await resetPasswordByAdmin(data.username, data.newPassword);
       onSuccess(response.message);
       reset();
     } catch (err: any) {
-      setApiError(err.response?.data?.message || "Ocorreu um erro.");
+      mostrarCard('Erro', err.response?.data?.message || "Ocorreu um erro.", 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -29,7 +29,6 @@ function AdminResetPasswordForm({ users, onSuccess }: AdminResetPasswordFormProp
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
-      {apiError && <Alert variant="danger">{apiError}</Alert>}
       <Form.Group className="mb-3">
         <Form.Label>Selecione o Utilizador</Form.Label>
         <Form.Select {...register("username", { required: "É necessário selecionar um utilizador" })} isInvalid={!!errors.username}>

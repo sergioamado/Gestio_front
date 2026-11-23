@@ -1,4 +1,6 @@
 // src/components/solicitacoes/SolicitacaoItem.tsx
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useToast } from '../../contexts/ToastContext';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // 🚀 Importado corretamente
 import { Accordion, Badge, Button, Row, Col, Table, Form, InputGroup, Modal } from 'react-bootstrap';
@@ -9,6 +11,11 @@ import {
 } from 'react-bootstrap-icons';
 import * as solicitacaoService from '../../services/solicitacaoService';
 import PrimaryButton from '../PrimaryButton';
+import { useAuth } from '../../hooks/useAuth';
+import {
+  ITEM, ITEM_LABEL, OS_LABEL, osEncerrada, proximosStatusItemGerente, proximosStatusOSGerente,
+  tecnicoPodeConverter, tecnicoPodeDevolver, tecnicoPodeReceber,
+} from '../../utils/solicitacaoRules';
 import type { SolicitacaoDetalhada, StatusSolicitacao } from '../../types';
 
 interface SolicitacaoItemProps {
@@ -45,18 +52,27 @@ const getEntregaStatusBadge = (status: string) => {
     case 'Devolvida': return <Badge bg="danger">Devolvida c/ Defeito</Badge>;
     case 'Recebida pelo Técnico': return <Badge bg="info">Em posse do Técnico</Badge>;
     case 'Aguardando Devolução': return <Badge bg="warning" text="dark">Devolver Peça de Teste</Badge>;
-    default: return <Badge bg="secondary">{status}</Badge>;
+    case 'Devolução Aceite': return <Badge bg="dark">Devolução Aceite</Badge>;
+    default: return <Badge bg="secondary">{ITEM_LABEL[status] || status}</Badge>;
   }
 };
 
 
 const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate, currentUserRole }) => {
+  const { confirmar } = useConfirm();
+  const { mostrarCard } = useToast();
   
   
   const navigate = useNavigate();
 
-  const isGestor = currentUserRole === 'admin' || currentUserRole === 'gerente';
-  const isTecnico = currentUserRole === 'tecnico' || currentUserRole?.startsWith('tecnico');
+  const { user } = useAuth();
+  const encerrada = osEncerrada(solicitacao.status);
+  // Regras (validadas também no backend):
+  // - gerente só gere OS da própria unidade; admin só visualiza;
+  // - técnico só age nas OS que ele abriu.
+  const isGerenteDaUnidade = currentUserRole === 'gerente' && user?.unidade_id === solicitacao.unidade_id && !encerrada;
+  const isTecnico = currentUserRole?.startsWith('tecnico') ?? false;
+  const isTecnicoDono = isTecnico && user?.id === solicitacao.usuario_id && !encerrada;
 
   // Estados principais
   const [statusOS, setStatusOS] = useState<StatusSolicitacao>(solicitacao.status);
@@ -69,9 +85,6 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
   const [copied, setCopied] = useState(false);
 
   // Estados para Gestão de Modais
-  const [modalFeedback, setModalFeedback] = useState<{ show: boolean; title: string; message: string; variant: 'success' | 'danger' | 'info' }>({
-    show: false, title: '', message: '', variant: 'info'
-  });
   
   const [modalConfirmVistoria, setModalConfirmVistoria] = useState(false);
 
@@ -89,6 +102,16 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
   };
 
   const handleSaveChanges = async () => {
+    if (statusOS === 'CANCELADA' && solicitacao.status !== 'CANCELADA') {
+      const ok = await confirmar({
+        titulo: '❌ Cancelar Ordem de Serviço',
+        mensagem: 'As peças que ainda não foram devolvidas voltam ao estoque correspondente (teste ou consumo). Esta ação não pode ser desfeita.',
+        textoConfirmar: 'Sim, Cancelar OS',
+        textoCancelar: 'Voltar',
+        varianteBotao: 'danger',
+      });
+      if (!ok) return;
+    }
     setIsSaving(true);
     try {
       let justificativaAtualizada = solicitacao.justificativa;
@@ -101,16 +124,15 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
         status: statusOS,
         numero_pedido_externo: chamadoAlmoxarifado,
         justificativa: justificativaAtualizada,
-        itens_entrega: Object.keys(entregas).map(id => ({
-          solicitacao_item_id: Number(id),
-          status_entrega: entregas[Number(id)]
-        }))
+        itens_entrega: solicitacao.solicitacao_itens
+          .filter(item => entregas[item.id] && entregas[item.id] !== item.status_entrega)
+          .map(item => ({ solicitacao_item_id: item.id, status_entrega: entregas[item.id] }))
       });
       onUpdate();
-      setModalFeedback({ show: true, title: 'Sucesso', message: 'Alterações guardadas com sucesso!', variant: 'success' });
+      mostrarCard('Sucesso', 'Alterações guardadas com sucesso!', 'sucesso');
     } catch (error: any) {
       const msgErro = error.response?.data?.message || 'Erro ao salvar as alterações da Solicitação.';
-      setModalFeedback({ show: true, title: 'Erro', message: msgErro, variant: 'danger' });
+      mostrarCard('Erro', msgErro, 'erro');
     } finally {
       setIsSaving(false);
     }
@@ -122,9 +144,9 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     try {
       await solicitacaoService.updateSolicitacao(solicitacao.id, { status: 'PRONTA PARA VISTORIA' });
       onUpdate();
-      setModalFeedback({ show: true, title: 'Sucesso', message: 'Status atualizado para Pronta para Vistoria com sucesso!', variant: 'success' });
-    } catch (error) {
-      setModalFeedback({ show: true, title: 'Erro', message: 'Erro ao atualizar o status para vistoria.', variant: 'danger' });
+      mostrarCard('Sucesso', 'Status atualizado para Pronta para Vistoria com sucesso!', 'sucesso');
+    } catch (error: any) {
+      mostrarCard('Erro', error.response?.data?.message || 'Erro ao atualizar o status para vistoria.', 'erro');
     } finally {
       setIsSaving(false);
     }
@@ -133,10 +155,14 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
   const handleReceberPeca = async (itemId: number, nomeItem: string) => {
     setIsSaving(true);
     try {
-       handleEntregaChange(itemId, 'Recebida pelo Técnico');
-       setModalFeedback({ show: true, title: 'Recebimento Confirmado', message: `O recebimento de "${nomeItem}" foi registado. O gestor foi notificado.`, variant: 'success' });
-    } catch {
-       setModalFeedback({ show: true, title: 'Erro', message: 'Não foi possível registrar o recebimento.', variant: 'danger' });
+       // O backend transforma em "Aguardando Devolução" quando a peça é de TESTE.
+       await solicitacaoService.updateSolicitacao(solicitacao.id, {
+         itens_entrega: [{ solicitacao_item_id: itemId, status_entrega: ITEM.RECEBIDA }]
+       });
+       onUpdate();
+       mostrarCard('Recebimento Confirmado', `O recebimento de "${nomeItem}" foi registado. O gestor foi notificado.`, 'sucesso');
+    } catch (error: any) {
+       mostrarCard('Erro', error.response?.data?.message || 'Não foi possível registrar o recebimento.', 'erro');
     } finally {
        setIsSaving(false);
     }
@@ -148,12 +174,15 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     const itemId = modalDevolucao.itemId;
     setIsSaving(true);
     try {
-       handleEntregaChange(itemId, 'Devolvida');
+       await solicitacaoService.updateSolicitacao(solicitacao.id, {
+         itens_entrega: [{ solicitacao_item_id: itemId, status_entrega: ITEM.DEVOLVIDA, motivo: motivoDefeito.trim() }]
+       });
        setModalDevolucao({ show: false, itemId: null, nomeItem: '' });
        setMotivoDefeito('');
-       setModalFeedback({ show: true, title: 'Devolução Registada', message: 'A devolução por defeito foi comunicada ao almoxarifado.', variant: 'info' });
-    } catch {
-       setModalFeedback({ show: true, title: 'Erro', message: 'Erro ao processar a devolução da peça.', variant: 'danger' });
+       onUpdate();
+       mostrarCard('Devolução Registada', 'A devolução por defeito foi comunicada ao almoxarifado.', 'info');
+    } catch (error: any) {
+       mostrarCard('Erro', error.response?.data?.message || 'Erro ao processar a devolução da peça.', 'erro');
     } finally {
        setIsSaving(false);
     }
@@ -166,10 +195,10 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     
     try {
       await solicitacaoService.converterTesteEmConsumo(modalConversao.itemId);
-      setModalFeedback({ show: true, title: 'Sucesso', message: 'Peça definitiva solicitada ao almoxarifado com sucesso.', variant: 'success' });
+      mostrarCard('Sucesso', 'Peça definitiva solicitada ao almoxarifado com sucesso.', 'sucesso');
       onUpdate(); 
     } catch (e: any) {
-      setModalFeedback({ show: true, title: 'Erro', message: e.response?.data?.message || 'Erro ao solicitar peça definitiva.', variant: 'danger' });
+      mostrarCard('Erro', e.response?.data?.message || 'Erro ao solicitar peça definitiva.', 'erro');
     } finally {
       setIsSaving(false);
     }
@@ -210,7 +239,7 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
         <Accordion.Body className="bg-light pt-4 border-top">
           
           {/* 🚀 O NOVO BANNER TÉCNICO COM O BOTÃO VERDE */}
-          {isTecnico && solicitacao.status === 'EM ATENDIMENTO' && (
+          {isTecnicoDono && solicitacao.status === 'EM ATENDIMENTO' && (
              <div className="bg-light border border-success rounded p-3 shadow-sm mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-2">
                    <div>
@@ -251,7 +280,7 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
           )}
 
           {/* CARD GESTOR */}
-          {isGestor && (
+          {isGerenteDaUnidade && (
              <div className="bg-white p-3 rounded border mb-4 shadow-sm">
                <Form.Group>
                   <Form.Label className="small fw-bold text-secondary text-uppercase mb-1">
@@ -286,7 +315,7 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
               )}
             </Col>
             <Col md={6}>
-               {isGestor ? (
+               {isGerenteDaUnidade ? (
                   <>
                     <h6 className="fw-bold text-secondary text-uppercase small mb-3">Gerir Status da OS</h6>
                     <Form.Select 
@@ -294,17 +323,22 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
                       onChange={(e) => setStatusOS(e.target.value as StatusSolicitacao)} 
                       className="mb-3 shadow-sm border-secondary fw-medium"
                     >
-                      <option value="PENDENTE">⏳ Pendente</option>
-                      <option value="EM ATENDIMENTO">🛠️ Em Atendimento</option>
-                      <option value="PRONTA PARA VISTORIA">👀 Pronta para Vistoria</option>
-                      <option value="CONCLUIDA">✅ Concluída</option>
-                      <option value="CANCELADA">❌ Cancelada</option>
+                      {/* Só o status atual e as transições permitidas ao gerente */}
+                      {[solicitacao.status, ...proximosStatusOSGerente(solicitacao.status)].map(st => (
+                        <option key={st} value={st}>{OS_LABEL[st] || st}</option>
+                      ))}
                     </Form.Select>
                   </>
                ) : (
                   <div className="p-3 bg-white rounded border border-dashed">
                     <h6 className="fw-bold text-secondary small text-uppercase">Aviso de Gestão</h6>
-                    <p className="text-muted small mb-0">O status geral da Ordem de Serviço é controlado exclusivamente pela gerência.</p>
+                    <p className="text-muted small mb-0">
+                      {encerrada
+                        ? 'Esta Ordem de Serviço está encerrada.'
+                        : currentUserRole === 'admin'
+                          ? 'Acesso somente de visualização. A gestão da OS é feita pelo gerente da unidade.'
+                          : 'O status geral da Ordem de Serviço é controlado exclusivamente pela gerência da unidade.'}
+                    </p>
                   </div>
                )}
             </Col>
@@ -319,12 +353,18 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
                   <th className="border-0 small text-secondary text-center">Tipo</th>
                   <th className="border-0 small text-secondary text-center">Qtd.</th>
                   <th className="border-0 small text-secondary">Status Gestão</th>
-                  {isTecnico && <th className="border-0 small text-secondary text-center">Ações do Técnico</th>}
+                  {isTecnicoDono && <th className="border-0 small text-secondary text-center">Ações do Técnico</th>}
                 </tr>
               </thead>
               <tbody>
                 {solicitacao.solicitacao_itens.map((item) => {
                    const itemStatus = entregas[item.id] || item.status_entrega;
+                   const statusSalvo = item.status_entrega;
+                   const opcoesGerente = [statusSalvo, ...proximosStatusItemGerente(statusSalvo, item.tipo_uso)];
+                   const idPeca = item.item_id ?? item.itens?.id;
+                   const jaPediuDefinitiva = solicitacao.solicitacao_itens.some(
+                     i => i.id !== item.id && i.tipo_uso === 'CONSUMO' && (i.item_id ?? i.itens?.id) === idPeca
+                   );
                    
                    return (
                     <tr key={item.id}>
@@ -335,19 +375,16 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
                       <td className="text-center fw-bold">{item.quantidade_solicitada}</td>
                       
                       <td>
-                        {isGestor ? (
+                        {isGerenteDaUnidade ? (
                          <div className="d-flex flex-column gap-2">
                             <Form.Select size="sm" value={itemStatus} onChange={(e) => handleEntregaChange(item.id, e.target.value)} className={itemStatus === 'Entregue' ? 'border-success text-success' : itemStatus === 'Devolvida' ? 'border-danger text-danger' : ''}>
-                              <option value="Pendente">Pendente Almoxarifado</option>
-                              <option value="Entregue">Disponível para Retirada</option>
-                              <option value="Recebida pelo Técnico">Em posse do Técnico</option>
-                              <option value="Aguardando Devolução">Aguardando Devolução (Teste)</option>
-                              <option value="Devolvida">Devolvida (Técnico)</option>
-                              <option value="Devolução Aceite">Devolução Aceite (Almoxarifado)</option>
+                              {opcoesGerente.map(st => (
+                                <option key={st} value={st}>{ITEM_LABEL[st] || st}</option>
+                              ))}
                             </Form.Select>
                             
-                            {(itemStatus === 'Aguardando Devolução' || itemStatus === 'Devolvida') && (
-                              <Button variant="outline-success" size="sm" onClick={() => { if (window.confirm(`Confirma que recebeu a peça "${item.itens?.descricao}" fisicamente de volta?`)) { handleEntregaChange(item.id, 'Devolução Aceite'); }}}>
+                            {itemStatus === statusSalvo && proximosStatusItemGerente(statusSalvo, item.tipo_uso).includes(ITEM.DEVOLUCAO_ACEITE) && (
+                              <Button variant="outline-success" size="sm" onClick={async () => { if (await confirmar({ titulo: '✅ Aceitar Devolução', mensagem: `Confirma que recebeu a peça "${item.itens?.descricao}" fisicamente de volta?`, textoConfirmar: 'Sim, Recebi', varianteBotao: 'success' })) { handleEntregaChange(item.id, 'Devolução Aceite'); }}}>
                                 ✅ Aceitar Devolução
                               </Button>
                             )}
@@ -357,23 +394,23 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
                         )}
                       </td>
 
-                      {isTecnico && (
+                      {isTecnicoDono && (
                         <td className="text-center">
                            <div className="d-flex justify-content-center gap-2 flex-wrap">
-                             {itemStatus === 'Entregue' && (
-                               <Button variant="outline-success" size="sm" title="Confirmar Recebimento Físico" onClick={() => handleReceberPeca(item.id, item.itens?.descricao || 'Peça')}>
+                             {tecnicoPodeReceber(statusSalvo) && (
+                               <Button variant="outline-success" size="sm" disabled={isSaving} title="Confirmar Recebimento Físico" onClick={() => handleReceberPeca(item.id, item.itens?.descricao || 'Peça')}>
                                  <CheckCircleFill className="me-1"/> Recebi
                                </Button>
                              )}
                              
-                             {(itemStatus === 'Entregue' || itemStatus === 'Recebida pelo Técnico') && (
-                               <Button variant="outline-danger" size="sm" title="Devolver ao Almoxarifado (Defeito/Erro)" onClick={() => setModalDevolucao({ show: true, itemId: item.id, nomeItem: item.itens?.descricao || 'Peça' })}>
+                             {tecnicoPodeDevolver(statusSalvo) && (
+                               <Button variant="outline-danger" size="sm" disabled={isSaving} title="Devolver ao Almoxarifado (Defeito/Erro)" onClick={() => setModalDevolucao({ show: true, itemId: item.id, nomeItem: item.itens?.descricao || 'Peça' })}>
                                  <ArrowReturnLeft className="me-1"/> Devolver
                                </Button>
                              )}
 
-                             {item.tipo_uso === 'TESTE' && itemStatus === 'Recebida pelo Técnico' && (
-                               <Button variant="outline-primary" size="sm" title="A peça funcionou? Solicitar a definitiva." onClick={() => setModalConversao({ show: true, itemId: item.id, nomeItem: item.itens?.descricao || 'Peça' })}>
+                             {tecnicoPodeConverter(statusSalvo, item.tipo_uso) && !jaPediuDefinitiva && (
+                               <Button variant="outline-primary" size="sm" disabled={isSaving} title="A peça funcionou? Solicitar a definitiva." onClick={() => setModalConversao({ show: true, itemId: item.id, nomeItem: item.itens?.descricao || 'Peça' })}>
                                  ✅ Funcionou (Pedir Definitiva)
                                </Button>
                              )}
@@ -401,7 +438,7 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
               </Button>
             </CopyToClipboard>
             
-            {isGestor && (
+            {isGerenteDaUnidade && (
                <PrimaryButton onClick={handleSaveChanges} isLoading={isSaving} disabled={isSaving} className="px-4 py-2">
                  💾 Guardar Alterações
                </PrimaryButton>
@@ -410,17 +447,6 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
         </Accordion.Body>
       </Accordion.Item>
 
-      <Modal show={modalFeedback.show} onHide={() => setModalFeedback(prev => ({ ...prev, show: false }))} centered>
-        <Modal.Header closeButton className={`bg-${modalFeedback.variant} text-white`}>
-          <Modal.Title className="fs-6 fw-bold">{modalFeedback.title}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="py-4">
-          <p className="mb-0 text-dark">{modalFeedback.message}</p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" size="sm" onClick={() => setModalFeedback(prev => ({ ...prev, show: false }))}>Fechar</Button>
-        </Modal.Footer>
-      </Modal>
 
       <Modal show={modalConfirmVistoria} onHide={() => setModalConfirmVistoria(false)} centered>
         <Modal.Header closeButton className="bg-warning text-dark">

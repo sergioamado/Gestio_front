@@ -1,5 +1,6 @@
 // src/pages/CatalogoServicosPage.tsx
-import React, { useState, useEffect } from 'react';
+import { useToast } from '../../contexts/ToastContext';
+import { useState, useEffect } from 'react';
 import { Card, Row, Col, Table, Badge, Modal, Form, Spinner, Alert, Button } from 'react-bootstrap';
 import { PlusCircle, PencilSquare, TagFill } from 'react-bootstrap-icons';
 import { useForm } from 'react-hook-form';
@@ -10,6 +11,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import type { CatalogoServico } from '../../types';
 
 function CatalogoServicosPage() {
+  const { mostrarCard } = useToast();
   const { user } = useAuth();
   const [servicos, setServicos] = useState<CatalogoServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,8 +75,8 @@ function CatalogoServicosPage() {
       }
       await carregarCatalogo();
       handleCloseModal();
-    } catch (error) {
-      setError("Erro ao salvar serviço. Verifique os dados.");
+    } catch {
+      mostrarCard('Erro', "Erro ao salvar serviço. Verifique os dados.", 'erro');
     }
   };
 

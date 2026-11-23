@@ -1,5 +1,4 @@
 // src/components/suprimentos/HistoricoSuprimentosModal.tsx
-import React from 'react';
 import { Modal, Button, Table, Spinner, Badge } from 'react-bootstrap';
 
 interface HistoricoSuprimentosModalProps {

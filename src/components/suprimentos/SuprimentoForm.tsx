@@ -1,5 +1,5 @@
 // src/components/suprimentos/SuprimentoForm.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Form, Row, Col, Card, Badge } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { Printer, Hash, DropletFill, PaletteFill, BoxSeam } from 'react-bootstrap-icons';

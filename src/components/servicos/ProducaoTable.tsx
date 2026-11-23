@@ -1,5 +1,4 @@
 // src/components/servicos/ProducaoTable.tsx
-import React from 'react';
 import { Table, Badge, Button } from 'react-bootstrap';
 import { WrenchAdjustable, PrinterFill, MotherboardFill, TicketDetailed, Trash } from 'react-bootstrap-icons';
 import type { ProducaoServico } from '../../types';

@@ -1,20 +1,44 @@
 // src/pages/LoginPage.tsx
+import { useToast } from '../contexts/ToastContext';
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Row, Col, Card, Form, Alert } from 'react-bootstrap';
+import { Row, Col, Card, Form, InputGroup, Button } from 'react-bootstrap';
+import { EyeFill, EyeSlashFill } from 'react-bootstrap-icons';
 import { useAuth } from '../hooks/useAuth';
 import AuthLayout from '../layouts/AuthLayout';
 import PrimaryButton from '../components/PrimaryButton';
 import ufsLogo from '../assets/ufs-logo.svg';
 
 function LoginPage() {
+  const { mostrarCard } = useToast();
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [bloqueadoAte, setBloqueadoAte] = useState(0);
+  const [agora, setAgora] = useState(Date.now());
+  const segundosRestantes = Math.max(0, Math.ceil((bloqueadoAte - agora) / 1000));
+
+  // Contagem regressiva enquanto o login estiver bloqueado.
+  useEffect(() => {
+    if (!bloqueadoAte) return;
+    const t = setInterval(() => {
+      const n = Date.now();
+      setAgora(n);
+      if (n >= bloqueadoAte) {
+        setBloqueadoAte(0);
+      }
+    }, 1000);
+    return () => clearInterval(t);
+  }, [bloqueadoAte]);
+
+  const formatarRestante = (s: number) => {
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), seg = s % 60;
+    return h ? `${h}h ${m}min` : m ? `${m}min ${seg}s` : `${seg}s`;
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -25,12 +49,15 @@ function LoginPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
-    setError(null);
     try {
       await login(username, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Credenciais inválidas ou erro de conexão.');
+      mostrarCard('Falha no Login', err.message || 'Credenciais inválidas ou erro de conexão.', 'erro');
+      if (err.retryAfter) {
+        setBloqueadoAte(Date.now() + err.retryAfter * 1000);
+        setAgora(Date.now());
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -53,11 +80,6 @@ function LoginPage() {
                 </div>
                 
                 <Form onSubmit={handleSubmit}>
-                    {error && (
-                      <Alert variant="danger" className="shadow-sm border-0" onClose={() => setError(null)} dismissible>
-                        {error}
-                      </Alert>
-                    )}
                     
                     <Form.Group className="mb-4" controlId="formUsername">
                     <Form.Label className="fw-bold text-secondary small text-uppercase">Usuário</Form.Label>
@@ -76,28 +98,41 @@ function LoginPage() {
                     
                     <Form.Group className="mb-4" controlId="formPassword">
                     <Form.Label className="fw-bold text-secondary small text-uppercase">Senha</Form.Label>
-                    <Form.Control
-                        type="password"
-                        size="lg"
-                        className="bg-light border-0 shadow-none"
-                        style={{ fontSize: '1rem' }}
-                        placeholder="Digite sua senha"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        disabled={isSubmitting}
-                    />
+                    <InputGroup size="lg">
+                      <Form.Control
+                          type={mostrarSenha ? 'text' : 'password'}
+                          className="bg-light border-0 shadow-none"
+                          style={{ fontSize: '1rem' }}
+                          placeholder="Digite sua senha"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          autoComplete="current-password"
+                          required
+                          disabled={isSubmitting}
+                      />
+                      <Button
+                          variant="light"
+                          className="border-0 text-secondary"
+                          onClick={() => setMostrarSenha((v) => !v)}
+                          aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                          aria-pressed={mostrarSenha}
+                          title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                      >
+                          {mostrarSenha ? <EyeSlashFill size={18} /> : <EyeFill size={18} />}
+                      </Button>
+                    </InputGroup>
                     </Form.Group>
                     
                     <div className="d-grid mt-4 pt-2">
                     <PrimaryButton
                         type="submit"
                         isLoading={isSubmitting}
+                        disabled={isSubmitting || segundosRestantes > 0}
                         size="lg"
                         className="fw-bold shadow-sm"
                         style={{ padding: '0.8rem' }}
                     >
-                        {isSubmitting ? 'Autenticando...' : 'Entrar no Sistema'}
+                        {isSubmitting ? 'Autenticando...' : segundosRestantes > 0 ? `Aguarde ${formatarRestante(segundosRestantes)}` : 'Entrar no Sistema'}
                     </PrimaryButton>
                     </div>
                 </Form>

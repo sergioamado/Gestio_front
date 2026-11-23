@@ -1,5 +1,4 @@
 // src/components/dashboard/ChartRenderer.tsx
-import React from 'react';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -60,7 +59,7 @@ export default function ChartRenderer({ tipo, dados, eixoX, metrica, cor = '#0d6
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie data={dados} dataKey={metrica} nameKey={eixoX} cx="50%" cy="50%" outerRadius={80} label>
-            {dados.map((entry, index) => (
+            {dados.map((_, index) => (
               <Cell key={`cell-${index}`} fill={CORES_PIZZA[index % CORES_PIZZA.length]} />
             ))}
           </Pie>

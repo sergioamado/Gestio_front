@@ -6,7 +6,7 @@ import { Badge } from 'react-bootstrap';
 import NotificacoesOffcanvas from './notificacoes/NotificacoesOffcanvas';
 import ConfigurarNotificacoesModal from './notificacoes/ConfigurarNotificacoesModal';
 import * as notificacaoService from '../services/notificacaoService';
-import type { Notificacao } from '../services/notificacaoService';
+import type { Notificacao } from '../types';
 import { socket } from '../services/socket'; 
 
 interface HeaderProps {

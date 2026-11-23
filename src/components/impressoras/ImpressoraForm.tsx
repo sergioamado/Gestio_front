@@ -3,7 +3,6 @@ import { Form, Row, Col, Card } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { Printer, Hash, Diagram3, GeoAlt, ShieldCheck, PaletteFill, Building, Tags } from 'react-bootstrap-icons';
 import PrimaryButton from '../PrimaryButton';
-import type { Impressora, Unidade, ImpressoraCreateData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../contexts/ToastContext';
 import type { ImpressoraFormProps } from '../../types/impressora';

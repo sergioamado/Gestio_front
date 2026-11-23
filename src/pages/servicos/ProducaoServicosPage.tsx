@@ -1,5 +1,5 @@
 // src/pages/ProducaoServicosPage.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Spinner, Alert, Modal } from 'react-bootstrap';
 import { PlusCircle, Tools } from 'react-bootstrap-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -55,7 +55,7 @@ function ProducaoServicosPage() {
       ]);
       setHistorico(historicoData || []);
       setCatalogo((catalogoData || []).filter(c => c.ativo));
-    } catch (error) {
+    } catch {
       setError("Falha ao carregar os dados. Verifique a sua conexão.");
     } finally {
       setIsLoading(false);
@@ -95,7 +95,7 @@ function ProducaoServicosPage() {
         await servicosService.deleteProducao(item.id);
         await carregarDados();
         mostrarCard('Sucesso', 'Registo apagado com sucesso.', 'sucesso');
-      } catch (err: any) {
+      } catch {
         mostrarCard('Erro', 'Não foi possível apagar o registo de produção.', 'erro');
       }
     }

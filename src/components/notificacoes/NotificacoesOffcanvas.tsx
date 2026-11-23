@@ -3,12 +3,11 @@ import { useState, useEffect } from 'react';
 import { Offcanvas, ListGroup, Badge, Button, Spinner, Form } from 'react-bootstrap';
 import { CheckAll, BoxSeam, Tools, BellFill, ShieldExclamation, BoxArrowUpRight, GearFill, Telegram, ArrowLeft } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
-import type { Notificacao } from '../../services/notificacaoService';
+import type { Notificacao } from '../../types';
 import * as notificacaoService from '../../services/notificacaoService';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { socket } from '../../services/socket'; //  Antena de Rádio!
-import type { User } from '../../types';
 import type { OffcanvasProps } from '../../types/notificacao';
 
 
@@ -76,7 +75,7 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
       const { link } = await notificacaoService.gerarLinkTelegram();
       window.open(link, '_blank');
       mostrarCard('Telegram', 'O Telegram será aberto para iniciar o Bot.', 'info');
-    } catch (error) {
+    } catch {
       mostrarCard('Erro', 'Não foi possível gerar o link do Telegram.', 'erro');
     } finally {
       setIsGenerating(false);
@@ -94,7 +93,7 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
         setUser({ ...user, notificacoes_app: prefsApp, notificacoes_bot: prefsBot });
       }
       mostrarCard('Sucesso', resposta.message || 'Preferências salvas!', 'sucesso');
-    } catch (error) {
+    } catch {
       mostrarCard('Erro', 'Erro ao salvar configurações.', 'erro');
     } finally {
       setIsSaving(false);
@@ -111,7 +110,7 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
       });
       setPrefsBot(false);
       mostrarCard('Desvinculado', 'O seu Telegram foi removido do sistema.', 'info');
-    } catch (error) {
+    } catch {
       mostrarCard('Erro', 'Erro ao desvincular conta.', 'erro');
     } finally {
       setIsSaving(false);

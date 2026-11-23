@@ -1,5 +1,5 @@
 // src/contexts/ToastContext.tsx
-import React, { createContext, useContext, useState} from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Toast, ToastContainer } from 'react-bootstrap';
 
@@ -8,10 +8,12 @@ interface ToastMessage {
   titulo: string;
   mensagem: string;
   tipo: 'sucesso' | 'erro' | 'alerta' | 'info';
+  duracao: number;
 }
 
 interface ToastContextType {
-  mostrarCard: (titulo: string, mensagem: string, tipo?: 'sucesso' | 'erro' | 'alerta' | 'info') => void;
+  /** Card de notificação do sistema. `duracaoMs` padrão: 5 s. */
+  mostrarCard: (titulo: string, mensagem: string, tipo?: 'sucesso' | 'erro' | 'alerta' | 'info', duracaoMs?: number) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -25,14 +27,21 @@ export const useToast = () => {
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const mostrarCard = (titulo: string, mensagem: string, tipo: 'sucesso' | 'erro' | 'alerta' | 'info' = 'info') => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, titulo, mensagem, tipo }]);
-  };
+  // Contador em vez de Date.now(): vários toasts no mesmo milissegundo teriam a mesma key.
+  const nextId = useRef(0);
+
+  // Memoizado: componentes que têm mostrarCard nas deps de useEffect (NotificationRadar,
+  // BemDetailsModal...) não devem re-executar o efeito a cada toast exibido.
+  const mostrarCard = useCallback((titulo: string, mensagem: string, tipo: 'sucesso' | 'erro' | 'alerta' | 'info' = 'info', duracaoMs = 5000) => {
+    const id = ++nextId.current;
+    setToasts((prev) => [...prev, { id, titulo, mensagem, tipo, duracao: duracaoMs }]);
+  }, []);
 
   const removerToast = (id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+
+  const value = useMemo(() => ({ mostrarCard }), [mostrarCard]);
 
   // Define as cores baseadas no tipo
   const getCores = (tipo: string) => {
@@ -45,7 +54,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <ToastContext.Provider value={{ mostrarCard }}>
+    <ToastContext.Provider value={value}>
       {children}
       {/* Container fixo no canto inferior direito */}
       <ToastContainer position="bottom-end" className="p-4" style={{ zIndex: 9999, position: 'fixed' }}>
@@ -55,7 +64,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
             <Toast 
               key={t.id} 
               onClose={() => removerToast(t.id)} 
-              delay={5000} 
+              delay={t.duracao} 
               autohide 
               className="border-0 shadow-lg mb-3"
             >
@@ -63,7 +72,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
                 <span className="me-2 fs-5">{config.icon}</span>
                 <strong className="me-auto fs-6">{t.titulo}</strong>
               </Toast.Header>
-              <Toast.Body className="bg-white text-dark fw-medium fs-6 p-3">
+              <Toast.Body className="bg-white text-dark fw-medium fs-6 p-3" style={{ whiteSpace: 'pre-line' }}>
                 {t.mensagem}
               </Toast.Body>
             </Toast>

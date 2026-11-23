@@ -12,36 +12,25 @@ export const getSolicitacaoById = async (id: number): Promise<SolicitacaoDetalha
     return response.data;
 }
 
-export const updateSolicitacaoStatus = async (id: number, status: string): Promise<Solicitacao> => {
-    const response = await api.patch(`/solicitacoes/${id}/status`, { status });
-    return response.data;
-}
-
-export const updateSolicitacaoItemStatus = async (itemId: number, status_entrega: 'Pendente' | 'Entregue'): Promise<void> => {
-    await api.patch(`/solicitacoes/item/${itemId}/status`, { status_entrega });
-}
-
 export const createSolicitacao = async (data: SolicitacaoCreateData): Promise<Solicitacao> => {
   const response = await api.post('/solicitacoes', data);
   return response.data;
 };
 
-export const cancelarItemSolicitacao = async (itemId: number) => {
-  const response = await api.put(`/solicitacoes/itens/${itemId}/cancelar`);
-  return response.data;
-};
+export interface UpdateSolicitacaoPayload {
+  status?: string;
+  numero_pedido_externo?: string | null;
+  justificativa?: string | null;
+  itens_entrega?: { solicitacao_item_id: number; status_entrega: string; motivo?: string }[];
+}
 
-export const sinalizarDefeitoItem = async (itemId: number) => {
-  const response = await api.put(`/solicitacoes/itens/${itemId}/defeito`);
-  return response.data;
-};
-
-export const updateSolicitacao = async (id: number, data: any) => {
+// Único caminho para mudar status da OS e das peças (regras validadas no backend).
+export const updateSolicitacao = async (id: number, data: UpdateSolicitacaoPayload) => {
   const response = await api.put(`/solicitacoes/${id}`, data);
   return response.data;
 };
 
 export const converterTesteEmConsumo = async (itemId: number) => {
-  const response = await api.post(`/solicitacoes/item/${itemId}/converter-consumo`);
+  const response = await api.put(`/solicitacoes/item/${itemId}/converter-consumo`);
   return response.data;
 };

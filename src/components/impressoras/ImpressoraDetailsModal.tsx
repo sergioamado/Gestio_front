@@ -1,7 +1,7 @@
 // src/components/impressoras/ImpressoraDetailsModal.tsx
 import { Modal, ListGroup, Badge, Row, Col } from 'react-bootstrap';
 import { PrinterFill, InfoCircleFill } from 'react-bootstrap-icons';
-import type { Impressora, ImpressoraDetailsModalProps } from '../../types';
+import type { ImpressoraDetailsModalProps } from '../../types';
 
 
 

@@ -1,8 +1,8 @@
 // src/components/Sidebar.tsx
-import React from 'react';
 import { Nav } from 'react-bootstrap';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { hasRole, ABRIR_SOLICITACAO, MODULO_ADMINISTRACAO, MODULO_ELETRONICA, MODULO_IMPRESSORAS, MODULO_PATRIMONIO } from '../utils/permissions';
 import ufsLogo from '../assets/ufs_principal_negativa.png';
 import { 
   HouseDoorFill, PeopleFill, BoxSeamFill, BuildingFill, KeyFill, 
@@ -51,8 +51,8 @@ function Sidebar() {
             Chamados & Peças
           </div>
           
-          {/* Nova Solicitação: Oculto para o gerente. Admin e técnicos veem */}
-          {user?.role !== 'gerente' && (
+          {/* Nova Solicitação: só técnicos (gerente gere, admin só visualiza) */}
+          {hasRole(user, ABRIR_SOLICITACAO) && (
            <Nav.Link as={NavLink} to="/nova-solicitacao" className="sidebar-nav-link text-white rounded">
             <PencilSquare size={22} className="me-3" />
             <span>Nova Solicitação</span>
@@ -82,7 +82,7 @@ function Sidebar() {
 
           {/* MÓDULO: IMPRESSORAS E SUPRIMENTOS          */}
           
-          {(user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_impressora') && (
+          {hasRole(user, MODULO_IMPRESSORAS) && (
           <>
             <div className="sidebar-title text-uppercase text-white-50 small fw-bold mt-4 mb-2 px-3" style={{ fontSize: '0.75rem', letterSpacing: '1px' }}>
               Gestão de Impressoras
@@ -111,7 +111,7 @@ function Sidebar() {
 
           {/* MÓDULO: MANUTENÇÃO ELETRÔNICA              */}
           
-          {(user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'tecnico_eletronica' || user?.role == 'tecnico') && (
+          {hasRole(user, MODULO_ELETRONICA) && (
             <>
               <div className="sidebar-title text-uppercase text-white-50 small fw-bold mt-4 mb-2 px-3" style={{ fontSize: '0.75rem', letterSpacing: '1px' }}>
                 Eletrônica
@@ -127,7 +127,7 @@ function Sidebar() {
 
           {/* MÓDULO: PATRIMÔNIO                         */}
           
-          {(user?.role === 'admin' || user?.role === 'gerente') && (
+          {hasRole(user, MODULO_PATRIMONIO) && (
             <>
               <div className="sidebar-title text-uppercase text-white-50 small fw-bold mt-4 mb-2 px-3" style={{ fontSize: '0.75rem', letterSpacing: '1px' }}>
                 Patrimônio
@@ -155,7 +155,7 @@ function Sidebar() {
           
           {/* MÓDULO: SISTEMA / ADMINISTRAÇÃO            */}
           
-          {(user?.role === 'admin' || user?.role === 'gerente') && (
+          {hasRole(user, MODULO_ADMINISTRACAO) && (
             <>
               <div className="sidebar-title text-uppercase text-white-50 small fw-bold mt-4 mb-2 px-3" style={{ fontSize: '0.75rem', letterSpacing: '1px' }}>
                 Administração

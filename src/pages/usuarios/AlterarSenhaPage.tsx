@@ -1,23 +1,22 @@
 // src/pages/AlterarSenhaPage.tsx
+import { useToast } from '../../contexts/ToastContext';
 import { useState, useEffect } from 'react';
 import { Card, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { useAuth } from '../../hooks/useAuth';
 import MainLayout from '../../layouts/MainLayout';
 import ChangeOwnPasswordForm from '../../components/auth/ChangeOwnPasswordForm';
 import AdminResetPasswordForm from '../../components/auth/AdminResetPasswordForm';
-import SuccessModal from '../../components/SuccessModal';
 import { getAllUsers } from '../../services/usuarioService';
 import type { User } from '../../types';
 
 
 function AlterarSenhaPage() {
+  const { mostrarCard } = useToast();
   const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
 
   // Busca a lista de usuários se o usuário logado for admin
   useEffect(() => {
@@ -32,8 +31,7 @@ function AlterarSenhaPage() {
   }, [user?.role]);
 
   const handleSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setShowSuccessModal(true);
+    mostrarCard('✅ Operação Bem-Sucedida!', message, 'sucesso');
   };
 
   if (loading) {
@@ -82,12 +80,6 @@ function AlterarSenhaPage() {
         )}
       </Row>
 
-      <SuccessModal
-        show={showSuccessModal}
-        onHide={() => setShowSuccessModal(false)}
-        title="✅ Operação Bem-Sucedida!"
-        body={successMessage}
-      />
     </MainLayout>
   );
 }

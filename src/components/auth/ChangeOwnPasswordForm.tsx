@@ -1,5 +1,6 @@
 // src/components/auth/ChangeOwnPasswordForm.tsx
-import { Form, Alert } from 'react-bootstrap';
+import { useToast } from '../../contexts/ToastContext';
+import { Form } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import PrimaryButton from '../PrimaryButton';
@@ -10,21 +11,20 @@ interface ChangeOwnPasswordFormProps {
 }
 
 function ChangeOwnPasswordForm({ onSuccess }: ChangeOwnPasswordFormProps) {
+  const { mostrarCard } = useToast();
   const { register, handleSubmit, formState: { errors }, watch, reset } = useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const newPassword = watch("newPassword");
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
-    setApiError(null);
     try {
       const response = await changeOwnPassword(data.currentPassword, data.newPassword);
       onSuccess(response.message);
       reset(); // Limpa o formulário
     } catch (err: any) {
-      setApiError(err.response?.data?.message || "Ocorreu um erro.");
+      mostrarCard('Erro', err.response?.data?.message || "Ocorreu um erro.", 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -32,7 +32,6 @@ function ChangeOwnPasswordForm({ onSuccess }: ChangeOwnPasswordFormProps) {
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
-      {apiError && <Alert variant="danger">{apiError}</Alert>}
       <Form.Group className="mb-3">
         <Form.Label>Senha Atual</Form.Label>
         <Form.Control type="password" {...register("currentPassword", { required: "A senha atual é obrigatória" })} isInvalid={!!errors.currentPassword} />

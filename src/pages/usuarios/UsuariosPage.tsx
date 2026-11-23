@@ -1,4 +1,6 @@
 // src/pages/UsuariosPage.tsx
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useToast } from '../../contexts/ToastContext';
 import { useState, useEffect } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
@@ -12,6 +14,8 @@ import * as unidadeService from '../../services/unidadeService';
 import type { User, UserCreateData, UserUpdateData, Role, Unidade } from '../../types';
 
 function UsuariosPage() {
+  const { confirmar } = useConfirm();
+  const { mostrarCard } = useToast();
   const [usuarios, setUsuarios] = useState<User[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,19 +80,19 @@ function UsuariosPage() {
       fetchData();
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Ocorreu um erro ao salvar o usuário.';
-      setError(errorMessage);
+      mostrarCard('Erro', errorMessage, 'erro');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (user: User) => {
-    if (window.confirm(`Tem certeza de que deseja excluir o usuário "${user.nome_completo || user.username}"?`)) {
+    if (await confirmar({ titulo: '🗑️ Excluir Usuário', mensagem: `Tem certeza de que deseja excluir o usuário "${user.nome_completo || user.username}"?`, textoConfirmar: 'Sim, Excluir', varianteBotao: 'danger' })) {
       try {
         await usuarioService.deleteUser(user.id);
         fetchData();
-      } catch (err) {
-        setError('Não foi possível excluir. Este usuário possui Ordens de Serviço associadas a ele.');
+      } catch {
+        mostrarCard('Erro', 'Não foi possível excluir. Este usuário possui Ordens de Serviço associadas a ele.', 'erro');
       }
     }
   };

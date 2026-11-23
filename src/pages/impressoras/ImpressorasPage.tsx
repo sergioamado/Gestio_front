@@ -84,7 +84,7 @@ function ImpressorasPage() {
         mostrarCard('Sucesso', 'Impressora atualizada com sucesso!', 'sucesso');
       } else {
         const createData = data as ImpressoraCreateData;
-        let unidadeIdFinal = isAdmin ? Number(createData.unidade_id) : user?.unidade_id;
+        const unidadeIdFinal = isAdmin ? Number(createData.unidade_id) : user?.unidade_id;
         
         if (!unidadeIdFinal) throw new Error("A unidade organizacional é obrigatória.");
         await impressoraService.createImpressora({ ...createData, unidade_id: unidadeIdFinal });
@@ -109,7 +109,7 @@ function ImpressorasPage() {
       await impressoraService.deleteImpressora(impressora.id);
       mostrarCard('Sucesso', 'Impressora excluída permanentemente.', 'sucesso');
       fetchData(filtros, true);
-    } catch (err) {
+    } catch {
       mostrarCard('Aviso', 'Não foi possível excluir a impressora. Ela pode estar vinculada a históricos ou chamados.', 'alerta');
     }
   };

@@ -40,7 +40,7 @@ export default function RelatoriosProducaoPage() {
       //  CORREÇÃO: Chamando o serviço correto (relatoriosService)
       const resposta = await relatoriosService.getDashboardProducao(dataInicial, dataFinal);
       setDados(resposta);
-    } catch (err) {
+    } catch {
       mostrarCard('Erro no Relatório', 'Falha ao carregar os dados. Verifique a sua conexão.', 'erro');
     } finally {
       setIsLoading(false);

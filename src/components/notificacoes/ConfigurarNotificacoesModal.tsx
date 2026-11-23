@@ -4,10 +4,8 @@ import { Modal, Form, Alert, Row, Col, Card, Badge, Button } from 'react-bootstr
 import { BellFill, Telegram, InfoCircleFill } from 'react-bootstrap-icons';
 import PrimaryButton from '../PrimaryButton';
 import * as notificacaoService from '../../services/notificacaoService';
-import * as usuarioService from '../../services/usuarioService'; 
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../hooks/useAuth'; 
-import type { Notificacao} from '../../types/index';
 
 interface ConfigModalProps {
   show: boolean;
@@ -56,7 +54,6 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
     const permissao = await Notification.requestPermission();
     setPermissaoNavegador(permissao);
     if (permissao === 'granted') {
-      new Notification('Gestio', { body: 'Notificações ativadas com sucesso!' });
       mostrarCard('Sucesso', 'Permissão concedida no navegador!', 'sucesso');
     }
   };

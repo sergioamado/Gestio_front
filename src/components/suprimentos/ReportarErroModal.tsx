@@ -1,5 +1,5 @@
 // src/components/suprimentos/ReportarErroModal.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal, Form, Button } from 'react-bootstrap';
 
 interface ReportarErroModalProps {

@@ -44,7 +44,7 @@ function NovaSolicitacaoPage() {
       setItensDisponiveis(arrayItens);
       
       // Lógica extra: Se recarregar e um item do carrinho não tiver mais estoque, avisa o usuário (opcional/futuro)
-    } catch (error) {
+    } catch {
       if (isInitial) mostrarCard('Erro', 'Falha ao buscar itens do catálogo.', 'erro');
     }
   }, [mostrarCard]);

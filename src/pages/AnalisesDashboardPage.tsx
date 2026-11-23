@@ -103,7 +103,7 @@ export default function AnalisesDashboardPage() {
         widgets: widgets
       });
       mostrarCard('Sucesso', 'Painel analítico salvo com sucesso!', 'sucesso');
-    } catch (error) {
+    } catch {
       mostrarCard('Erro', 'Não foi possível salvar a configuração do dashboard.', 'erro');
     }
   };

@@ -1,4 +1,6 @@
 // src/pages/UnidadesPage.tsx
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useToast } from '../../contexts/ToastContext';
 import { useState, useEffect } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
@@ -11,6 +13,8 @@ import * as unidadeService from '../../services/unidadeService';
 import type { Unidade, UnidadeCreateData } from '../../types';
 
 function UnidadesPage() {
+  const { confirmar } = useConfirm();
+  const { mostrarCard } = useToast();
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,19 +62,19 @@ function UnidadesPage() {
       fetchUnidades(); 
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Ocorreu um erro ao salvar a unidade.';
-      setError(errorMessage);
+      mostrarCard('Erro', errorMessage, 'erro');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (unidade: Unidade) => {
-    if (window.confirm(`Tem certeza que deseja excluir a unidade "${unidade.nome}"?`)) {
+    if (await confirmar({ titulo: '🗑️ Excluir Unidade', mensagem: `Tem certeza que deseja excluir a unidade "${unidade.nome}"?`, textoConfirmar: 'Sim, Excluir', varianteBotao: 'danger' })) {
       try {
         await unidadeService.deleteUnidade(unidade.id);
         fetchUnidades(); 
-      } catch (err: any) {
-        setError('Não foi possível excluir. Esta unidade pode estar vinculada a usuários, itens ou solicitações existentes.');
+      } catch {
+        mostrarCard('Erro', 'Não foi possível excluir. Esta unidade pode estar vinculada a usuários, itens ou solicitações existentes.', 'erro');
       }
     }
   };

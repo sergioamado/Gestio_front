@@ -1,4 +1,5 @@
 // src/pages/Patrimonio/ImportarSipacPage.tsx
+import { useToast } from '../../contexts/ToastContext';
 import { useState, useEffect } from 'react';
 import { Card, Form, Alert } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
@@ -13,13 +14,13 @@ import ModalForm from '../../components/ModalForm';
 import BemForm from '../../components/patrimonio/BemForm';
 
 function ImportarSipacPage() {
+  const { mostrarCard } = useToast();
   const { user } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [unidadeDestinoId, setUnidadeDestinoId] = useState('');
   
   const [loading, setLoading] = useState(false);
-  const [mensagem, setMensagem] = useState<{ tipo: string; texto: string; detalhes?: any } | null>(null);
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,25 +45,29 @@ function ImportarSipacPage() {
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !unidadeDestinoId) {
-      setMensagem({ tipo: 'warning', texto: 'Por favor, preencha a Unidade e selecione o ficheiro.' });
+      mostrarCard('Atenção', 'Por favor, preencha a Unidade e selecione o ficheiro.', 'alerta');
       return;
     }
 
     setLoading(true);
-    setMensagem(null);
     const formData = new FormData();
     formData.append('planilha', file); 
     formData.append('unidade_id', unidadeDestinoId); 
 
     try {
       const response = await api.post('/patrimonio/importar', formData);
-      setMensagem({ tipo: 'success', texto: response.data.message, detalhes: response.data.detalhes });
+      const d = response.data.detalhes;
+      mostrarCard(
+        'Importação Concluída',
+        d
+          ? `${response.data.message}\nEncontrados: ${d.total_bens_encontrados} · Novos: ${d.novos_registos} · Atualizados: ${d.atualizados} · Erros/Ignorados: ${d.erros}`
+          : response.data.message,
+        'sucesso',
+        12000,
+      );
       setFile(null); 
     } catch (err: any) {
-      setMensagem({ 
-        tipo: 'danger', 
-        texto: err.response?.data?.message || 'Erro ao processar o ficheiro. Tente salvar o PDF novamente ou use o formato CSV.' 
-      });
+      mostrarCard('Erro na Importação', err.response?.data?.message || 'Erro ao processar o ficheiro. Tente salvar o PDF novamente ou use o formato CSV.', 'erro', 8000);
     } finally {
       setLoading(false);
     }
@@ -70,13 +75,12 @@ function ImportarSipacPage() {
 
   const handleManualSubmit = async (data: any) => {
     setIsSubmitting(true);
-    setMensagem(null);
     try {
       await patrimonioService.createBem(data);
       setShowFormModal(false);
-      setMensagem({ tipo: 'success', texto: `Tombamento ${data.tombamento} cadastrado com sucesso!` });
+      mostrarCard('Sucesso', `Tombamento ${data.tombamento} cadastrado com sucesso!`, 'sucesso');
     } catch (err: any) {
-      setMensagem({ tipo: 'danger', texto: err.response?.data?.message || 'Erro ao cadastrar bem manualmente.' });
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao cadastrar bem manualmente.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -107,19 +111,6 @@ function ImportarSipacPage() {
             <p className="text-muted">Faça o upload do seu relatório ou insira os itens manualmente.</p>
           </div>
 
-          {mensagem && (
-            <Alert variant={mensagem.tipo} className="border-0 shadow-sm mb-4" dismissible onClose={() => setMensagem(null)}>
-              <strong>{mensagem.texto}</strong>
-              {mensagem.detalhes && (
-                <ul className="mt-2 mb-0 small">
-                  <li>Encontrados: <b>{mensagem.detalhes.total_bens_encontrados}</b></li>
-                  <li>Novos registos: <b>{mensagem.detalhes.novos_registos}</b></li>
-                  <li>Atualizados: <b>{mensagem.detalhes.atualizados}</b></li>
-                  <li>Erros/Ignorados: <b>{mensagem.detalhes.erros}</b></li>
-                </ul>
-              )}
-            </Alert>
-          )}
 
           <Form onSubmit={handleImport}>
             <Form.Group className="mb-4">

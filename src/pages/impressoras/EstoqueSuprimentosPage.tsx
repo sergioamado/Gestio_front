@@ -1,4 +1,5 @@
 // src/pages/EstoqueSuprimentosPage.tsx
+import { useToast } from '../../contexts/ToastContext';
 import { useState, useEffect, useCallback } from 'react';
 import { Alert, Spinner, Button, Card, Table, Badge, Form, Row, Col } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
@@ -12,6 +13,7 @@ import AdicionarEstoqueForm from '../../components/estoque/AdicionarEstoqueForm'
 import { socket } from '../../services/socket'; //   Antena de Rádio!
 
 function EstoqueSuprimentosPage() {
+  const { mostrarCard } = useToast();
   const { user, isLoading: isAuthLoading } = useAuth();
   const [estoque, setEstoque] = useState<EstoqueSuprimentos | null>(null);
   const [historico, setHistorico] = useState<any[]>([]);
@@ -83,7 +85,7 @@ function EstoqueSuprimentosPage() {
       // O backend vai emitir o rádio, mas garantimos a recarga local
       fetchData(true); 
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao registrar nova entrada no estoque.');
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao registrar nova entrada no estoque.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -99,7 +101,7 @@ function EstoqueSuprimentosPage() {
       setShowCorrecaoModal(false);
       fetchData(true); 
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao corrigir o estoque.');
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao corrigir o estoque.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -113,9 +115,9 @@ function EstoqueSuprimentosPage() {
          await suprimentosService.reportarErroEstoque(reportData);
       }
       setShowReportModal(false);
-      alert('Sua notificação de divergência foi enviada aos gestores com sucesso.');
+      mostrarCard('Reporte Enviado', 'Sua notificação de divergência foi enviada aos gestores com sucesso.', 'sucesso');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao enviar o reporte.');
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao enviar o reporte.', 'erro');
     } finally {
       setIsSubmitting(false);
       setReportData({ mensagem: '' });

@@ -1,6 +1,7 @@
 // src/pages/ControleSuprimentosPage.tsx
+import { useToast } from '../../contexts/ToastContext';
 import { useState, useEffect, useCallback } from 'react';
-import { Card, Spinner, Alert, Button, Modal } from 'react-bootstrap';
+import { Card, Spinner, Alert, Button } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
 import ModalForm from '../../components/ModalForm';
@@ -18,6 +19,7 @@ import ReportarErroModal from '../../components/suprimentos/ReportarErroModal';
 import HistoricoSuprimentosModal from '../../components/suprimentos/HistoricoSuprimentosModal';
 
 function ControleSuprimentosPage() {
+  const { mostrarCard } = useToast();
   const { user } = useAuth();
   const [registros, setRegistros] = useState<ControleSuprimentos[]>([]);
   const [impressoras, setImpressoras] = useState<Impressora[]>([]);
@@ -39,9 +41,6 @@ function ControleSuprimentosPage() {
   const [historicoEntradas, setHistoricoEntradas] = useState<any[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
 
-  const [feedback, setFeedback] = useState<{ show: boolean; title: string; message: string; variant: 'success' | 'danger' }>({
-    show: false, title: '', message: '', variant: 'success'
-  });
 
   const fetchData = useCallback((isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -77,7 +76,7 @@ function ControleSuprimentosPage() {
       setShowFormModal(false);
       fetchData(true); 
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao registrar a requisição.');
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao registrar a requisição.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -88,9 +87,9 @@ function ControleSuprimentosPage() {
     try {
       await suprimentosService.reportarErroEstoque({ mensagem: mensagemCompleta });
       setShowModalReporte(false);
-      setFeedback({ show: true, title: 'Reporte Enviado', message: 'Inconsistência reportada à gerência.', variant: 'success' });
+      mostrarCard('Reporte Enviado', 'Inconsistência reportada à gerência.', 'sucesso');
     } catch (err: any) {
-      setFeedback({ show: true, title: 'Erro no Envio', message: err.response?.data?.message || 'Erro ao reportar.', variant: 'danger' });
+      mostrarCard('Erro no Envio', err.response?.data?.message || 'Erro ao reportar.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -102,9 +101,9 @@ function ControleSuprimentosPage() {
       await suprimentosService.corrigirEstoque(data);
       setShowModalCorrecao(false);
       fetchData(true);
-      setFeedback({ show: true, title: 'Estoque Atualizado', message: 'Ajuste de estoque registrado com sucesso.', variant: 'success' });
+      mostrarCard('Estoque Atualizado', 'Ajuste de estoque registrado com sucesso.', 'sucesso');
     } catch (err: any) {
-      setFeedback({ show: true, title: 'Erro na Correção', message: err.response?.data?.message || 'Erro ao corrigir estoque.', variant: 'danger' });
+      mostrarCard('Erro na Correção', err.response?.data?.message || 'Erro ao corrigir estoque.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -117,7 +116,7 @@ function ControleSuprimentosPage() {
       const data = await suprimentosService.getHistoricoEntradas();
       setHistoricoEntradas(Array.isArray(data) ? data : data?.data || []);
     } catch {
-      setFeedback({ show: true, title: 'Erro ao Carregar', message: 'Falha ao buscar o histórico.', variant: 'danger' });
+      mostrarCard('Erro ao Carregar', 'Falha ao buscar o histórico.', 'erro');
     } finally {
       setLoadingHistorico(false);
     }
@@ -177,12 +176,6 @@ function ControleSuprimentosPage() {
       
       <HistoricoSuprimentosModal show={showModalHistorico} onHide={() => setShowModalHistorico(false)} historicoEntradas={historicoEntradas} loadingHistorico={loadingHistorico} />
 
-      <Modal show={feedback.show} onHide={() => setFeedback(prev => ({ ...prev, show: false }))} centered>
-        <Modal.Header closeButton className={`bg-${feedback.variant} text-white`}>
-          <Modal.Title className="fs-6 fw-bold">{feedback.title}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="py-4 text-dark">{feedback.message}</Modal.Body>
-      </Modal>
     </MainLayout>
   );
 }

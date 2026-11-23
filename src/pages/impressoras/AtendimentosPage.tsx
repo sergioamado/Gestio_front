@@ -1,4 +1,5 @@
 // src/pages/AtendimentosPage.tsx
+import { useToast } from '../../contexts/ToastContext';
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
@@ -22,6 +23,7 @@ const EmptyAtendimentosState = () => (
 );
 
 function AtendimentosPage() {
+  const { mostrarCard } = useToast();
   const { user } = useAuth();
   
   const [atendimentos, setAtendimentos] = useState<AtendimentoImpressora[]>([]);
@@ -85,7 +87,7 @@ function AtendimentosPage() {
       setShowFormModal(false);
       fetchData(true);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao salvar os dados do atendimento.');
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao salvar os dados do atendimento.', 'erro');
     } finally {
       setIsSubmitting(false);
     }

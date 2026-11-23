@@ -1,6 +1,7 @@
 // src/pages/ItensPage.tsx
+import { useToast } from '../../contexts/ToastContext';
 import { useState, useEffect, useCallback } from 'react';
-import { Spinner, Alert, Card, Row, Col, InputGroup, Form, Pagination } from 'react-bootstrap';
+import { Spinner, Alert, Card, InputGroup, Form, Pagination } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
 import ItensTable from '../../components/itens/ItensTable';
@@ -8,6 +9,7 @@ import ModalForm from '../../components/ModalForm';
 import ItemForm from '../../components/itens/ItemForm';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import { useAuth } from '../../hooks/useAuth';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import ItemDetailsModal from '../../components/itens/ItemDetailsModal';
 import * as itemService from '../../services/itemService';
 import * as unidadeService from '../../services/unidadeService';
@@ -15,6 +17,7 @@ import type { Item, ItemCreateData, Unidade } from '../../types';
 import { socket } from '../../services/socket'; // Antena de Rádio!
 
 function ItensPage() {
+  const { mostrarCard } = useToast();
   const { user } = useAuth();
   const [itens, setItens] = useState<Item[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
@@ -35,6 +38,7 @@ function ItensPage() {
   const canManageItems = user?.role === 'admin' || user?.role === 'gerente';
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebouncedValue(searchTerm);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -50,7 +54,7 @@ function ItensPage() {
     const params: any = {
       page: currentPage,
       limit: ITEMS_PER_PAGE,
-      search: searchTerm
+      search: debouncedSearch
     };
 
     if (user.role !== 'admin' && user.unidade_id) {
@@ -58,7 +62,7 @@ function ItensPage() {
     }
 
     const promises: [Promise<any>, Promise<Unidade[]>?] = [
-      itemService.getAllItems ? itemService.getAllItems(params) : (itemService as any).getAllItens(params)
+      itemService.getAllItems(params)
     ];
 
     if (user.role === 'admin') {
@@ -89,7 +93,7 @@ function ItensPage() {
       .finally(() => {
         if (!isSilent) setLoading(false);
       });
-  }, [user, currentPage, searchTerm]);
+  }, [user, currentPage, debouncedSearch]);
 
 
   // ==========================================================================
@@ -124,9 +128,9 @@ function ItensPage() {
   };
 
   const renderPaginationItems = () => {
-    let items = [];
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
+    const items = [];
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
     for (let number = startPage; number <= endPage; number++) {
       items.push(
         <Pagination.Item key={number} active={number === currentPage} onClick={() => handlePageChange(number)}>
@@ -169,7 +173,7 @@ function ItensPage() {
       // O backend agora avisa o rádio, mas forçamos localmente também por segurança da UI
       fetchItens(true); 
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Ocorreu um erro ao salvar o item.');
+      mostrarCard('Erro', err.response?.data?.message || 'Ocorreu um erro ao salvar o item.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -189,8 +193,8 @@ function ItensPage() {
       await itemService.deleteItem(deletingItem.id);
       setShowDeleteModal(false);
       fetchItens(true);
-    } catch (err: any) {
-      setError('Não foi possível excluir. O item provavelmente já está associado a uma Ordem de Serviço.');
+    } catch {
+      mostrarCard('Erro', 'Não foi possível excluir. O item provavelmente já está associado a uma Ordem de Serviço.', 'erro');
       setShowDeleteModal(false);
     } finally {
       setIsDeleting(false);

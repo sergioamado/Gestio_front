@@ -1,16 +1,16 @@
 // src/services/api.ts
 import axios from 'axios';
+import { API_URL } from '../config';
 
 // Cria a instância do Axios
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://10.110.1.69:3001/api', // mudar para http://localhost:3001/api se for usar localmente
+  baseURL: API_URL,
 });
 
 // Interceptor de REQUISIÇÃO 
 // Antes de qualquer requisição sair injeta o token
 api.interceptors.request.use(
   (config) => {
-    // CORREÇÃO 1: Lê a chave correta 'authToken' em vez de 'token'
     const token = localStorage.getItem('authToken');
     
     if (token && config.headers) {
@@ -33,9 +33,8 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       console.warn("🔒 Sessão expirada ou não autorizada. A redirecionar...");
       
-      // CORREÇÃO 2: Apaga a chave correta 'authToken' para matar a sessão de vez
       localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+      localStorage.removeItem('authUser');
       
       // Redireciona para o ecrã de login
       if (window.location.pathname !== '/login') {

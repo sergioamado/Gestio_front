@@ -1,4 +1,6 @@
 // src/pages/Patrimonio/LevantamentoPage.tsx
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useToast } from '../../contexts/ToastContext';
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Row, Col, Form, Badge, ProgressBar, Table, Alert, Spinner, InputGroup } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
@@ -8,6 +10,8 @@ import * as patrimonioService from '../../services/patrimonioService';
 import type { BemPatrimonial } from '../../types';
 
 function LevantamentoPage() {
+  const { confirmar } = useConfirm();
+  const { mostrarCard } = useToast();
   const { user } = useAuth();
   
   const [levantamentoAberto, setLevantamentoAberto] = useState(false);
@@ -18,7 +22,6 @@ function LevantamentoPage() {
   const [tombamentoBip, setTombamentoBip] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingAcao, setLoadingAcao] = useState(false);
-  const [mensagem, setMensagem] = useState<{ tipo: string, texto: string } | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +33,6 @@ function LevantamentoPage() {
 
   const carregarLevantamento = async () => {
     setLoading(true);
-    setMensagem(null);
     try {
       const data = await patrimonioService.getLevantamentoAtual(unidadeId);
       if (data && data.levantamento) {
@@ -65,9 +67,9 @@ function LevantamentoPage() {
     try {
       await patrimonioService.iniciarLevantamento();
       await carregarLevantamento();
-      setMensagem({ tipo: 'success', texto: 'Auditoria Anual Iniciada! Comece a bipar os equipamentos.' });
+      mostrarCard('Sucesso', 'Auditoria Anual Iniciada! Comece a bipar os equipamentos.', 'sucesso');
     } catch (err: any) {
-      setMensagem({ tipo: 'danger', texto: err.response?.data?.message || 'Erro ao iniciar.' });
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao iniciar.', 'erro');
     } finally {
       setLoadingAcao(false);
     }
@@ -75,17 +77,22 @@ function LevantamentoPage() {
 
   const handleFinalizar = async () => {
     if (resumo.pendentes_qtd > 0) {
-      const confirmar = window.confirm(`Atenção! Faltam ${resumo.pendentes_qtd} itens para conferir. Deseja fechar o levantamento mesmo assim e considerá-los como "Não Localizados"?`);
-      if (!confirmar) return;
+      const ok = await confirmar({
+        titulo: '⚠️ Itens Pendentes',
+        mensagem: `Faltam ${resumo.pendentes_qtd} itens para conferir. Deseja fechar o levantamento mesmo assim e considerá-los como "Não Localizados"?`,
+        textoConfirmar: 'Sim, Fechar',
+        varianteBotao: 'warning',
+      });
+      if (!ok) return;
     }
     
     setLoadingAcao(true);
     try {
       await patrimonioService.finalizarLevantamento();
       setLevantamentoAberto(false);
-      setMensagem({ tipo: 'success', texto: 'Relatório de Levantamento encerrado e guardado com sucesso!' });
+      mostrarCard('Sucesso', 'Relatório de Levantamento encerrado e guardado com sucesso!', 'sucesso');
     } catch (err: any) {
-      setMensagem({ tipo: 'danger', texto: err.response?.data?.message || 'Erro ao finalizar.' });
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao finalizar.', 'erro');
     } finally {
       setLoadingAcao(false);
     }
@@ -102,10 +109,10 @@ function LevantamentoPage() {
         unidade_id: unidadeId
       });
       setTombamentoBip(''); // Limpa o input rápido para o próximo bipe
-      setMensagem({ tipo: 'success', texto: `✅ Item ${tombamentoBip} conferido com sucesso!` });
+      mostrarCard('Sucesso', `✅ Item ${tombamentoBip} conferido com sucesso!`, 'sucesso');
       await carregarLevantamento(); // Atualiza as listas e a barra de progresso
     } catch (err: any) {
-      setMensagem({ tipo: 'danger', texto: err.response?.data?.message || 'Erro ao bipar item.' });
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao bipar item.', 'erro');
       setTombamentoBip('');
       // Foca de volta no input mesmo se der erro
       inputRef.current?.focus();
@@ -140,7 +147,6 @@ function LevantamentoPage() {
 
   return (
     <MainLayout pageTitle="📊 Auditoria Patrimonial (Levantamento Anual)">
-      {mensagem && <Alert variant={mensagem.tipo} dismissible onClose={() => setMensagem(null)} className="shadow-sm border-0">{mensagem.texto}</Alert>}
 
       {!levantamentoAberto ? (
         <Card className="text-center border-0 shadow-sm p-5 mt-4">

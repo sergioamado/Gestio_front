@@ -1,6 +1,7 @@
 // src/components/manutencao/ManutencaoEletronicaForm.tsx
+import { useToast } from '../../contexts/ToastContext';
 import { useState } from 'react';
-import { Form, Row, Col, Alert } from 'react-bootstrap';
+import { Form, Row, Col } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import PrimaryButton from '../PrimaryButton';
 import type { User, ManutencaoEletronicaCreateData } from '../../types';
@@ -12,18 +13,17 @@ interface ManutencaoFormProps {
 }
 
 function ManutencaoEletronicaForm({ tecnicos, onSuccess }: ManutencaoFormProps) {
+  const { mostrarCard } = useToast();
   const { register, handleSubmit, formState: { errors } } = useForm<ManutencaoEletronicaCreateData>();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const onSubmit = async (data: ManutencaoEletronicaCreateData) => {
     setIsSubmitting(true);
-    setApiError(null);
     try {
       await manutencaoService.create(data);
       onSuccess();
-    } catch (err) {
-      setApiError('Ocorreu um erro ao criar o registo.');
+    } catch {
+      mostrarCard('Erro', 'Ocorreu um erro ao criar o registo.', 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -31,7 +31,6 @@ function ManutencaoEletronicaForm({ tecnicos, onSuccess }: ManutencaoFormProps) 
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
-      {apiError && <Alert variant="danger">{apiError}</Alert>}
       <Row>
         <Col md={6}>
           <Form.Group className="mb-3">

@@ -2,7 +2,6 @@
 import React from 'react';
 import { Card, Button, Stack, Badge } from 'react-bootstrap';
 import { differenceInDays } from 'date-fns';
-import type { ManutencaoEletronica } from '../../types';
 import * as manutencaoService from '../../services/manutencaoEletronicaService';
 import PrimaryButton from '../PrimaryButton';
 import { useAuth } from '../../hooks/useAuth';
@@ -57,7 +56,7 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
         await manutencaoService.iniciarManutencao(manutencao.id);
         mostrarCard('Manutenção Iniciada', 'Você agora é o responsável por este equipamento.', 'sucesso'); 
         onUpdate();
-      } catch (error) {
+      } catch {
         mostrarCard('Erro', 'Não foi possível iniciar a manutenção.', 'erro');
       }
     }
@@ -79,7 +78,7 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
       try {
         document.execCommand('copy');
         mostrarCard('Copiado', 'Resumo copiado com sucesso!', 'info');
-      } catch (err) {
+      } catch {
         mostrarCard('Erro', 'O seu navegador bloqueou a cópia automática.', 'erro');
       }
       document.body.removeChild(textArea);

@@ -54,6 +54,7 @@ export interface SolicitacaoDetalhada extends Solicitacao {
     status_entrega: 'Pendente' | 'Entregue' | 'Cancelado' | 'Defeito' | 'Recebida pelo Técnico' | 'Devolvida' | 'Aguardando Devolução' | 'Devolução Aceite';
     data_entrega: string | null;
     tipo_uso?: string;
+    item_id?: number;
     itens: {
       id: number;
       descricao: string;

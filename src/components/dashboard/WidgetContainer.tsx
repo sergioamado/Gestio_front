@@ -1,5 +1,5 @@
 // src/components/dashboard/WidgetContainer.tsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Spinner, Alert } from 'react-bootstrap';
 import ChartRenderer from './ChartRenderer';
 import { analiseService } from '../../services/analiseService';
@@ -26,7 +26,7 @@ export default function WidgetContainer({ widget, refreshTrigger }: WidgetContai
           metricas: widget.configuracao.metricas,
         });
         setDados(resposta);
-      } catch (err) {
+      } catch {
         setError("Erro ao carregar dados analíticos.");
       } finally {
         setIsLoading(false);

@@ -1,4 +1,5 @@
 // src/pages/Patrimonio/ListaBensPage.tsx
+import { useToast } from '../../contexts/ToastContext';
 import { useState, useEffect, useCallback } from 'react';
 import { Table, Card, Form, Badge, Spinner, Alert, InputGroup, Pagination, Row, Col } from 'react-bootstrap';
 import MainLayout from '../../layouts/MainLayout';
@@ -14,6 +15,7 @@ import { useAuth } from '../../hooks/useAuth';
 import type { BemPatrimonial, Unidade } from '../../types';
 
 function ListaBensPage() {
+  const { mostrarCard } = useToast();
   const { user } = useAuth();
   const [bens, setBens] = useState<BemPatrimonial[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]); 
@@ -92,7 +94,7 @@ function ListaBensPage() {
       setShowFormModal(false);
       fetchDados();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao salvar o equipamento.');
+      mostrarCard('Erro', err.response?.data?.message || 'Erro ao salvar o equipamento.', 'erro');
     } finally { setIsSubmitting(false); }
   };
 
@@ -103,16 +105,16 @@ function ListaBensPage() {
       await patrimonioService.deleteBem(deletingBem.id);
       setShowDeleteModal(false);
       fetchDados();
-    } catch (err) {
-      setError('Erro ao excluir. O equipamento pode estar em uso num termo de cautela.');
+    } catch {
+      mostrarCard('Erro', 'Erro ao excluir. O equipamento pode estar em uso num termo de cautela.', 'erro');
       setShowDeleteModal(false);
     } finally { setIsDeleting(false); }
   };
 
   const renderPaginationItems = () => {
-    let items = [];
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
+    const items = [];
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
     for (let number = startPage; number <= endPage; number++) {
       items.push(
         <Pagination.Item key={number} active={number === currentPage} onClick={() => {setCurrentPage(number); window.scrollTo(0,0);}}>

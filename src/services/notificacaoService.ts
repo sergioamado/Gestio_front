@@ -19,7 +19,7 @@ export const marcarTodasComoLidas = async () => {
 };
 
 export const gerarLinkTelegram = async (): Promise<{ link: string }> => {
-  const response = await api.get('/usuarios/telegram/gerar-link');
+  const response = await api.get('/notificacoes/telegram/gerar-link');
   return response.data;
 };
 

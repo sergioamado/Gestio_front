@@ -1,10 +1,11 @@
-// src/components/ProtectedRoute.tsx (ou src/routes/ProtectedRoute.tsx)
+// src/routes/ProtectedRoute.tsx
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Spinner } from 'react-bootstrap';
+import type { Role } from '../types';
 
 interface ProtectedRouteProps {
-  allowedRoles?: string[]; // Array opcional de cargos que podem acessar a rota
+  allowedRoles?: readonly Role[]; // Cargos que podem acessar a rota (omitido = qualquer usuário logado)
 }
 
 const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
@@ -24,8 +25,8 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   }
 
   // Se a rota exigir cargos específicos e o usuário NÃO tiver permissão, manda pro Dashboard
-  if (allowedRoles && user?.role && !allowedRoles.includes(user.role)) {
-    console.warn(`Acesso negado: Usuário ${user.role} tentou acessar uma rota restrita para ${allowedRoles.join(', ')}`);
+  if (allowedRoles && (!user?.role || !allowedRoles.includes(user.role))) {
+    console.warn(`Acesso negado: Usuário ${user?.role} tentou acessar uma rota restrita para ${allowedRoles.join(', ')}`);
     return <Navigate to="/dashboard" replace />;
   }
 

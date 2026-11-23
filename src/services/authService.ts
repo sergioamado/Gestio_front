@@ -26,7 +26,10 @@ export const login = async (username : string, password : string): Promise<User>
   } catch (error: any) {
     // Re-lança o erro para que o componente possa tratá-lo
     if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Falha no login.');
+      const erro = new Error(error.response.data.message || 'Falha no login.') as Error & { retryAfter?: number };
+      // 429 = bloqueio por excesso de tentativas; o backend informa quantos segundos esperar.
+      if (error.response.status === 429) erro.retryAfter = Number(error.response.data.retry_after) || undefined;
+      throw erro;
     }
     throw new Error('Não foi possível conectar ao servidor.');
   }

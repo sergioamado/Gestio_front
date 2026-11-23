@@ -6,7 +6,6 @@ import AdminDashboard from '../components/dashboard/AdminDashboard';
 import GerenteDashboard from '../components/dashboard/GerenteDashboard';
 import TecnicoDashboard from '../components/dashboard/TecnicoDashboard';
 import { Card } from 'react-bootstrap';
-import type { DashboardProps } from '../types';
 import { socket } from '../services/socket'; // Antena de Rádio!
 
 //  Agora a função recebe o gatilho e passa para os painéis filhos
