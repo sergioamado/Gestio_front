@@ -12,6 +12,7 @@ export interface Solicitacao {
   responsavel_usuario_id: number; 
   unidade_id: number;
   justificativa: string;
+  /** @deprecated substituído pelo Nº do pedido SIPAC por peça */
   numero_pedido_externo?: string | null;
   documento_emitido_em?: string | null;
 }
@@ -55,6 +56,8 @@ export interface SolicitacaoDetalhada extends Solicitacao {
     data_entrega: string | null;
     tipo_uso?: string;
     item_id?: number;
+    numero_pedido_sipac?: string | null;
+    almoxarifado?: string | null;
     itens: {
       id: number;
       descricao: string;

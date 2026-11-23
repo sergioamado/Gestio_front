@@ -3,7 +3,7 @@ import { useConfirm } from '../../contexts/ConfirmContext';
 import { useToast } from '../../contexts/ToastContext';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // 🚀 Importado corretamente
-import { Accordion, Badge, Button, Row, Col, Table, Form, InputGroup, Modal } from 'react-bootstrap';
+import { Accordion, Badge, Button, Row, Col, Table, Form, Modal } from 'react-bootstrap';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { 
   Clipboard, CheckCircleFill, XCircleFill, ClockFill, 
@@ -80,7 +80,35 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     solicitacao.solicitacao_itens.reduce((acc, item) => ({ ...acc, [item.id]: item.status_entrega }), {})
   );
 
-  const [chamadoAlmoxarifado, setChamadoAlmoxarifado] = useState(solicitacao.numero_pedido_externo ?? '');
+  // Nº do pedido SIPAC e almoxarifado de cada peça (editável pelo gerente)
+  const [sipac, setSipac] = useState<Record<number, { numero: string; almoxarifado: string }>>(
+    solicitacao.solicitacao_itens.reduce(
+      (acc, item) => ({ ...acc, [item.id]: { numero: item.numero_pedido_sipac ?? '', almoxarifado: item.almoxarifado ?? '' } }),
+      {}
+    )
+  );
+  const handleSipacChange = (itemId: number, campo: 'numero' | 'almoxarifado', valor: string) => {
+    setSipac(prev => ({ ...prev, [itemId]: { ...prev[itemId], [campo]: valor } }));
+  };
+  // "Pode ser o mesmo": copia o 1º pedido preenchido para as peças que estão em branco.
+  const preencherVazias = () => {
+    const modelo = solicitacao.solicitacao_itens.map(i => sipac[i.id]).find(v => v?.numero.trim() && v?.almoxarifado.trim());
+    if (!modelo) {
+      mostrarCard('Atenção', 'Preencha o Nº do pedido SIPAC e o almoxarifado de uma peça primeiro.', 'alerta');
+      return;
+    }
+    setSipac(prev => {
+      const novo = { ...prev };
+      for (const i of solicitacao.solicitacao_itens) {
+        if (i.status_entrega === ITEM.CANCELADO) continue;
+        const atual = novo[i.id];
+        novo[i.id] = { numero: atual.numero.trim() || modelo.numero, almoxarifado: atual.almoxarifado.trim() || modelo.almoxarifado };
+      }
+      return novo;
+    });
+  };
+  // Sugestões de almoxarifado: os já usados nesta OS
+  const almoxarifadosUsados = Array.from(new Set(Object.values(sipac).map(v => v.almoxarifado.trim()).filter(Boolean)));
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -114,19 +142,26 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
     }
     setIsSaving(true);
     try {
-      let justificativaAtualizada = solicitacao.justificativa;
-      if (chamadoAlmoxarifado !== solicitacao.numero_pedido_externo) {
-         const dataHora = formatarData(new Date().toISOString());
-         justificativaAtualizada = `${solicitacao.justificativa || ''}\n[${dataHora}] Chamado Almoxarifado atualizado para: ${chamadoAlmoxarifado}`.trim();
-      }
+      // Envia só as peças que mudaram (status e/ou dados do SIPAC). O histórico é gerado no backend.
+      const itensAlterados = solicitacao.solicitacao_itens
+        .map(item => {
+          const mudouStatus = !!entregas[item.id] && entregas[item.id] !== item.status_entrega;
+          const dados = sipac[item.id];
+          const mudouSipac =
+            dados.numero.trim() !== (item.numero_pedido_sipac ?? '') ||
+            dados.almoxarifado.trim() !== (item.almoxarifado ?? '');
+          if (!mudouStatus && !mudouSipac) return null;
+          return {
+            solicitacao_item_id: item.id,
+            ...(mudouStatus ? { status_entrega: entregas[item.id] } : {}),
+            ...(mudouSipac ? { numero_pedido_sipac: dados.numero.trim() || null, almoxarifado: dados.almoxarifado.trim() || null } : {}),
+          };
+        })
+        .filter((i): i is NonNullable<typeof i> => i !== null);
 
-      await solicitacaoService.updateSolicitacao(solicitacao.id, { 
+      await solicitacaoService.updateSolicitacao(solicitacao.id, {
         status: statusOS,
-        numero_pedido_externo: chamadoAlmoxarifado,
-        justificativa: justificativaAtualizada,
-        itens_entrega: solicitacao.solicitacao_itens
-          .filter(item => entregas[item.id] && entregas[item.id] !== item.status_entrega)
-          .map(item => ({ solicitacao_item_id: item.id, status_entrega: entregas[item.id] }))
+        itens_entrega: itensAlterados,
       });
       onUpdate();
       mostrarCard('Sucesso', 'Alterações guardadas com sucesso!', 'sucesso');
@@ -210,7 +245,7 @@ Unidade: ${solicitacao.unidades_organizacionais?.nome || 'N/A'}
 Técnico: ${solicitacao.usuarios_solicitacoes_usuario_idTousuarios?.nome_completo || 'N/A'}
 Responsável (Unidade): ${solicitacao.usuarios_solicitacoes_responsavel_usuario_idTousuarios?.nome_completo || 'N/A'}
 Itens Solicitados:
-${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.itens?.descricao} (${i.status_entrega})`).join('\n')}`.trim();
+${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.itens?.descricao} (${i.status_entrega}) | Pedido SIPAC: ${i.numero_pedido_sipac || 'N/A'} | Almoxarifado: ${i.almoxarifado || 'N/A'}`).join('\n')}`.trim();
 
   const isVistoria = solicitacao.status === 'PRONTA PARA VISTORIA';
 
@@ -279,29 +314,6 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
              </div>
           )}
 
-          {/* CARD GESTOR */}
-          {isGerenteDaUnidade && (
-             <div className="bg-white p-3 rounded border mb-4 shadow-sm">
-               <Form.Group>
-                  <Form.Label className="small fw-bold text-secondary text-uppercase mb-1">
-                    Nº do Chamado Almoxarifado (Num/Ano)
-                  </Form.Label>
-                  <InputGroup>
-                    <Form.Control 
-                      type="text" 
-                      placeholder="Ex: 124/2026" 
-                      value={chamadoAlmoxarifado} 
-                      onChange={(e) => setChamadoAlmoxarifado(e.target.value)}
-                      className="bg-light"
-                    />
-                  </InputGroup>
-                  <Form.Text className="text-muted" style={{fontSize: '0.75rem'}}>
-                    A alteração deste campo regista automaticamente a data/hora no histórico da OS.
-                  </Form.Text>
-               </Form.Group>
-             </div>
-          )}
-
           <Row className="mb-4">
             <Col md={6}>
               <h6 className="fw-bold text-secondary text-uppercase small mb-3">Detalhes da Requisição</h6>
@@ -310,9 +322,6 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
               <p className="mb-1 small"><strong className="text-dark">Patrimônio / Tombamento:</strong> {solicitacao.patrimonio || 'Não informado'}</p>
               <p className="mb-1 small"><strong className="text-dark">Setor Físico:</strong> {solicitacao.setor_equipamento || 'Não informado'}</p>
               <p className="mb-1 small"><strong className="text-dark">Documento Emitido Em:</strong> {formatarData(solicitacao.documento_emitido_em)}</p>
-              {solicitacao.numero_pedido_externo && (
-                <p className="mb-1 small"><strong className="text-dark">Chamado Almoxarifado Atual:</strong> <Badge bg="secondary">{solicitacao.numero_pedido_externo}</Badge></p>
-              )}
             </Col>
             <Col md={6}>
                {isGerenteDaUnidade ? (
@@ -344,7 +353,17 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
             </Col>
           </Row>
 
-          <h6 className="fw-bold text-secondary text-uppercase small mb-3">Peças Solicitadas ({solicitacao.solicitacao_itens.length})</h6>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h6 className="fw-bold text-secondary text-uppercase small mb-0">Peças Solicitadas ({solicitacao.solicitacao_itens.length})</h6>
+            {isGerenteDaUnidade && solicitacao.solicitacao_itens.length > 1 && (
+              <Button variant="link" size="sm" className="p-0 text-decoration-none" onClick={preencherVazias}>
+                Repetir pedido/almoxarifado nas peças em branco
+              </Button>
+            )}
+          </div>
+          <datalist id={`almoxarifados-os-${solicitacao.id}`}>
+            {almoxarifadosUsados.map(a => <option key={a} value={a} />)}
+          </datalist>
           <div className="table-responsive bg-white rounded border shadow-sm mb-4">
             <Table hover className="align-middle mb-0 text-sm">
               <thead className="bg-light">
@@ -353,6 +372,8 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
                   <th className="border-0 small text-secondary text-center">Tipo</th>
                   <th className="border-0 small text-secondary text-center">Qtd.</th>
                   <th className="border-0 small text-secondary">Status Gestão</th>
+                  <th className="border-0 small text-secondary">Almoxarifado</th>
+                  <th className="border-0 small text-secondary">Nº Pedido SIPAC</th>
                   {isTecnicoDono && <th className="border-0 small text-secondary text-center">Ações do Técnico</th>}
                 </tr>
               </thead>
@@ -393,6 +414,38 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
                           getEntregaStatusBadge(itemStatus)
                         )}
                       </td>
+
+                      {/* Almoxarifado e Nº do pedido SIPAC desta peça */}
+                      {isGerenteDaUnidade && statusSalvo !== ITEM.CANCELADO ? (
+                        <>
+                          <td style={{ minWidth: 150 }}>
+                            <Form.Control
+                              size="sm"
+                              placeholder="Ex: Almox. Central"
+                              list={`almoxarifados-os-${solicitacao.id}`}
+                              value={sipac[item.id]?.almoxarifado ?? ''}
+                              onChange={(e) => handleSipacChange(item.id, 'almoxarifado', e.target.value)}
+                              isInvalid={!sipac[item.id]?.almoxarifado.trim()}
+                              maxLength={100}
+                            />
+                          </td>
+                          <td style={{ minWidth: 130 }}>
+                            <Form.Control
+                              size="sm"
+                              placeholder="Ex: 124/2026"
+                              value={sipac[item.id]?.numero ?? ''}
+                              onChange={(e) => handleSipacChange(item.id, 'numero', e.target.value)}
+                              isInvalid={!sipac[item.id]?.numero.trim()}
+                              maxLength={100}
+                            />
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="small">{item.almoxarifado || <span className="text-muted">—</span>}</td>
+                          <td className="small">{item.numero_pedido_sipac ? <Badge bg="secondary">{item.numero_pedido_sipac}</Badge> : <span className="text-muted">—</span>}</td>
+                        </>
+                      )}
 
                       {isTecnicoDono && (
                         <td className="text-center">

@@ -19,9 +19,14 @@ export const createSolicitacao = async (data: SolicitacaoCreateData): Promise<So
 
 export interface UpdateSolicitacaoPayload {
   status?: string;
-  numero_pedido_externo?: string | null;
   justificativa?: string | null;
-  itens_entrega?: { solicitacao_item_id: number; status_entrega: string; motivo?: string }[];
+  itens_entrega?: {
+    solicitacao_item_id: number;
+    status_entrega?: string;
+    motivo?: string;
+    numero_pedido_sipac?: string | null;
+    almoxarifado?: string | null;
+  }[];
 }
 
 // Único caminho para mudar status da OS e das peças (regras validadas no backend).
