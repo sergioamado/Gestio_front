@@ -37,24 +37,24 @@ function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps) {
   // 🚀 NOVA FUNÇÃO: Interceta o clique e mostra o Cartão de Confirmação Moderno
   const handleDeleteClick = async (usuario: User) => {
     const confirmou = await confirmar({
-      titulo: '🗑️ Excluir Utilizador',
-      mensagem: `Tem a certeza que deseja remover o acesso do utilizador "${usuario.nome_completo}"? Esta ação não pode ser desfeita.`,
+      titulo: '🗑️ Excluir Usuário',
+      mensagem: `Tem certeza que deseja remover o acesso do usuário "${usuario.nome_completo}"? Esta ação não pode ser desfeita.`,
       textoConfirmar: 'Sim, Excluir',
       textoCancelar: 'Cancelar',
       varianteBotao: 'danger'
     });
 
     if (confirmou) {
-      // Se o utilizador clicou em "Sim", passamos a ordem para a página Pai apagar na API
+      // Se o usuário clicou em "Sim", passamos a ordem para a página Pai apagar na API
       onDelete(usuario);
     }
   };
 
   return (
-    <Table striped hover responsive className="align-middle shadow-sm bg-white rounded">
+    <Table striped hover responsive className="align-middle shadow-sm bg-white rounded tabela-cards">
       <thead className="table-light">
         <tr>
-          <th>Utilizador (Login)</th>
+          <th>Usuário (Login)</th>
           <th>Nome Completo</th>
           <th>Perfil</th>
           <th>Unidade Organizacional</th>
@@ -64,11 +64,11 @@ function UsuariosTable({ usuarios, onEdit, onDelete }: UsuariosTableProps) {
       <tbody>
         {usersToDisplay.map((user) => (
           <tr key={user.id}>
-            <td className="fw-medium">{user.username}</td>
-            <td>{user.nome_completo}</td>
-            <td>{getRoleBadge(user.role)}</td>
-            <td className="text-muted">{user.unidades_organizacionais?.nome || '[ Acesso Global ]'}</td>
-            <td className="text-center">
+            <td data-label="Usuário" className="fw-medium">{user.username}</td>
+            <td data-label="Nome">{user.nome_completo}</td>
+            <td data-label="Perfil">{getRoleBadge(user.role)}</td>
+            <td data-label="Unidade" className="text-muted">{user.unidades_organizacionais?.nome || '[ Acesso Global ]'}</td>
+            <td className="text-center acoes">
               <Stack direction="horizontal" gap={2} className="justify-content-center">
                 <Button variant="outline-primary" size="sm" onClick={() => onEdit(user)} className="fw-bold">
                   <PencilSquare className="me-1"/> Editar

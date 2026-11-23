@@ -31,8 +31,8 @@ export default function AnalisesDashboardPage() {
   useEffect(() => {
     analiseService.getCatalogo().then(setCatalogo).catch(console.error);
     
-    // (Opcional) Aqui também deveria carregar o Dashboard guardado no banco, 
-    // caso o utilizador já tivesse um guardado previamente.
+    // (Opcional) Aqui também deveria carregar o Dashboard salvo no banco, 
+    // caso o usuário já tivesse um salvo previamente.
   }, []);
 
   
@@ -65,7 +65,7 @@ export default function AnalisesDashboardPage() {
   }, []);
   // ==========================================================================
 
-  // Força uma atualização manual se o utilizador clicar no botão
+  // Força uma atualização manual se o usuário clicar no botão
   const forceRefresh = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);

@@ -129,7 +129,7 @@ function CatalogoServicosPage() {
             </div>
           ) : (
             <div className="table-responsive">
-              <Table hover className="mb-0 align-middle">
+              <Table hover className="mb-0 align-middle tabela-cards">
                 <thead className="table-light">
                   <tr>
                     <th className="ps-4">Serviço (Especificação)</th>
@@ -142,7 +142,7 @@ function CatalogoServicosPage() {
                 <tbody>
                   {servicos.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center p-5 text-muted bg-light">
+                      <td colSpan={5} className="text-center p-5 text-muted bg-light vazio">
                          <span className="fs-1 d-block mb-3">📭</span>
                          <h6 className="fw-bold text-dark">Nenhum serviço cadastrado.</h6>
                          <p className="mb-0 small">Comece criando os serviços base do setor.</p>
@@ -151,21 +151,21 @@ function CatalogoServicosPage() {
                   ) : (
                     servicos.map((svc) => (
                       <tr key={svc.id}>
-                        <td className="fw-bold text-dark ps-4 py-3">{svc.nome_servico}</td>
-                        <td>
+                        <td data-label="Serviço" className="fw-bold text-dark ps-4 py-3">{svc.nome_servico}</td>
+                        <td data-label="Categoria">
                           <Badge bg="secondary" className="bg-opacity-10 text-dark border border-secondary border-opacity-25 rounded-pill px-3 py-2">
                             {svc.categoria}
                           </Badge>
                         </td>
-                        <td className="fw-bold text-success">
+                        <td data-label="Valor Estimado" className="fw-bold text-success">
                           R$ {Number(svc.valor_estimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="text-center">
+                        <td data-label="Status" className="text-center">
                           <Badge bg={svc.ativo ? 'success' : 'danger'} className="rounded-pill px-3">
                             {svc.ativo ? 'Ativo' : 'Inativo'}
                           </Badge>
                         </td>
-                        <td className="text-center pe-4">
+                        <td className="text-center pe-4 acoes">
                           <Button variant="outline-primary" size="sm" onClick={() => handleOpenModal(svc)} className="fw-bold shadow-sm">
                             <PencilSquare className="me-1" /> Editar
                           </Button>

@@ -18,6 +18,22 @@ export const marcarTodasComoLidas = async () => {
   return response.data;
 };
 
+export interface StatusTelegram {
+  bot_ativo: boolean;
+  bot_username: string | null;
+  bot_link: string | null;
+  vinculado: boolean;
+  telegram_chat_id: string | null;
+  notificacoes_bot: boolean;
+  notificacoes_app: boolean;
+}
+
+/** Situação real da vinculação, lida do servidor (o usuário salvo no navegador pode estar desatualizado). */
+export const getStatusTelegram = async (): Promise<StatusTelegram> => {
+  const response = await api.get('/notificacoes/telegram/status');
+  return response.data;
+};
+
 export const gerarLinkTelegram = async (): Promise<{ link: string }> => {
   const response = await api.get('/notificacoes/telegram/gerar-link');
   return response.data;

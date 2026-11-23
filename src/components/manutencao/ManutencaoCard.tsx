@@ -94,7 +94,7 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
             <Card.Title className="fw-bold text-dark mb-1 lh-sm text-uppercase" style={{fontSize: '0.95rem'}}>
               {manutencao.equipamento}
             </Card.Title>
-            <div className="text-muted fw-bold text-uppercase d-flex align-items-center" style={{ fontSize: '0.7rem', letterSpacing: '0.5px' }}>
+            <div className="text-muted fw-bold text-uppercase d-flex align-items-center" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>
               GLPI: <span className="text-primary ms-1 me-2">{glpiValue}</span>
               <Button variant="link" className="p-0 text-secondary text-decoration-none" onClick={handleCopy} title="Copiar Resumo">
                 📋
@@ -106,12 +106,12 @@ function ManutencaoCard({ manutencao, onDetailsClick, onUpdate }: ManutencaoCard
         
         <div className="mb-3 p-2 rounded bg-light border border-light-subtle">
           <div className="d-flex justify-content-between align-items-center mb-1">
-            <span className="text-muted fw-bold text-uppercase" style={{ fontSize: '0.65rem' }}>Entrada</span>
+            <span className="text-muted fw-bold text-uppercase" style={{ fontSize: '0.75rem' }}>Entrada</span>
             <span className="fw-bold text-dark" style={{ fontSize: '0.75rem' }}>{new Date(manutencao.data_entrada).toLocaleDateString('pt-BR')}</span>
           </div>
           <div className="d-flex justify-content-between align-items-center pt-1 border-top border-secondary-subtle">
-             <span className="text-muted fw-bold text-uppercase" style={{ fontSize: '0.65rem' }}>Decorrido</span>
-             <span className={`badge ${urgency.badgeClass} rounded-pill px-2 py-1`} style={{ fontSize: '0.65rem' }}>
+             <span className="text-muted fw-bold text-uppercase" style={{ fontSize: '0.75rem' }}>Decorrido</span>
+             <span className={`badge ${urgency.badgeClass} rounded-pill px-2 py-1`} style={{ fontSize: '0.75rem' }}>
                 {urgency.icon} {urgency.text}
              </span>
           </div>

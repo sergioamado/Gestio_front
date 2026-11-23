@@ -171,7 +171,7 @@ function BemForm({ bem, unidades, onSubmit, isLoading }: BemFormProps) {
 
       <div className="d-flex justify-content-end border-top pt-4 mt-2">
         <PrimaryButton type="submit" isLoading={isLoading} className="px-4 fw-bold shadow-sm">
-          {bem ? '💾 Guardar Alterações' : '🚀 Cadastrar Equipamento'}
+          {bem ? '💾 Salvar Alterações' : '🚀 Cadastrar Equipamento'}
         </PrimaryButton>
       </div>
     </Form>

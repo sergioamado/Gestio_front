@@ -9,6 +9,7 @@ import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
 import { relatoriosService } from '../../services/relatorioService';
 import { useToast } from '../../contexts/ToastContext';
+import MontarRelatorio from '../../components/relatorios/MontarRelatorio';
 
 export default function RelatoriosProducaoPage() {
   const [dados, setDados] = useState<any>(null);
@@ -246,6 +247,9 @@ export default function RelatoriosProducaoPage() {
 
         </div>
       )}
+
+      {/* Construtor de relatórios personalizados (não entra na impressão do dashboard) */}
+      <MontarRelatorio />
     </MainLayout>
   );
 }

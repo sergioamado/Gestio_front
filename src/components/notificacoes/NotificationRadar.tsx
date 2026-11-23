@@ -6,6 +6,10 @@ import { socket } from '../../services/socket';
 import { useToast } from '../../contexts/ToastContext';
 import * as notificacaoService from '../../services/notificacaoService';
 import { useAuth } from '../../hooks/useAuth';
+import { textoSemMarcacao } from '../../utils/textoNotificacao';
+
+// Acima disto, as notificações acumuladas viram um único card de resumo (não cobrem a tela).
+const MAX_CARDS_OFFLINE = 2;
 
 type TipoToast = 'sucesso' | 'erro' | 'alerta' | 'info';
 
@@ -26,7 +30,7 @@ export function NotificationRadar() {
     const identificar = () => socket.emit('identificar_usuario', userId);
 
     const onNovaNotificacao = (notificacao: { titulo: string; mensagem: string; tipo?: string }) => {
-      mostrarCard(notificacao.titulo, notificacao.mensagem, toTipo(notificacao.tipo));
+      mostrarCard(textoSemMarcacao(notificacao.titulo), textoSemMarcacao(notificacao.mensagem), toTipo(notificacao.tipo));
     };
 
     socket.on('connect', identificar);
@@ -42,15 +46,22 @@ export function NotificationRadar() {
 
         const storageKey = `toasts_exibidos_${userId}`;
         const exibidosAnteriormente: number[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        let teveNovaNotificacao = false;
+        const novas = unread.filter((n) => !exibidosAnteriormente.includes(n.id));
+        const teveNovaNotificacao = novas.length > 0;
 
-        for (const notif of unread) {
-          if (!exibidosAnteriormente.includes(notif.id)) {
-            mostrarCard(notif.titulo || 'Mensagem Retida', notif.mensagem, toTipo(notif.tipo));
-            exibidosAnteriormente.push(notif.id);
-            teveNovaNotificacao = true;
+        if (novas.length > MAX_CARDS_OFFLINE) {
+          mostrarCard(
+            '🔔 Notificações enquanto você estava fora',
+            `Você tem ${novas.length} notificações novas. Abra o sininho no topo da tela para ver todas.`,
+            'info',
+            8000,
+          );
+        } else {
+          for (const notif of novas) {
+            mostrarCard(textoSemMarcacao(notif.titulo) || 'Mensagem Retida', textoSemMarcacao(notif.mensagem), toTipo(notif.tipo));
           }
         }
+        exibidosAnteriormente.push(...novas.map((n) => n.id));
 
         if (teveNovaNotificacao) {
           if (exibidosAnteriormente.length > 50) {

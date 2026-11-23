@@ -1,5 +1,5 @@
 // src/components/notificacoes/NotificacoesOffcanvas.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Offcanvas, ListGroup, Badge, Button, Spinner, Form } from 'react-bootstrap';
 import { CheckAll, BoxSeam, Tools, BellFill, ShieldExclamation, BoxArrowUpRight, GearFill, Telegram, ArrowLeft } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { socket } from '../../services/socket'; //  Antena de Rádio!
 import type { OffcanvasProps } from '../../types/notificacao';
+import { textoSemMarcacao } from '../../utils/textoNotificacao';
 
 
 
@@ -24,6 +25,53 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
   const [prefsApp, setPrefsApp] = useState(user?.notificacoes_app ?? true);
   const [prefsBot, setPrefsBot] = useState(user?.notificacoes_bot ?? true);
 
+  // ---------- Telegram: situação real (lida do servidor) ----------
+  const [statusTg, setStatusTg] = useState<notificacaoService.StatusTelegram | null>(null);
+  const [aguardandoVinculo, setAguardandoVinculo] = useState(false);
+  const [linkManual, setLinkManual] = useState<string | null>(null);
+  const esperaRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const atualizarStatusTg = useCallback(async () => {
+    try {
+      const st = await notificacaoService.getStatusTelegram();
+      setStatusTg(st);
+      setPrefsBot(st.notificacoes_bot);
+      return st;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const pararEspera = useCallback(() => {
+    if (esperaRef.current) clearInterval(esperaRef.current);
+    esperaRef.current = null;
+    setAguardandoVinculo(false);
+  }, []);
+
+  const confirmarVinculo = useCallback(async () => {
+    const st = await atualizarStatusTg();
+    if (st?.vinculado) {
+      pararEspera();
+      setLinkManual(null);
+      if (user) setUser({ ...user, telegram_chat_id: st.telegram_chat_id, notificacoes_bot: st.notificacoes_bot });
+      mostrarCard('Telegram Vinculado', 'Pronto! Você passará a receber os alertas no Telegram.', 'sucesso');
+    }
+  }, [atualizarStatusTg, pararEspera, user, setUser, mostrarCard]);
+
+  // Ao abrir as configurações, busca a situação real
+  useEffect(() => {
+    if (show && view === 'config') atualizarStatusTg();
+  }, [show, view, atualizarStatusTg]);
+
+  // O servidor avisa pelo socket quando o bot concluir a vinculação
+  useEffect(() => {
+    if (!aguardandoVinculo) return;
+    socket.on('telegram_vinculado', confirmarVinculo);
+    return () => { socket.off('telegram_vinculado', confirmarVinculo); };
+  }, [aguardandoVinculo, confirmarVinculo]);
+
+  useEffect(() => pararEspera, [pararEspera]);
+
   
   //  MOTOR DE TEMPO REAL NO PAINEL LATERAL
   
@@ -31,16 +79,10 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
     if (!user) return;
 
     // Quando o servidor gritar uma nova notificação, mandamos atualizar a lista e mostramos o card!
-    const lidarComNovaNotificacao = (novaNotif: Notificacao) => {
-      // Se a notificação for direcionada a este utilizador
-      
-        console.log("🔔 Alerta recebido no Offcanvas! Atualizando lista...");
-        onUpdate(); //  Dispara a função do pai para recarregar a lista do banco de dados
-        
-        // Dispara o Toast visual se o painel lateral estiver fechado
-        const tipoFrontend = novaNotif.tipo ? novaNotif.tipo.toLowerCase() as 'sucesso'|'erro'|'alerta'|'info' : 'info';
-        mostrarCard(novaNotif.titulo || 'Nova Atualização', novaNotif.mensagem, tipoFrontend);
-     
+    // Só recarrega a lista do sininho. O card é mostrado pelo NotificationRadar
+    // (antes os dois mostravam card e cada notificação aparecia duas vezes).
+    const lidarComNovaNotificacao = () => {
+      onUpdate();
     };
 
     socket.on('nova_notificacao', lidarComNovaNotificacao);
@@ -48,7 +90,7 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
     return () => {
       socket.off('nova_notificacao', lidarComNovaNotificacao);
     };
-  }, [user, onUpdate, mostrarCard]);
+  }, [user, onUpdate]);
   // ==========================================================================
 
   const handleMarcarLida = async (id: number) => {
@@ -70,13 +112,33 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
   };
 
   const gerarLink = async () => {
+    // Abre a aba já no clique: se abrir só depois da resposta do servidor,
+    // o navegador bloqueia como pop-up.
+    const janela = window.open('about:blank', '_blank');
     setIsGenerating(true);
     try {
       const { link } = await notificacaoService.gerarLinkTelegram();
-      window.open(link, '_blank');
-      mostrarCard('Telegram', 'O Telegram será aberto para iniciar o Bot.', 'info');
-    } catch {
-      mostrarCard('Erro', 'Não foi possível gerar o link do Telegram.', 'erro');
+      if (janela) {
+        janela.location.href = link;
+      } else {
+        setLinkManual(link); // pop-up bloqueado: mostra o link para clicar
+      }
+      mostrarCard('Telegram', 'No Telegram, toque em "Iniciar" (Start) para concluir a vinculação.', 'info', 8000);
+
+      // Aguarda a confirmação (socket) e, por garantia, consulta a cada 4 s por até 3 minutos.
+      pararEspera();
+      setAguardandoVinculo(true);
+      const inicio = Date.now();
+      esperaRef.current = setInterval(() => {
+        if (Date.now() - inicio > 3 * 60 * 1000) {
+          pararEspera();
+          return;
+        }
+        confirmarVinculo();
+      }, 4000);
+    } catch (e: any) {
+      janela?.close();
+      mostrarCard('Erro', e.response?.data?.message || 'Não foi possível gerar o link do Telegram.', 'erro');
     } finally {
       setIsGenerating(false);
     }
@@ -109,6 +171,8 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
         desvincular_telegram: true
       });
       setPrefsBot(false);
+      await atualizarStatusTg();
+      if (user) setUser({ ...user, telegram_chat_id: null, notificacoes_bot: false });
       mostrarCard('Desvinculado', 'O seu Telegram foi removido do sistema.', 'info');
     } catch {
       mostrarCard('Erro', 'Erro ao desvincular conta.', 'erro');
@@ -188,13 +252,13 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
                       </div>
                       <div className="flex-grow-1">
                         <div className="d-flex justify-content-between align-items-start mb-1">
-                          <span className={`fw-bold ${notif.lida ? 'text-muted' : 'text-dark'}`}>{notif.titulo}</span>
+                          <span className={`fw-bold ${notif.lida ? 'text-muted' : 'text-dark'}`}>{textoSemMarcacao(notif.titulo)}</span>
                           {!notif.lida && <Badge bg="primary" pill style={{ width: '8px', height: '8px', padding: 0 }}></Badge>}
                         </div>
-                        <p className="mb-1 small text-secondary lh-sm">{notif.mensagem}</p>
+                        <p className="mb-1 small text-secondary lh-sm" style={{ whiteSpace: 'pre-line' }}>{textoSemMarcacao(notif.mensagem)}</p>
                         
                         <div className="d-flex justify-content-between align-items-center mt-2">
-                          <small className="text-muted" style={{ fontSize: '0.7rem' }}>{formatDate(notif.data_criacao)}</small>
+                          <small className="text-muted" style={{ fontSize: '0.75rem' }}>{formatDate(notif.data_criacao)}</small>
                           {notif.link_acao && (
                             <span className="text-primary small fw-bold" style={{ fontSize: '0.75rem' }}>
                               Acessar <BoxArrowUpRight className="ms-1" size={12}/>
@@ -245,27 +309,66 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
 
             <div className="mt-4 p-3 bg-light rounded border border-info border-opacity-25 text-center">
               <Telegram className="text-info mb-2" size={40} />
-              <h6 className="fw-bold text-dark mb-2">Vincular Conta ao Telegram</h6>
-              <p className="small text-muted mb-3">Receba notificações em tempo real diretamente no seu telemóvel.</p>
-              
-              <Button 
-                variant="info" 
-                className="w-100 fw-bold text-white shadow-sm mb-2" 
-                onClick={gerarLink}
-                disabled={isGenerating}
-              >
-                {isGenerating ? <Spinner size="sm" /> : '🔗 Gerar Link e Abrir Bot'}
-              </Button>
+              <h6 className="fw-bold text-dark mb-2">Telegram</h6>
+              {statusTg === null ? (
+                <Spinner size="sm" className="mb-3" />
+              ) : !statusTg.bot_ativo ? (
+                <p className="small text-danger mb-3">O bot do Telegram não está ativo no servidor. Avise o administrador.</p>
+              ) : statusTg.vinculado ? (
+                <p className="small mb-3"><Badge bg="success">✅ Conta vinculada</Badge></p>
+              ) : (
+                <p className="small text-muted mb-3">
+                  <Badge bg="secondary" className="mb-2">Não vinculado</Badge><br />
+                  Receba os alertas no celular. Gere o link e toque em <strong>Iniciar</strong> no bot.
+                </p>
+              )}
 
-              <Button 
-                variant="outline-danger" 
-                size="sm" 
-                className="w-100 fw-medium mt-2" 
-                onClick={desvincularTelegram}
-                disabled={isSaving}
-              >
-                Desvincular Conta Atual
-              </Button>
+              {statusTg?.bot_link && (
+                <a
+                  href={statusTg.bot_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="d-inline-flex align-items-center gap-1 small fw-bold text-decoration-none mb-3"
+                  style={{ color: '#0088cc' }}
+                >
+                  <Telegram /> Abrir @{statusTg.bot_username} no Telegram <BoxArrowUpRight size={11} />
+                </a>
+              )}
+
+              {statusTg?.bot_ativo && !statusTg.vinculado && (
+                <Button 
+                  variant="info" 
+                  className="w-100 fw-bold text-white shadow-sm mb-2" 
+                  onClick={gerarLink}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? <Spinner size="sm" /> : '🔗 Gerar Link e Abrir Bot'}
+                </Button>
+              )}
+
+              {linkManual && (
+                <a href={linkManual} target="_blank" rel="noreferrer" className="btn btn-outline-info btn-sm w-100 mb-2">
+                  O Telegram não abriu? Clique aqui
+                </a>
+              )}
+
+              {aguardandoVinculo && (
+                <div className="small text-muted mb-2">
+                  <Spinner size="sm" className="me-2" />Aguardando você tocar em "Iniciar" no Telegram…
+                </div>
+              )}
+
+              {statusTg?.vinculado && (
+                <Button 
+                  variant="outline-danger" 
+                  size="sm" 
+                  className="w-100 fw-medium mt-2" 
+                  onClick={desvincularTelegram}
+                  disabled={isSaving}
+                >
+                  Desvincular Conta Atual
+                </Button>
+              )}
             </div>
 
           </div>

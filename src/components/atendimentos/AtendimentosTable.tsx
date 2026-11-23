@@ -26,7 +26,7 @@ function AtendimentosTable({ atendimentos, onDetails, onEdit }: AtendimentosTabl
   };
 
   return (
-    <Table striped hover responsive className="align-middle shadow-sm bg-white rounded">
+    <Table striped hover responsive className="align-middle shadow-sm bg-white rounded tabela-cards">
       <thead className="table-light">
         <tr>
           <th>GLPI</th>
@@ -42,22 +42,22 @@ function AtendimentosTable({ atendimentos, onDetails, onEdit }: AtendimentosTabl
       <tbody>
         {atendimentos.map((item) => (
           <tr key={item.id}>
-            <td className="fw-bold text-primary">{item.numero_glpi}</td>
-            <td className="fw-medium text-dark">
+            <td data-label="GLPI" className="fw-bold text-primary">{item.numero_glpi}</td>
+            <td data-label="Impressora" className="fw-medium text-dark">
                {item.impressora?.nome} <br/>
                <span className="small text-muted">{item.impressora?.modelo}</span>
             </td>
-            <td>
+            <td data-label="Setor (Dono)">
               <Badge className="bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1 rounded-pill shadow-sm">
                 {/* Usamos (item as any) aqui caso o TS reclame da unidade_dona que foi injetada no Backend */}
                 {(item as any).unidade_dona || item.unidades_organizacionais?.nome || 'Não Definida'}
               </Badge>
             </td>
-            <td className="text-muted small">{item.impressora?.localizacao || 'Não informada'}</td>
-            <td className="text-muted small">{item.tecnico?.nome_completo || 'N/A'}</td>
-            <td className="small">{new Date(item.data).toLocaleDateString('pt-BR')}</td>
-            <td>{getStatusBadge(item.status)}</td>
-            <td className="text-center">
+            <td data-label="Localização" className="text-muted small">{item.impressora?.localizacao || 'Não informada'}</td>
+            <td data-label="Técnico" className="text-muted small">{item.tecnico?.nome_completo || 'N/A'}</td>
+            <td data-label="Abertura" className="small">{new Date(item.data).toLocaleDateString('pt-BR')}</td>
+            <td data-label="Status">{getStatusBadge(item.status)}</td>
+            <td className="text-center acoes">
               <Stack direction="horizontal" gap={2} className="justify-content-center">
                 <Button variant="outline-info" size="sm" onClick={() => onDetails(item)} className="fw-bold text-dark">
                   <InfoCircleFill className="me-1" /> Detalhes

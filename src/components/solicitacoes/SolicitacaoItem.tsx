@@ -164,7 +164,7 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
         itens_entrega: itensAlterados,
       });
       onUpdate();
-      mostrarCard('Sucesso', 'Alterações guardadas com sucesso!', 'sucesso');
+      mostrarCard('Sucesso', 'Alterações salvas com sucesso!', 'sucesso');
     } catch (error: any) {
       const msgErro = error.response?.data?.message || 'Erro ao salvar as alterações da Solicitação.';
       mostrarCard('Erro', msgErro, 'erro');
@@ -195,7 +195,7 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
          itens_entrega: [{ solicitacao_item_id: itemId, status_entrega: ITEM.RECEBIDA }]
        });
        onUpdate();
-       mostrarCard('Recebimento Confirmado', `O recebimento de "${nomeItem}" foi registado. O gestor foi notificado.`, 'sucesso');
+       mostrarCard('Recebimento Confirmado', `O recebimento de "${nomeItem}" foi registrado. O gestor foi notificado.`, 'sucesso');
     } catch (error: any) {
        mostrarCard('Erro', error.response?.data?.message || 'Não foi possível registrar o recebimento.', 'erro');
     } finally {
@@ -215,7 +215,7 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
        setModalDevolucao({ show: false, itemId: null, nomeItem: '' });
        setMotivoDefeito('');
        onUpdate();
-       mostrarCard('Devolução Registada', 'A devolução por defeito foi comunicada ao almoxarifado.', 'info');
+       mostrarCard('Devolução Registrada', 'A devolução por defeito foi comunicada ao almoxarifado.', 'info');
     } catch (error: any) {
        mostrarCard('Erro', error.response?.data?.message || 'Erro ao processar a devolução da peça.', 'erro');
     } finally {
@@ -493,7 +493,7 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
             
             {isGerenteDaUnidade && (
                <PrimaryButton onClick={handleSaveChanges} isLoading={isSaving} disabled={isSaving} className="px-4 py-2">
-                 💾 Guardar Alterações
+                 💾 Salvar Alterações
                </PrimaryButton>
             )}
           </div>
@@ -535,7 +535,7 @@ ${solicitacao.solicitacao_itens.map(i => `- ${i.quantidade_solicitada}x ${i.iten
           <Modal.Title className="fs-6 fw-bold">✅ Solicitar Peça Definitiva</Modal.Title>
         </Modal.Header>
         <Modal.Body className="py-4">
-          <p className="mb-0">Você está a confirmar que o teste com a peça <strong>{modalConversao.nomeItem}</strong> funcionou com sucesso.</p>
+          <p className="mb-0">Você está confirmando que o teste com a peça <strong>{modalConversao.nomeItem}</strong> funcionou com sucesso.</p>
           <br />
           <p className="text-muted small mb-0">Ao confirmar, esta peça de teste será marcada para devolução e o almoxarifado será notificado para separar uma peça idêntica, nova e definitiva, para instalação final. Deseja continuar?</p>
         </Modal.Body>

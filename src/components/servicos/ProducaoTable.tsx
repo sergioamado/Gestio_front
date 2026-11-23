@@ -22,7 +22,7 @@ export default function ProducaoTable({ historico, isGestor, onDelete }: Produca
     return (
       <div className="text-center p-5 text-muted bg-light">
          <span className="fs-1 d-block mb-3">📝</span>
-         <h6 className="fw-bold text-dark">Nenhuma produção registada.</h6>
+         <h6 className="fw-bold text-dark">Nenhuma produção registrada.</h6>
          <p className="mb-0 small">Finalize um chamado e lance aqui o serviço prestado.</p>
       </div>
     );
@@ -30,7 +30,7 @@ export default function ProducaoTable({ historico, isGestor, onDelete }: Produca
 
   return (
     <div className="table-responsive">
-      <Table hover className="mb-0 align-middle">
+      <Table hover className="mb-0 align-middle tabela-cards">
         <thead className="table-light">
           <tr>
             <th className="ps-4">Data</th>
@@ -48,28 +48,28 @@ export default function ProducaoTable({ historico, isGestor, onDelete }: Produca
         <tbody>
           {historico.map((prod) => (
             <tr key={prod.id}>
-              <td className="ps-4 text-muted small fw-medium">
+              <td data-label="Data" className="ps-4 text-muted small fw-medium">
                 {new Date(prod.data_registro).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </td>
-              {isGestor && <td className="fw-bold text-dark small">{prod.tecnico?.nome_completo || 'Desconhecido'}</td>}
-              <td>
+              {isGestor && <td data-label="Técnico" className="fw-bold text-dark small">{prod.tecnico?.nome_completo || 'Desconhecido'}</td>}
+              <td data-label="Serviço">
                 <div className="fw-bold text-dark small">{prod.servico?.nome_servico || 'Serviço Excluído'}</div>
-                <div className="text-muted" style={{ fontSize: '0.7rem' }}>{prod.servico?.categoria}</div>
+                <div className="text-muted" style={{ fontSize: '0.75rem' }}>{prod.servico?.categoria}</div>
               </td>
               
               {/* EXIBIÇÃO DA QUANTIDADE COM UM BADGE */}
-              <td className="text-center">
+              <td data-label="Qtd" className="text-center">
                 <Badge bg="light" text="dark" className="border px-2 py-1 fs-6 shadow-sm">
                   {/* Se a quantidade for undefined (registros antigos), assume 1 */}
                   {(prod as any).quantidade || 1}x
                 </Badge>
               </td>
 
-              <td>{renderVinculo(prod)}</td>
-              <td className="text-end text-muted small">R$ {Number(prod.valor_servico_aplicado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-              <td className="text-end text-muted small">R$ {Number(prod.valor_pecas_aplicado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-              <td className="text-end fw-bold text-success">R$ {Number(prod.valor_total_produzido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-              <td className="text-center pe-4">
+              <td data-label="Ref. Chamado">{renderVinculo(prod)}</td>
+              <td data-label="Valor do Serviço" className="text-end text-muted small">R$ {Number(prod.valor_servico_aplicado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+              <td data-label="Custo Peças" className="text-end text-muted small">R$ {Number(prod.valor_pecas_aplicado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+              <td data-label="Custo Total" className="text-end fw-bold text-success">R$ {Number(prod.valor_total_produzido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+              <td className="text-center pe-4 acoes">
                 <Button variant="outline-danger" size="sm" onClick={() => onDelete(prod)} className="border-0">
                   <Trash />
                 </Button>

@@ -17,20 +17,20 @@ function UnidadesTable({ unidades, onEdit, onDelete }: UnidadesTableProps) {
   const handleDeleteClick = async (unidade: Unidade) => {
     const confirmou = await confirmar({
       titulo: '🗑️ Excluir Unidade',
-      mensagem: `Tem a certeza que deseja excluir a unidade "${unidade.nome}" (${unidade.sigla})? Esta ação não pode ser desfeita.`,
+      mensagem: `Tem certeza que deseja excluir a unidade "${unidade.nome}" (${unidade.sigla})? Esta ação não pode ser desfeita.`,
       textoConfirmar: 'Sim, Excluir',
       textoCancelar: 'Cancelar',
       varianteBotao: 'danger'
     });
 
     if (confirmou) {
-      // Se o utilizador clicou em "Sim", passamos a ordem para a página Pai
+      // Se o usuário clicou em "Sim", passamos a ordem para a página Pai
       onDelete(unidade);
     }
   };
 
   return (
-    <Table striped hover responsive className="align-middle shadow-sm bg-white rounded">
+    <Table striped hover responsive className="align-middle shadow-sm bg-white rounded tabela-cards">
       <thead className="table-light">
         <tr>
           <th>ID</th>
@@ -43,11 +43,11 @@ function UnidadesTable({ unidades, onEdit, onDelete }: UnidadesTableProps) {
       <tbody>
         {unidades.map((unidade) => (
           <tr key={unidade.id}>
-            <td className="fw-medium text-muted">#{unidade.id}</td>
-            <td className="fw-medium">{unidade.nome}</td>
-            <td>{unidade.sigla}</td>
-            <td>{unidade.campus}</td>
-            <td className="text-center">
+            <td data-label="ID" className="fw-medium text-muted">#{unidade.id}</td>
+            <td data-label="Nome" className="fw-medium">{unidade.nome}</td>
+            <td data-label="Sigla">{unidade.sigla}</td>
+            <td data-label="Campus">{unidade.campus}</td>
+            <td className="text-center acoes">
               <Stack direction="horizontal" gap={2} className="justify-content-center">
                 <Button
                   variant="outline-primary"
@@ -71,7 +71,7 @@ function UnidadesTable({ unidades, onEdit, onDelete }: UnidadesTableProps) {
         ))}
         {unidades.length === 0 && (
           <tr>
-            <td colSpan={5} className="text-center py-4 text-muted fst-italic">
+            <td colSpan={5} className="text-center py-4 text-muted fst-italic vazio">
               Nenhuma unidade organizacional cadastrada.
             </td>
           </tr>

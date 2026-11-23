@@ -24,7 +24,7 @@ function ItensTable({ itens, onEdit, onDelete, onDetails, canManageItems = false
     // Abre o nosso Modal Bonito
     const confirmou = await confirmar({
       titulo: '🗑️ Excluir Item',
-      mensagem: `Tem a certeza que deseja excluir o item "${item.descricao}" (SIPAC: ${item.codigo_sipac})? Esta ação removerá o item do catálogo base.`,
+      mensagem: `Tem certeza que deseja excluir o item "${item.descricao}" (SIPAC: ${item.codigo_sipac})? Esta ação removerá o item do catálogo base.`,
       textoConfirmar: 'Sim, Excluir',
       textoCancelar: 'Cancelar',
       varianteBotao: 'danger'
@@ -36,7 +36,7 @@ function ItensTable({ itens, onEdit, onDelete, onDetails, canManageItems = false
   };
 
   return (
-    <Table striped hover responsive className="align-middle shadow-sm bg-white rounded">
+    <Table striped hover responsive className="align-middle shadow-sm bg-white rounded tabela-cards">
       
       
       {/* CABEÇALHO DA TABELA                        */}
@@ -58,16 +58,16 @@ function ItensTable({ itens, onEdit, onDelete, onDetails, canManageItems = false
         {itens.map((item) => (
           <tr key={item.id}>
             {/* 1. Código SIPAC */}
-            <td className="fw-medium text-muted">{item.codigo_sipac || 'S/N'}</td>
+            <td data-label="Código SIPAC" className="fw-medium text-muted">{item.codigo_sipac || 'S/N'}</td>
             
             {/* 2. Nome da Peça */}
-            <td style={{ minWidth: '250px' }} className="fw-medium text-uppercase text-dark">
+            <td data-label="Especificação" style={{ minWidth: '250px' }} className="fw-medium text-uppercase text-dark">
               {item.descricao}
             </td>
             
             {/* 3. PAINEL TRIPLO DE QUANTIDADES (Só visível para Gestor/Admin) */}
             {canManageItems && (
-              <td>
+              <td data-label="Estoque">
                 <div className="d-flex flex-column gap-1" style={{ fontSize: '0.85rem' }}>
                   
                   {/* Linha A: Estoque NOVO / CONSUMO (Verde) */}
@@ -87,7 +87,7 @@ function ItensTable({ itens, onEdit, onDelete, onDetails, canManageItems = false
                   <div 
                     className="d-flex justify-content-between align-items-center border-bottom border-light pb-1" 
                     title={item.localizacao_teste ? `Local: ${item.localizacao_teste}` : 'Localização da peça de teste não definida'}
-                    style={{ cursor: 'help' }} // Muda o rato para um ponto de interrogação
+                    style={{ cursor: 'help' }} // Muda o cursor do mouse para um ponto de interrogação
                   >
                     <span className="text-primary fw-bold">🧪 Para Testes:</span>
                     {/* Badge Azul se > 0, Cinza Claro se 0 */}
@@ -118,7 +118,7 @@ function ItensTable({ itens, onEdit, onDelete, onDetails, canManageItems = false
             )}
             
             {/* 4. BOTÕES DE AÇÃO */}
-            <td className="text-center">
+            <td className="text-center acoes">
               <Stack direction="horizontal" gap={2} className="justify-content-center">
                 {/* Botão de Detalhes (Visível para todos) */}
                 <Button variant="outline-info" size="sm" onClick={() => onDetails(item)} className="fw-bold text-dark shadow-sm">
@@ -146,7 +146,7 @@ function ItensTable({ itens, onEdit, onDelete, onDetails, canManageItems = false
           <tr>
             {/* O colSpan estica a mensagem por todas as colunas. 
                 Se o gestor estiver a ver, estica 4. Se for o técnico, estica 3. */}
-            <td colSpan={canManageItems ? 4 : 3} className="text-center py-5 text-muted fst-italic bg-light">
+            <td colSpan={canManageItems ? 4 : 3} className="text-center py-5 text-muted fst-italic bg-light vazio">
               <span className="fs-3 d-block mb-2">📦</span>
               Nenhum item cadastrado no sistema.
             </td>

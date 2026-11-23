@@ -36,7 +36,7 @@ api.interceptors.response.use(
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
       
-      // Redireciona para o ecrã de login
+      // Redireciona para a tela de login
       if (window.location.pathname !== '/login') {
         window.location.href = '/login?expired=true';
       }

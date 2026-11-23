@@ -18,6 +18,9 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
   
   // Preenche o ID com o que já vier do banco (se existir)
   const [telegramId, setTelegramId] = useState(user?.telegram_chat_id || '');
+  // Telegram que está de fato vinculado no servidor (o usuário salvo no navegador pode estar desatualizado)
+  const [chatIdServidor, setChatIdServidor] = useState<string | null>(null);
+  const [bot, setBot] = useState<{ username: string; link: string } | null>(null);
   const [loading, setLoading] = useState(false);
   
   const [permissaoNavegador, setPermissaoNavegador] = useState<NotificationPermission>('default');
@@ -36,7 +39,16 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
   useEffect(() => {
     if (show) {
       if ('Notification' in window) setPermissaoNavegador(Notification.permission);
-      setTelegramId(user?.telegram_chat_id || ''); // Atualiza o ID caso tenha mudado noutra aba
+      // Busca no servidor a vinculação real (pode ter sido feita pelo bot depois do login)
+      notificacaoService.getStatusTelegram()
+        .then((st) => {
+          setBot(st.bot_username && st.bot_link ? { username: st.bot_username, link: st.bot_link } : null);
+          setChatIdServidor(st.telegram_chat_id);
+          setTelegramId(st.telegram_chat_id || '');
+          const bot = st.notificacoes_bot;
+          setPrefsTelegram({ os: bot, estoque: bot, sistema: bot, alertas: bot });
+        })
+        .catch(() => setTelegramId(user?.telegram_chat_id || ''));
       
       // Ajusta os botões "mestres" com base no perfil logado
       if (user) {
@@ -44,7 +56,8 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
          setPrefsNavegador({ os: boolApp, estoque: boolApp, sistema: boolApp, alertas: boolApp });
       }
     }
-  }, [show, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show]);
 
   const solicitarPermissaoNavegador = async () => {
     if (!('Notification' in window)) {
@@ -72,16 +85,17 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
     try {
       const isAppActive = Object.values(prefsNavegador).some(v => v === true);
       const isBotActive = Object.values(prefsTelegram).some(v => v === true);
-      const isDesvincular = !telegramId.trim(); // Se vazio, desvincula
+      // Só desvincula se havia um Telegram vinculado e o usuário apagou o ID de propósito.
+      // (Antes, qualquer "Salvar" com o campo vazio apagava a vinculação feita pelo bot.)
+      const isDesvincular = !!chatIdServidor && !telegramId.trim();
       
-      //ATUALIZAR DADOS DO USUÁRIO NA API
-      // Enviamos diretamente a chave telegram_chat_id se ela existir, ou enviamos flag de desvincular
       await notificacaoService.salvarPreferencias({
         notificacoes_app: isAppActive,
         notificacoes_bot: isBotActive,
         desvincular_telegram: isDesvincular,
-        telegram_chat_id: isDesvincular ? null : telegramId.trim()
+        ...(telegramId.trim() ? { telegram_chat_id: telegramId.trim() } : {})
       });
+      setChatIdServidor(isDesvincular ? null : telegramId.trim() || chatIdServidor);
 
       // (Sessão atual) para refletir na hora sem precisar F5
       if (user) {
@@ -89,15 +103,14 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
           ...user,
           notificacoes_app: isAppActive,
           notificacoes_bot: isBotActive,
-          telegram_chat_id: isDesvincular ? undefined : telegramId.trim()
+          telegram_chat_id: isDesvincular ? null : telegramId.trim() || chatIdServidor
         });
       }
 
       mostrarCard('Sucesso!', 'As suas preferências de alerta foram salvas.', 'sucesso');
       setTimeout(onHide, 1000); // Aguarda o Toast piscar antes de fechar o Modal
-    } catch (error) {
-      console.error(error);
-      mostrarCard('Erro', 'Falha ao salvar. Verifique se o seu Telegram ID está correto.', 'erro');
+    } catch (error: any) {
+      mostrarCard('Erro', error.response?.data?.message || 'Falha ao salvar. Verifique se o seu Telegram ID está correto.', 'erro', 8000);
     } finally {
       setLoading(false);
     }
@@ -179,6 +192,17 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
                       <h6 className="fw-bold text-dark mb-0">No Celular (Telegram Bot)</h6>
                       <small className="text-muted">Mensagens diretas no seu App.</small>
                     </div>
+                    {bot && (
+                      <a
+                        href={bot.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-sm text-white fw-bold ms-auto shadow-sm"
+                        style={{ backgroundColor: '#0088cc' }}
+                      >
+                        <Telegram className="me-1" /> Abrir @{bot.username}
+                      </a>
+                    )}
                   </div>
 
                   <Form.Group className="mb-4">
@@ -191,7 +215,12 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
                       className="border-0 shadow-sm bg-white py-2"
                     />
                     <Form.Text className="text-muted" style={{ fontSize: '0.75rem' }}>
-                      Não sabe seu ID? Mande um "Oi" para <strong>@userinfobot</strong> no Telegram para descobrir.
+                      Não sabe seu ID?{' '}
+                      {bot ? (
+                        <>Abra o <a href={bot.link} target="_blank" rel="noreferrer" className="fw-bold">@{bot.username}</a> e toque em <strong>Iniciar</strong>: ele responde com o seu ID.</>
+                      ) : (
+                        <>Abra o bot do sistema no Telegram e toque em <strong>Iniciar</strong>: ele responde com o seu ID.</>
+                      )}
                     </Form.Text>
                   </Form.Group>
 

@@ -8,6 +8,7 @@ import ConfigurarNotificacoesModal from './notificacoes/ConfigurarNotificacoesMo
 import * as notificacaoService from '../services/notificacaoService';
 import type { Notificacao } from '../types';
 import { socket } from '../services/socket'; 
+import { textoSemMarcacao } from '../utils/textoNotificacao';
 
 interface HeaderProps {
   title: string;
@@ -58,7 +59,7 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
       // Dispara a notificação nativa do sistema (Windows/Mac) apenas no momento em que ela chega!
       if (Notification.permission === 'granted') {
         new Notification('COSUP+', { 
-            body: novaNotif.mensagem,
+            body: textoSemMarcacao(novaNotif.mensagem),
             icon: '/favicon.ico' // Opcional: coloque o caminho do seu logo aqui
         });
       }
@@ -88,28 +89,32 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
 
   return (
     <>
-      <header className="bg-white border-bottom shadow-sm px-4 py-3 sticky-top" style={{ zIndex: 1000 }}>
-          <div className='d-flex justify-content-between align-items-center'>
+      <header className="bg-white border-bottom shadow-sm px-3 px-md-4 py-3 sticky-top" style={{ zIndex: 1000 }}>
+          <div className='d-flex justify-content-between align-items-center gap-2'>
               
-              <div className="d-flex align-items-center">
+              <div className="d-flex align-items-center" style={{ minWidth: 0 }}>
                 <button 
                   className="btn btn-link text-secondary p-0 me-3 shadow-none border-0" 
                   onClick={onToggleSidebar}
+                  aria-label="Abrir ou fechar o menu"
+                  aria-controls="menu-lateral"
+                  title="Menu"
                   style={{ transition: 'color 0.2s' }}
                   onMouseOver={(e) => e.currentTarget.classList.replace('text-secondary', 'text-primary')}
                   onMouseOut={(e) => e.currentTarget.classList.replace('text-primary', 'text-secondary')}
                 >
                   <List size={28} />
                 </button>
-                <h4 className="m-0 fw-bold text-dark">{title}</h4>
+                <h4 className="m-0 fw-bold text-dark header-title">{title}</h4>
               </div>
               
-              <div className="d-flex align-items-center gap-4">
+              <div className="d-flex align-items-center gap-2 gap-md-4 flex-shrink-0">
                  <div className="d-flex align-items-center gap-2">
                     <button 
                       className="btn btn-link text-muted p-1 border-0 shadow-none" 
                       onClick={() => setShowConfigModal(true)}
                       title="Configurar Telegram e Alertas"
+                      aria-label="Configurar Telegram e alertas"
                     >
                       <GearFill size={18} />
                     </button>
@@ -117,6 +122,8 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
                     <button 
                       className="btn btn-link text-secondary p-1 border-0 shadow-none position-relative" 
                       onClick={() => setShowOffcanvas(true)}
+                      title="Notificações"
+                      aria-label={unreadCount > 0 ? `Notificações: ${unreadCount} não lida(s)` : 'Notificações'}
                     >
                       <BellFill size={22} />
                       {unreadCount > 0 && (
@@ -124,7 +131,7 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
                           bg="danger" 
                           pill 
                           className="position-absolute top-0 start-100 translate-middle border border-light border-2"
-                          style={{ fontSize: '0.65rem' }}
+                          style={{ fontSize: '0.75rem' }}
                         >
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </Badge>
@@ -139,7 +146,7 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
                       <span className="d-block fw-bold text-dark lh-1 mb-1" style={{ fontSize: '0.9rem' }}>
                           {user?.nome_completo || 'Usuário do Sistema'}
                       </span>
-                      <span className="text-muted text-uppercase fw-semibold" style={{ fontSize: '0.7rem', letterSpacing: '0.5px' }}>
+                      <span className="text-muted text-uppercase fw-semibold" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>
                           {formatRole(user?.role)}
                       </span>
                     </div>

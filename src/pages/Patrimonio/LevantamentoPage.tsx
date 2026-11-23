@@ -54,7 +54,7 @@ function LevantamentoPage() {
   };
 
   useEffect(() => {
-    // 🚀 Só tenta buscar os dados se o utilizador tiver permissão
+    // 🚀 Só tenta buscar os dados se o usuário tiver permissão
     if (user && hasAccess) {
       carregarLevantamento();
     } else if (user && !hasAccess) {
@@ -90,7 +90,7 @@ function LevantamentoPage() {
     try {
       await patrimonioService.finalizarLevantamento();
       setLevantamentoAberto(false);
-      mostrarCard('Sucesso', 'Relatório de Levantamento encerrado e guardado com sucesso!', 'sucesso');
+      mostrarCard('Sucesso', 'Relatório de Levantamento encerrado e salvo com sucesso!', 'sucesso');
     } catch (err: any) {
       mostrarCard('Erro', err.response?.data?.message || 'Erro ao finalizar.', 'erro');
     } finally {
@@ -126,7 +126,7 @@ function LevantamentoPage() {
     return Math.round((resumo.conferidos_qtd / resumo.total) * 100);
   };
 
-  // 🚀 TELA DE BLOQUEIO: Exibida se o utilizador não for Admin ou Gerente
+  // 🚀 TELA DE BLOQUEIO: Exibida se o usuário não for Admin ou Gerente
   if (!user || !hasAccess) {
     return (
       <MainLayout pageTitle="🚫 Acesso Restrito">

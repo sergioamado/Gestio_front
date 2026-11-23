@@ -35,7 +35,7 @@ const RelatoriosProducaoPage = lazy(() => import('./pages/servicos/RelatoriosPro
 const AnalisesDashboardPage = lazy(() => import('./pages/AnalisesDashboardPage'));
 
 const PageLoader = () => (
-  <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+  <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
     <Spinner animation="border" variant="primary" />
   </div>
 );
@@ -48,7 +48,7 @@ function App() {
           {/* Conexão em tempo real única para toda a sessão */}
           <NotificationRadar />
           <SidebarProvider>
-            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Router>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />

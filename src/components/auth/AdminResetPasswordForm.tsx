@@ -30,8 +30,8 @@ function AdminResetPasswordForm({ users, onSuccess }: AdminResetPasswordFormProp
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
       <Form.Group className="mb-3">
-        <Form.Label>Selecione o Utilizador</Form.Label>
-        <Form.Select {...register("username", { required: "É necessário selecionar um utilizador" })} isInvalid={!!errors.username}>
+        <Form.Label>Selecione o Usuário</Form.Label>
+        <Form.Select {...register("username", { required: "É necessário selecionar um usuário" })} isInvalid={!!errors.username}>
           <option value="">Selecione...</option>
           {users.map(user => <option key={user.id} value={user.username}>{user.nome_completo} ({user.username})</option>)}
         </Form.Select>

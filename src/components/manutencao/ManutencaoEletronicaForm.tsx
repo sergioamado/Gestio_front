@@ -23,7 +23,7 @@ function ManutencaoEletronicaForm({ tecnicos, onSuccess }: ManutencaoFormProps) 
       await manutencaoService.create(data);
       onSuccess();
     } catch {
-      mostrarCard('Erro', 'Ocorreu um erro ao criar o registo.', 'erro');
+      mostrarCard('Erro', 'Ocorreu um erro ao criar o registro.', 'erro');
     } finally {
       setIsSubmitting(false);
     }

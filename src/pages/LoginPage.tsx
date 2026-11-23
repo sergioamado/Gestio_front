@@ -138,9 +138,6 @@ function LoginPage() {
                 </Form>
                 </Card.Body>
             </Card>
-            <div className="text-center mt-4 text-muted small fw-bold">
-              &copy; {new Date().getFullYear()} Coordenadoria de Suporte - UFS
-            </div>
             </Col>
         </Row>
     </AuthLayout>

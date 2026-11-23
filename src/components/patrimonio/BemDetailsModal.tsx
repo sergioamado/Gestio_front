@@ -118,7 +118,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
 
     const confirmou = await confirmar({
       titulo: '🤝 Emitir Termo de Cautela',
-      mensagem: `Deseja entregar a responsabilidade deste equipamento ao utilizador "${tecnicoDestino?.nome_completo}"?`,
+      mensagem: `Deseja entregar a responsabilidade deste equipamento ao usuário "${tecnicoDestino?.nome_completo}"?`,
       textoConfirmar: 'Sim, Atribuir',
       textoCancelar: 'Cancelar',
       varianteBotao: 'primary'
@@ -133,7 +133,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
         tecnico_id: Number(tecnicoAtribuicaoId),
         observacoes: observacaoAtribuicao
       });
-      mostrarCard('Equipamento Atribuído', 'Termo de cautela registado com sucesso.', 'sucesso');
+      mostrarCard('Equipamento Atribuído', 'Termo de cautela registrado com sucesso.', 'sucesso');
       onUpdate();
       setTecnicoAtribuicaoId('');
       setObservacaoAtribuicao('');
@@ -146,7 +146,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
 
   const handleDevolver = async () => {
     const confirmou = await confirmar({
-      titulo: '↩️ Registar Devolução',
+      titulo: '↩️ Registrar Devolução',
       mensagem: 'Confirma que este equipamento foi devolvido e deverá voltar ao inventário geral da unidade?',
       textoConfirmar: 'Sim, Devolver',
       textoCancelar: 'Cancelar',
@@ -161,7 +161,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
       mostrarCard('Devolução Concluída', 'O equipamento voltou para o inventário.', 'sucesso');
       onUpdate();
     } catch {
-      mostrarCard('Erro', 'Falha ao registar a devolução.', 'erro');
+      mostrarCard('Erro', 'Falha ao registrar a devolução.', 'erro');
     } finally {
       setLoadingAcao(false);
     }
@@ -254,7 +254,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
                     </tbody>
                   </Table>
                 ) : (
-                  <div className="text-center text-muted p-4 bg-light rounded border-dashed">Nenhuma transferência registada no histórico.</div>
+                  <div className="text-center text-muted p-4 bg-light rounded border-dashed">Nenhuma transferência registrada no histórico.</div>
                 )}
               </div>
             </Tab>
@@ -265,9 +265,9 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
                   <div className="p-4 bg-light rounded border text-center shadow-sm">
                      <span className="fs-1 d-block mb-3">💼</span>
                      <h5 className="fw-bold">Emprestado a {bem.tecnico_responsavel}</h5>
-                     <p className="text-muted small mb-4">Este equipamento não está no inventário geral da unidade. Ele está sob a responsabilidade direta deste utilizador.</p>
+                     <p className="text-muted small mb-4">Este equipamento não está no inventário geral da unidade. Ele está sob a responsabilidade direta deste usuário.</p>
                      <PrimaryButton variant="danger" onClick={handleDevolver} isLoading={loadingAcao}>
-                        ↩️ Registar Devolução!
+                        ↩️ Registrar Devolução!
                      </PrimaryButton>
                   </div>
                 ) : (
@@ -278,7 +278,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
                     <Form.Group className="mb-3">
                       <Form.Label className="small fw-bold text-secondary">Selecione o Responsável</Form.Label>
                       <Form.Select value={tecnicoAtribuicaoId} onChange={(e) => setTecnicoAtribuicaoId(e.target.value)} required className="shadow-sm border-0 bg-white py-2">
-                        <option value="">Escolha um utilizador...</option>
+                        <option value="">Escolha um usuário...</option>
                         {tecnicos.map(t => <option key={t.id} value={t.id}>{t.nome_completo}</option>)}
                       </Form.Select>
                     </Form.Group>

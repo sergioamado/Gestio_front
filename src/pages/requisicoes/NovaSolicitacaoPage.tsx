@@ -358,7 +358,7 @@ function NovaSolicitacaoPage() {
                           <tr key={item.id}>
                             <td className="ps-3 w-50">
                               <span className="fw-bold text-dark d-block text-uppercase" style={{ fontSize: '0.95rem' }}>{item.descricao}</span>
-                              {item.is_permanente && <Badge bg="warning" text="dark" className="mt-1" style={{fontSize: '0.7rem'}}>Devolver após uso</Badge>}
+                              {item.is_permanente && <Badge bg="warning" text="dark" className="mt-1" style={{fontSize: '0.75rem'}}>Devolver após uso</Badge>}
                             </td>
                             <td className="px-2" style={{ width: '130px' }}>
                                 <InputGroup size="sm" className="shadow-sm">

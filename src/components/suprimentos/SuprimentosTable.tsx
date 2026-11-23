@@ -45,7 +45,7 @@ function SuprimentosTable({ registros }: SuprimentosTableProps) {
         {registros.length === 0 && (
           <tr>
             <td colSpan={8} className="text-center py-4 text-muted fst-italic">
-              Nenhum registo de suprimento encontrado.
+              Nenhum registro de suprimento encontrado.
             </td>
           </tr>
         )}

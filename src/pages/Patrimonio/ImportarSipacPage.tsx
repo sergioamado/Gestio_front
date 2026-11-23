@@ -29,7 +29,7 @@ function ImportarSipacPage() {
   const hasAccess = user?.role === 'admin' || user?.role === 'gerente';
 
   useEffect(() => {
-    //  Evita chamadas à API caso o utilizador não tenha permissão
+    //  Evita chamadas à API caso o usuário não tenha permissão
     if (user && hasAccess) {
       unidadeService.getAllUnidades().then(setUnidades).catch(console.error);
       if (user.role !== 'admin' && user.unidade_id) {
@@ -45,7 +45,7 @@ function ImportarSipacPage() {
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !unidadeDestinoId) {
-      mostrarCard('Atenção', 'Por favor, preencha a Unidade e selecione o ficheiro.', 'alerta');
+      mostrarCard('Atenção', 'Por favor, preencha a Unidade e selecione o arquivo.', 'alerta');
       return;
     }
 
@@ -67,7 +67,7 @@ function ImportarSipacPage() {
       );
       setFile(null); 
     } catch (err: any) {
-      mostrarCard('Erro na Importação', err.response?.data?.message || 'Erro ao processar o ficheiro. Tente salvar o PDF novamente ou use o formato CSV.', 'erro', 8000);
+      mostrarCard('Erro na Importação', err.response?.data?.message || 'Erro ao processar o arquivo. Tente salvar o PDF novamente ou use o formato CSV.', 'erro', 8000);
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ function ImportarSipacPage() {
     }
   };
 
-  //  TELA DE BLOQUEIO: Exibida se o utilizador não for Admin ou Gerente
+  //  TELA DE BLOQUEIO: Exibida se o usuário não for Admin ou Gerente
   if (!user || !hasAccess) {
     return (
       <MainLayout pageTitle="🚫 Acesso Restrito">
@@ -122,13 +122,13 @@ function ImportarSipacPage() {
             </Form.Group>
 
             <Form.Group className="mb-4">
-              <Form.Label className="fw-bold text-secondary">2. Ficheiro SIPAC (.pdf, .csv, .xlsx)</Form.Label>
+              <Form.Label className="fw-bold text-secondary">2. Arquivo SIPAC (.pdf, .csv, .xlsx)</Form.Label>
               <Form.Control type="file" accept=".pdf, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" onChange={handleFileChange} required className="bg-light border-0 shadow-sm" />
             </Form.Group>
 
             <div className="d-flex flex-column gap-3 mt-4 pt-4 border-top">
               <PrimaryButton type="submit" isLoading={loading} disabled={!file || !unidadeDestinoId}>
-                {loading ? 'A processar ficheiro...' : '📥 Iniciar Sincronização'}
+                {loading ? 'Processando arquivo...' : '📥 Iniciar Sincronização'}
               </PrimaryButton>
               <div className="text-center text-muted fw-bold small my-1">OU</div>
               <PrimaryButton type="button" variant="outline-primary" onClick={() => setShowFormModal(true)}>

@@ -17,7 +17,7 @@ function ImpressorasTable({ impressoras, onEdit, onDelete, onDetails }: Impresso
   const handleDeleteClick = async (impressora: Impressora) => {
     const confirmou = await confirmar({
       titulo: '🗑️ Remover Impressora',
-      mensagem: `Tem a certeza que deseja eliminar do sistema a impressora "${impressora.nome}" (Série: ${impressora.numero_serie})? Esta ação pode afetar relatórios de suprimentos vinculados.`,
+      mensagem: `Tem certeza que deseja eliminar do sistema a impressora "${impressora.nome}" (Série: ${impressora.numero_serie})? Esta ação pode afetar relatórios de suprimentos vinculados.`,
       textoConfirmar: 'Sim, Eliminar',
       textoCancelar: 'Cancelar',
       varianteBotao: 'danger'

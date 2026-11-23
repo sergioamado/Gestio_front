@@ -9,7 +9,8 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
       <Container as="main" className="auth-content">
         {children}
       </Container>
-      <Footer theme="light" />
+      {/* Fundo azul: tema escuro do rodapé (texto claro, legível) */}
+      <Footer theme="dark" />
     </div>
   );
 };

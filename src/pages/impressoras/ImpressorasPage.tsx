@@ -95,7 +95,7 @@ function ImpressorasPage() {
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.message || '';
       if (err.response?.status === 400 || errorMsg.toLowerCase().includes('unique')) {
-        mostrarCard('Erro de Duplicidade', 'Este Número de Série ou Endereço IP já se encontra registado noutra impressora.', 'erro');
+        mostrarCard('Erro de Duplicidade', 'Este Número de Série ou Endereço IP já se encontra registrado em outra impressora.', 'erro');
       } else {
         mostrarCard('Erro', 'Ocorreu um problema ao salvar a impressora.', 'erro');
       }

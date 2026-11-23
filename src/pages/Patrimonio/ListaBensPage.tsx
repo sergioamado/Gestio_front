@@ -135,7 +135,7 @@ function ListaBensPage() {
     }
   };
 
-  //  TELA DE BLOQUEIO: Se o utilizador não for Gerente ou Administrador, barra o acesso
+  //  TELA DE BLOQUEIO: Se o usuário não for Gerente ou Administrador, barra o acesso
   if (!user || !hasAccess) {
     return (
       <MainLayout pageTitle="🚫 Acesso Restrito">
@@ -190,7 +190,7 @@ function ListaBensPage() {
 
       <Card className="floating-card border-0 shadow-sm">
         <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
-          <h5 className="fw-bold text-dark mb-0">Bens Registados</h5>
+          <h5 className="fw-bold text-dark mb-0">Bens Registrados</h5>
           {!loading && totalItems > 0 && <small className="text-muted fw-bold text-uppercase">Exibindo {bens.length} de {totalItems} itens</small>}
         </Card.Header>
         <Card.Body className="p-0 mt-3">
@@ -257,7 +257,7 @@ function ListaBensPage() {
 
           <DeleteConfirmationModal 
             show={showDeleteModal} onHide={() => setShowDeleteModal(false)} onConfirm={handleConfirmDelete} 
-            title="Excluir Equipamento" body={`Tem a certeza que deseja excluir o tombamento "${deletingBem?.tombamento}"?`} 
+            title="Excluir Equipamento" body={`Tem certeza que deseja excluir o tombamento "${deletingBem?.tombamento}"?`} 
             isDeleting={isDeleting} confirmButtonText="Excluir Definitivamente" 
           />
         </>

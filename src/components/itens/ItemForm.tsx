@@ -133,7 +133,7 @@ function ItemForm({ item, unidades, onSubmit, isLoading }: ItemFormProps) {
               // valueAsNumber garante que o React Hook Form envie um Int ao invés de String para o Prisma
               {...register("quantidade_estoque", { valueAsNumber: true, min: 0 })}
             />
-            <Form.Text className="text-muted" style={{fontSize: '0.7rem'}}>Peças fechadas prontas p/ uso.</Form.Text>
+            <Form.Text className="text-muted" style={{fontSize: '0.75rem'}}>Peças fechadas prontas p/ uso.</Form.Text>
           </Form.Group>
         </Col>
 
@@ -147,7 +147,7 @@ function ItemForm({ item, unidades, onSubmit, isLoading }: ItemFormProps) {
               className="border-primary bg-primary bg-opacity-10 fw-bold"
               {...register("quantidade_teste", { valueAsNumber: true, min: 0 })}
             />
-            <Form.Text className="text-muted" style={{fontSize: '0.7rem'}}>Peças de diagnóstico.</Form.Text>
+            <Form.Text className="text-muted" style={{fontSize: '0.75rem'}}>Peças de diagnóstico.</Form.Text>
           </Form.Group>
         </Col>
 
@@ -161,7 +161,7 @@ function ItemForm({ item, unidades, onSubmit, isLoading }: ItemFormProps) {
               className="border-danger bg-danger bg-opacity-10 fw-bold text-danger"
               {...register("quantidade_defeito", { valueAsNumber: true, min: 0 })}
             />
-            <Form.Text className="text-muted" style={{fontSize: '0.7rem'}}>Aguardando conserto/descarte.</Form.Text>
+            <Form.Text className="text-muted" style={{fontSize: '0.75rem'}}>Aguardando conserto/descarte.</Form.Text>
           </Form.Group>
         </Col>
       </Row>

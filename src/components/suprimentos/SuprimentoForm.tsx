@@ -177,7 +177,7 @@ function SuprimentoForm({ impressoras, onSubmit, isLoading }: SuprimentoFormProp
 
       <div className="d-flex justify-content-end mt-4 pt-2 border-top">
         <PrimaryButton type="submit" isLoading={isLoading} className="px-4 fw-bold shadow-sm">
-           Registar Requisitação
+           Registrar Requisição
         </PrimaryButton>
       </div>
     </Form>

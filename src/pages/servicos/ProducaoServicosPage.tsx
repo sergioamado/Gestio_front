@@ -67,14 +67,14 @@ function ProducaoServicosPage() {
     try {
       await servicosService.registrarProducao(payload);
       await carregarDados();
-      mostrarCard('Sucesso', 'Produção registada com sucesso!', 'sucesso');
+      mostrarCard('Sucesso', 'Produção registrada com sucesso!', 'sucesso');
       setShowFormModal(false);
       
       if (prefillData.defaultVinculoId) {
          setTimeout(() => navigate('/gerenciar-solicitacoes'), 1500);
       }
     } catch (err: any) {
-      mostrarCard('Erro', err.response?.data?.message || "Erro ao registar produção. Verifique os dados informados.", 'erro');
+      mostrarCard('Erro', err.response?.data?.message || "Erro ao registrar produção. Verifique os dados informados.", 'erro');
     } finally {
       setIsSubmitting(false);
     }
@@ -83,8 +83,8 @@ function ProducaoServicosPage() {
   // Nova função de exclusão usando o useConfirm Global
   const handleDeleteClick = async (item: ProducaoServico) => {
     const confirmou = await confirmar({
-      titulo: '🗑️ Apagar Registo',
-      mensagem: `Tem certeza que deseja apagar o registo do serviço "${item.servico?.nome_servico}"? O valor será removido do histórico e dos relatórios.`,
+      titulo: '🗑️ Apagar Registro',
+      mensagem: `Tem certeza que deseja apagar o registro do serviço "${item.servico?.nome_servico}"? O valor será removido do histórico e dos relatórios.`,
       textoConfirmar: 'Sim, Apagar',
       textoCancelar: 'Cancelar',
       varianteBotao: 'danger'
@@ -94,15 +94,15 @@ function ProducaoServicosPage() {
       try {
         await servicosService.deleteProducao(item.id);
         await carregarDados();
-        mostrarCard('Sucesso', 'Registo apagado com sucesso.', 'sucesso');
+        mostrarCard('Sucesso', 'Registro apagado com sucesso.', 'sucesso');
       } catch {
-        mostrarCard('Erro', 'Não foi possível apagar o registo de produção.', 'erro');
+        mostrarCard('Erro', 'Não foi possível apagar o registro de produção.', 'erro');
       }
     }
   };
 
   return (
-    <MainLayout pageTitle="⚙️ Registo de Produção">
+    <MainLayout pageTitle="⚙️ Registro de Produção">
       
       {error && <Alert variant="danger" className="shadow-sm border-0 mb-3" onClose={() => setError(null)} dismissible>{error}</Alert>}
 

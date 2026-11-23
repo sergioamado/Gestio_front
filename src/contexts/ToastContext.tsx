@@ -34,7 +34,8 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   // BemDetailsModal...) não devem re-executar o efeito a cada toast exibido.
   const mostrarCard = useCallback((titulo: string, mensagem: string, tipo: 'sucesso' | 'erro' | 'alerta' | 'info' = 'info', duracaoMs = 5000) => {
     const id = ++nextId.current;
-    setToasts((prev) => [...prev, { id, titulo, mensagem, tipo, duracao: duracaoMs }]);
+    // No máximo 3 cards ao mesmo tempo (no celular eles cobririam a tela): descarta os mais antigos.
+    setToasts((prev) => [...prev, { id, titulo, mensagem, tipo, duracao: duracaoMs }].slice(-3));
   }, []);
 
   const removerToast = (id: number) => {
@@ -57,7 +58,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     <ToastContext.Provider value={value}>
       {children}
       {/* Container fixo no canto inferior direito */}
-      <ToastContainer position="bottom-end" className="p-4" style={{ zIndex: 9999, position: 'fixed' }}>
+      <ToastContainer position="bottom-end" className="p-2 p-sm-4 toast-container-cosup" style={{ zIndex: 9999, position: 'fixed' }}>
         {toasts.map((t) => {
           const config = getCores(t.tipo);
           return (

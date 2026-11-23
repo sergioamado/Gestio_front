@@ -192,7 +192,7 @@ function ImpressoraForm({ impressora, unidades, onSubmit, isLoading }: Impressor
 
       <div className="d-flex justify-content-end mt-4 pt-3 border-top">
         <PrimaryButton type="submit" isLoading={isLoading} className="px-4 fw-bold shadow-sm">
-          {impressora ? '💾 Salvar Alterações' : ' Registar Impressora'}
+          {impressora ? '💾 Salvar Alterações' : ' Registrar Impressora'}
         </PrimaryButton>
       </div>
     </Form>
