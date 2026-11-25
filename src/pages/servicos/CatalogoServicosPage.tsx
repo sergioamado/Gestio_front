@@ -9,6 +9,7 @@ import { servicosService } from '../../services/servicosService';
 import MainLayout from '../../layouts/MainLayout'; // 
 import PrimaryButton from '../../components/PrimaryButton';
 import type { CatalogoServico } from '../../types';
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function CatalogoServicosPage() {
   const { mostrarCard } = useToast();
@@ -30,8 +31,11 @@ function CatalogoServicosPage() {
     carregarCatalogo();
   }, []);
 
-  const carregarCatalogo = async () => {
-    setIsLoading(true);
+  useTempoReal(['servicos'], () => carregarCatalogo(true));
+
+  // silencioso = recarga em tempo real (sem spinner)
+  const carregarCatalogo = async (silencioso = false) => {
+    if (silencioso !== true) setIsLoading(true);
     setError(null);
     try {
       const data = await servicosService.getCatalogo();

@@ -1,7 +1,7 @@
 // src/components/solicitacoes/SolicitacaoItem.tsx
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useToast } from '../../contexts/ToastContext';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // 🚀 Importado corretamente
 import { Accordion, Badge, Button, Row, Col, Table, Form, Modal } from 'react-bootstrap';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
@@ -74,19 +74,39 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
   const isTecnico = currentUserRole?.startsWith('tecnico') ?? false;
   const isTecnicoDono = isTecnico && user?.id === solicitacao.usuario_id && !encerrada;
 
-  // Estados principais
-  const [statusOS, setStatusOS] = useState<StatusSolicitacao>(solicitacao.status);
-  const [entregas, setEntregas] = useState<Record<number, string>>(
-    solicitacao.solicitacao_itens.reduce((acc, item) => ({ ...acc, [item.id]: item.status_entrega }), {})
-  );
-
-  // Nº do pedido SIPAC e almoxarifado de cada peça (editável pelo gerente)
-  const [sipac, setSipac] = useState<Record<number, { numero: string; almoxarifado: string }>>(
-    solicitacao.solicitacao_itens.reduce(
+  // Valores que vieram do servidor (a tela edita uma cópia deles)
+  const entregasDoServidor = () =>
+    solicitacao.solicitacao_itens.reduce<Record<number, string>>((acc, item) => ({ ...acc, [item.id]: item.status_entrega }), {});
+  const sipacDoServidor = () =>
+    solicitacao.solicitacao_itens.reduce<Record<number, { numero: string; almoxarifado: string }>>(
       (acc, item) => ({ ...acc, [item.id]: { numero: item.numero_pedido_sipac ?? '', almoxarifado: item.almoxarifado ?? '' } }),
       {}
-    )
-  );
+    );
+
+  // Estados principais
+  const [statusOS, setStatusOS] = useState<StatusSolicitacao>(solicitacao.status);
+  const [entregas, setEntregas] = useState<Record<number, string>>(entregasDoServidor);
+
+  // Nº do pedido SIPAC e almoxarifado de cada peça (editável pelo gerente)
+  const [sipac, setSipac] = useState<Record<number, { numero: string; almoxarifado: string }>>(sipacDoServidor);
+
+  // Tempo real: quando a OS muda no servidor (por esta ou por outra pessoa), a lista recarrega
+  // e este card recebe a OS nova. Sem isto, o card continuaria mostrando o status antigo até o F5,
+  // porque os estados acima só leem o servidor na primeira montagem.
+  const versaoDoServidor = JSON.stringify([
+    solicitacao.status,
+    solicitacao.solicitacao_itens.map((i) => [i.id, i.status_entrega, i.tipo_uso, i.numero_pedido_sipac, i.almoxarifado]),
+  ]);
+  const [versaoVista, setVersaoVista] = useState(versaoDoServidor);
+  useEffect(() => {
+    if (versaoDoServidor === versaoVista) return;
+    setVersaoVista(versaoDoServidor);
+    setStatusOS(solicitacao.status);
+    setEntregas(entregasDoServidor());
+    setSipac(sipacDoServidor());
+    // As funções acima leem `solicitacao`, que é o que gerou a nova versão.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [versaoDoServidor]);
   const handleSipacChange = (itemId: number, campo: 'numero' | 'almoxarifado', valor: string) => {
     setSipac(prev => ({ ...prev, [itemId]: { ...prev[itemId], [campo]: valor } }));
   };

@@ -11,6 +11,7 @@ import UnidadeForm from '../../components/unidades/UnidadeForm';
 
 import * as unidadeService from '../../services/unidadeService';
 import type { Unidade, UnidadeCreateData } from '../../types';
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function UnidadesPage() {
   const { confirmar } = useConfirm();
@@ -23,8 +24,9 @@ function UnidadesPage() {
   const [editingUnidade, setEditingUnidade] = useState<Unidade | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchUnidades = () => {
-    setLoading(true);
+  // silencioso = recarga em tempo real (sem spinner)
+  const fetchUnidades = (silencioso = false) => {
+    if (silencioso !== true) setLoading(true);
     setError(null);
     unidadeService.getAllUnidades()
       .then(setUnidades)
@@ -38,6 +40,8 @@ function UnidadesPage() {
   useEffect(() => {
     fetchUnidades();
   }, []);
+
+  useTempoReal(['unidades'], () => fetchUnidades(true));
 
   const handleShowCreateModal = () => {
     setEditingUnidade(null);

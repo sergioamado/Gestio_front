@@ -17,7 +17,7 @@ function TecnicoDashboard({refreshTrigger}: DashboardProps) {
   useEffect(() => {
     const fetchMinhasTarefas = async () => {
       try {
-        setLoading(true);
+        // O spinner só aparece na primeira carga (loading começa true); recargas em tempo real são silenciosas.
         
         // Busca as estatísticas e usamos o service oficial para as solicitações
         const [resStats, resSolicitacoes] = await Promise.all([
@@ -25,7 +25,8 @@ function TecnicoDashboard({refreshTrigger}: DashboardProps) {
           solicitacaoService.getAllSolicitacoes()
         ]);
         
-        setStats(resStats.data); 
+        setStats(resStats.data);
+        setError(null); 
 
         
         const listaItens = Array.isArray(resSolicitacoes) ? resSolicitacoes : (resSolicitacoes.data || []);
@@ -34,9 +35,6 @@ function TecnicoDashboard({refreshTrigger}: DashboardProps) {
       } catch (err: any) {
         console.error("Erro ao carregar tarefas do técnico", err);
         setError("Não foi possível carregar os seus dados em tempo real.");
-        
-        // Mock de emergência caso a API de estatísticas falhe
-        setStats({ os_pendentes: 3, baixo_estoque: 2, patrimonio_ativo: 0 });
         setAgenda([]);
       } finally {
         setLoading(false);

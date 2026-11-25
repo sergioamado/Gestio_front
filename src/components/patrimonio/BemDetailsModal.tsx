@@ -30,13 +30,23 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
   const { mostrarCard } = useToast();
   const { src: fotoSrc } = useAuthImage(bem?.foto_url);
 
+  const bemId = bem?.id;
+
+  // Ao abrir (ou trocar de bem): limpa os campos digitados.
   useEffect(() => {
-    if (show && bem) {
+    if (show && bemId) {
       setFoto(null);
       setUnidadeDestinoId('');
       setObservacaoTransferencia('');
       setTecnicoAtribuicaoId('');
       setObservacaoAtribuicao('');
+    }
+  }, [show, bemId]);
+
+  // Carrega técnicos, unidades e histórico. Roda de novo quando o bem chega atualizado em tempo real
+  // (ex.: outro gestor transferiu), sem apagar o que o usuário está digitando.
+  useEffect(() => {
+    if (show && bem) {
       setLoadingDados(true);
       
       Promise.all([

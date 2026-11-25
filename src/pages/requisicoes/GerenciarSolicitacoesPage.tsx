@@ -7,7 +7,7 @@ import * as solicitacaoService from '../../services/solicitacaoService';
 import * as usuarioService from '../../services/usuarioService';
 import type { SolicitacaoDetalhada, User } from '../../types';
 import SolicitacaoItem from '../../components/solicitacoes/SolicitacaoItem';
-import { socket } from '../../services/socket'; //  A Antena de Rádio!
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function GerenciarSolicitacoesPage() {
   const { user } = useAuth();
@@ -95,25 +95,13 @@ function GerenciarSolicitacoesPage() {
     fetchTecnicos();
   }, [fetchTecnicos]);
 
-  //  Carrega as OS e escuta o Servidor!
+  // Carga inicial (com spinner)
   useEffect(() => {
-    // Carrega a primeira vez de forma normal (mostrando o Spinner)
-    fetchSolicitacoes(false); 
+    fetchSolicitacoes(false);
+  }, [fetchSolicitacoes]);
 
-    // Define a função que o rádio vai disparar quando ouvir o grito
-    const lidarComAtualizacaoTempoReal = () => {
-      console.log("🔄 O Servidor avisou: Há uma OS nova ou atualizada! Recarregando silenciosamente...");
-      fetchSolicitacoes(true); // Atualiza os dados sem piscar a tela toda
-    };
-
-    // Fica  ouvindo!
-    socket.on('atualizar_tabelas_os', lidarComAtualizacaoTempoReal);
-
-    // Quando o usuario sair da página, desliga a escuta desta tabela
-    return () => {
-      socket.off('atualizar_tabelas_os', lidarComAtualizacaoTempoReal);
-    };
-  }, [fetchSolicitacoes]); 
+  // Tempo real: OS ou estoque mudou em qualquer lugar → recarrega sem piscar
+  useTempoReal(['os', 'estoque'], () => fetchSolicitacoes(true));
   
 
 

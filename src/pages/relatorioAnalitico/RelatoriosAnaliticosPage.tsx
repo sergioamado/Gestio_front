@@ -9,6 +9,7 @@ import {
 import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useAuth } from '../../hooks/useAuth';
+import { useTempoReal } from '../../hooks/useTempoReal';
 import { useToast } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import * as service from '../../services/relatorioAnaliticoService';
@@ -55,21 +56,42 @@ export default function RelatoriosAnaliticosPage() {
     show: false, codigo: '', resultado: null, erro: null, buscando: false,
   });
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
+  // silencioso = recarga em tempo real (sem spinner e sem card de erro repetido)
+  const carregar = useCallback(async (silencioso = false) => {
+    if (!silencioso) setCarregando(true);
     try {
       setLista(await service.listar({ status: filtros.status || undefined, ano: filtros.ano || undefined, busca: filtros.busca.trim() || undefined }));
     } catch {
-      mostrarCard('Erro', 'Não foi possível carregar os relatórios analíticos.', 'erro');
+      if (!silencioso) mostrarCard('Erro', 'Não foi possível carregar os relatórios analíticos.', 'erro');
     } finally {
-      setCarregando(false);
+      if (!silencioso) setCarregando(false);
     }
   }, [filtros, mostrarCard]);
 
   useEffect(() => {
-    const t = setTimeout(carregar, 300); // pequena espera para a busca não disparar a cada tecla
+    const t = setTimeout(() => carregar(), 300); // pequena espera para a busca não disparar a cada tecla
     return () => clearTimeout(t);
   }, [carregar]);
+
+  // Tempo real: outro usuário emitiu, corrigiu, assinou, devolveu ou anulou → a lista se atualiza sozinha.
+  useTempoReal(['relatorios_analiticos'], () => carregar(true));
+
+  // Se o relatório aberto numa janela mudou de situação por outra pessoa (ex.: outro gerente assinou),
+  // fecha a janela para ninguém agir sobre um estado velho.
+  useEffect(() => {
+    const mudou = (r: RelatorioAnalitico | null) => {
+      if (!r) return false;
+      const atual = lista.find((x) => x.id === r.id);
+      return !atual || atual.status !== r.status;
+    };
+    const avisar = () =>
+      mostrarCard('Relatório Atualizado', 'Este relatório foi alterado por outro usuário. Confira a situação atual na lista.', 'info');
+    if (mudou(assinatura.r)) { setAssinatura({ r: null, cargo: '', revisei: false }); avisar(); }
+    if (mudou(motivo.r)) { setMotivo({ r: null, tipo: 'devolver', texto: '' }); avisar(); }
+    if (form.show && mudou(form.editando)) { setForm({ show: false, editando: null, itens: [itemVazio()] }); avisar(); }
+    // Só reage à chegada de uma lista nova.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lista]);
 
   const erroDe = (e: unknown, padrao: string) =>
     (e as { response?: { data?: { message?: string } } })?.response?.data?.message || padrao;

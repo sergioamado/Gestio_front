@@ -10,7 +10,7 @@ import * as suprimentosService from '../../services/suprimentosService';
 import type { EstoqueSuprimentos } from '../../types';
 import EstoqueAtualCard from '../../components/estoque/EstoqueAtualCard';
 import AdicionarEstoqueForm from '../../components/estoque/AdicionarEstoqueForm';
-import { socket } from '../../services/socket'; //   Antena de Rádio!
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function EstoqueSuprimentosPage() {
   const { mostrarCard } = useToast();
@@ -52,29 +52,14 @@ function EstoqueSuprimentosPage() {
   }, []);
 
   
-  //  MOTOR DE TEMPO REAL (WebSockets)
-  
   useEffect(() => {
-    if (!isAuthLoading && canManageImpressoras) {
-      fetchData(false); // Carga inicial
-
-      const lidarComAtualizacaoTempoReal = () => {
-        console.log("🖨️ O Servidor avisou: Estoque Global de Toners atualizado! Recarregando silenciosamente...");
-        fetchData(true);
-      };
-
-      // Escuta o mesmo evento global de suprimentos!
-      socket.on('atualizar_suprimentos', lidarComAtualizacaoTempoReal);
-
-      return () => {
-        socket.off('atualizar_suprimentos', lidarComAtualizacaoTempoReal);
-      };
-    }
-    
-    if (!isAuthLoading && !canManageImpressoras) {
-      setLoading(false);
-    }
+    if (isAuthLoading) return;
+    if (canManageImpressoras) fetchData(false); // Carga inicial
+    else setLoading(false);
   }, [canManageImpressoras, fetchData, isAuthLoading]);
+
+  // Tempo real: entradas, correções e saídas de toner
+  useTempoReal(['suprimentos'], () => fetchData(true), !isAuthLoading && canManageImpressoras);
   // ==========================================================================
 
   const handleAddEstoque = async (data: Partial<EstoqueSuprimentos>) => {

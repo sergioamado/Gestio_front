@@ -38,7 +38,10 @@ function DetalhesManutencaoModal({ show, onHide, manutencao, onUpdate }: Detalhe
       setIsEditing(false);
       setCopiado(false);
     }
-  }, [show, manutencao]);
+    // Só ao abrir ou trocar de manutenção: uma atualização em tempo real (status novo)
+    // não pode apagar o que o técnico está editando.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show, manutencao?.id]);
 
   // Tratamento seguro para os nomes e GLPI
   const glpiValue = (manutencao as any).numero_glpi || (manutencao as any).glpi || 'N/A';

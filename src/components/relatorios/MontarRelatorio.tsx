@@ -3,6 +3,7 @@
 // DETALHADO (colunas escolhidas) ou CRUZADO (linhas x colunas com totais), vê a prévia,
 // baixa em PDF e pode salvar a montagem como modelo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTempoReal } from '../../hooks/useTempoReal';
 import { Badge, Button, ButtonGroup, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { FileEarmarkPdfFill, FunnelFill, PlusCircle, Save2Fill, Table as TableIcon, Trash3Fill, XCircle } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
@@ -122,6 +123,9 @@ export default function MontarRelatorio() {
       mostrarCard('Erro', 'Não foi possível carregar os modelos salvos.', 'erro');
     }
   }, [mostrarCard]);
+
+  // Tempo real: outro gestor salvou, alterou ou excluiu um modelo compartilhado
+  useTempoReal(['relatorio_modelos'], () => carregarModelos());
 
   useEffect(() => {
     (async () => {

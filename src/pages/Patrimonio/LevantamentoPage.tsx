@@ -8,6 +8,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import { useAuth } from '../../hooks/useAuth';
 import * as patrimonioService from '../../services/patrimonioService';
 import type { BemPatrimonial } from '../../types';
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function LevantamentoPage() {
   const { confirmar } = useConfirm();
@@ -31,8 +32,9 @@ function LevantamentoPage() {
   // Forçamos a buscar o Levantamento usando o ID da Unidade do usuário atual (ou 1 se for Admin sem unidade)
   const unidadeId = user?.unidade_id || 1;
 
-  const carregarLevantamento = async () => {
-    setLoading(true);
+  // silencioso = recarga em tempo real (sem spinner e sem roubar o foco)
+  const carregarLevantamento = async (silencioso = false) => {
+    if (silencioso !== true) setLoading(true);
     try {
       const data = await patrimonioService.getLevantamentoAtual(unidadeId);
       if (data && data.levantamento) {
@@ -42,7 +44,7 @@ function LevantamentoPage() {
         setConferidos(data.conferidos);
         
         // Foca automaticamente no campo de bipe após carregar
-        setTimeout(() => inputRef.current?.focus(), 300);
+        if (silencioso !== true) setTimeout(() => inputRef.current?.focus(), 300);
       } else {
         setLevantamentoAberto(false);
       }
@@ -61,6 +63,10 @@ function LevantamentoPage() {
       setLoading(false); // Remove o loading infinito para quem não tem acesso
     }
   }, [unidadeId, user, hasAccess]);
+
+  // Tempo real: outro colega bipando (ex.: pelo celular), levantamento iniciado/finalizado
+  // ou bens alterados → o progresso se atualiza sozinho.
+  useTempoReal(['levantamento', 'patrimonio'], () => carregarLevantamento(true), !!user && hasAccess);
 
   const handleIniciar = async () => {
     setLoadingAcao(true);

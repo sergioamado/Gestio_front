@@ -12,6 +12,7 @@ import UsuarioForm from '../../components/usuarios/UsuarioForm';
 import * as usuarioService from '../../services/usuarioService';
 import * as unidadeService from '../../services/unidadeService';
 import type { User, UserCreateData, UserUpdateData, Role, Unidade } from '../../types';
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function UsuariosPage() {
   const { confirmar } = useConfirm();
@@ -25,8 +26,9 @@ function UsuariosPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchData = () => {
-    setLoading(true);
+  // silencioso = recarga em tempo real (sem spinner)
+  const fetchData = (silencioso = false) => {
+    if (silencioso !== true) setLoading(true);
     setError(null);
     Promise.all([
       usuarioService.getAllUsers(),
@@ -47,6 +49,8 @@ function UsuariosPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useTempoReal(['usuarios', 'unidades'], () => fetchData(true));
   
   const handleShowCreateModal = () => {
     setEditingUser(null);

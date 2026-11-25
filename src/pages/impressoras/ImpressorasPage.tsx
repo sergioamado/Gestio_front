@@ -9,7 +9,7 @@ import { useToast } from '../../contexts/ToastContext';
 import * as impressoraService from '../../services/impressoraService';
 import type { Impressora, ImpressoraCreateData, ImpressoraFiltros, ImpressoraUpdateData, Unidade } from '../../types';
 import * as unidadeService from '../../services/unidadeService';
-import { socket } from '../../services/socket';
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 // COMPONENTES EXTERNOS
 import ImpressorasTable from '../../components/impressoras/ImpressorasTable';
@@ -60,15 +60,11 @@ function ImpressorasPage() {
       }
       
       fetchData(filtros, false);
-
-      const lidarComAtualizacaoTempoReal = () => fetchData(filtros, true);
-      socket.on('atualizar_impressoras', lidarComAtualizacaoTempoReal);
-
-      return () => {
-        socket.off('atualizar_impressoras', lidarComAtualizacaoTempoReal);
-      };
     }
   }, [user, hasAccess, isAdmin, fetchData]); 
+
+  // Tempo real: recarrega mantendo os filtros atuais
+  useTempoReal(['impressoras'], () => fetchData(filtros, true), !!user && hasAccess);
 
   // FUNÇÕES DE AÇÃO
 
@@ -160,7 +156,7 @@ function ImpressorasPage() {
         <ImpressoraForm impressora={editingImpressora} unidades={unidades} onSubmit={handleFormSubmit} isLoading={isSubmitting} />
       </ModalForm>
 
-      <ImpressoraDetailsModal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} impressora={viewingImpressora} />
+      <ImpressoraDetailsModal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} impressora={viewingImpressora && (impressoras.find((i) => i.id === viewingImpressora.id) ?? viewingImpressora)} />
     </MainLayout>
   );
 }

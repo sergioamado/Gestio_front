@@ -14,6 +14,7 @@ import ProducaoTable from '../../components/servicos/ProducaoTable';
 import ProducaoForm from '../../components/servicos/ProducaoForm';
 
 import type { CatalogoServico, ProducaoServico } from '../../types';
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function ProducaoServicosPage() {
   const { user } = useAuth();
@@ -45,8 +46,12 @@ function ProducaoServicosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const carregarDados = async () => {
-    setIsLoading(true);
+  // Tempo real: lançamentos de produção e mudanças no catálogo de serviços
+  useTempoReal(['producao', 'servicos'], () => carregarDados(true));
+
+  // silencioso = recarga em tempo real (sem spinner)
+  const carregarDados = async (silencioso = false) => {
+    if (silencioso !== true) setIsLoading(true);
     setError(null);
     try {
       const [historicoData, catalogoData] = await Promise.all([

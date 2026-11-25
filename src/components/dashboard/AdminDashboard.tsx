@@ -28,25 +28,13 @@ function AdminDashboard({refreshTrigger}: DashboardProps) {
   useEffect(() => {
     const fetchEstatisticas = async () => {
       try {
-        setLoading(true);
+        // O spinner só aparece na primeira carga (loading começa true); recargas em tempo real são silenciosas.
         const response = await api.get('/estatisticas');
         setStats(response.data);
+        setError(null);
       } catch (err: any) {
         console.error("Erro ao buscar estatísticas", err);
         setError("Não foi possível carregar os indicadores no momento.");
-        
-        // Mock de dados turbinado com o gráfico, caso a API caia
-        setStats({ 
-          os_pendentes: 12, 
-          baixo_estoque: 8, 
-          patrimonio_ativo: 1450,
-          grafico_status: [
-            { name: 'PENDENTE', quantidade: 12 },
-            { name: 'EM ATENDIMENTO', quantidade: 5 },
-            { name: 'CONCLUIDA', quantidade: 34 },
-            { name: 'CANCELADA', quantidade: 2 }
-          ]
-        });
       } finally {
         setLoading(false);
       }

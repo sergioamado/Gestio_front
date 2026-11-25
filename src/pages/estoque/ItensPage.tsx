@@ -14,7 +14,7 @@ import ItemDetailsModal from '../../components/itens/ItemDetailsModal';
 import * as itemService from '../../services/itemService';
 import * as unidadeService from '../../services/unidadeService';
 import type { Item, ItemCreateData, Unidade } from '../../types';
-import { socket } from '../../services/socket'; // Antena de Rádio!
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function ItensPage() {
   const { mostrarCard } = useToast();
@@ -101,19 +101,9 @@ function ItensPage() {
   // ==========================================================================
   useEffect(() => {
     fetchItens(false); // Carga inicial
-
-    const lidarComAtualizacaoTempoReal = () => {
-      console.log("📦 O Servidor avisou: O Estoque mudou! Recarregando silenciosamente...");
-      fetchItens(true); 
-    };
-
-    // Fica à escuta do evento do Estoque
-    socket.on('atualizar_estoque', lidarComAtualizacaoTempoReal);
-
-    return () => {
-      socket.off('atualizar_estoque', lidarComAtualizacaoTempoReal);
-    };
   }, [fetchItens]);
+
+  useTempoReal(['estoque'], () => fetchItens(true));
   // ==========================================================================
 
 
@@ -308,7 +298,7 @@ function ItensPage() {
       <ItemDetailsModal 
         show={showDetailsModal}
         onHide={() => setShowDetailsModal(false)}
-        item={viewingItem}
+        item={viewingItem && (itens.find((i) => i.id === viewingItem.id) ?? viewingItem)}
         canManageItems={canManageItems} 
       />
     </MainLayout>

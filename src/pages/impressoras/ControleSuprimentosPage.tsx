@@ -11,7 +11,7 @@ import * as impressoraService from '../../services/impressoraService';
 import type { Impressora, ControleSuprimentos, ControleSuprimentosCreateData } from '../../types';
 import SuprimentosTable from '../../components/suprimentos/SuprimentosTable';
 import SuprimentoForm from '../../components/suprimentos/SuprimentoForm';
-import { socket } from '../../services/socket'; 
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 //  IMPORTAÇÃO DOS NOVOS COMPONENTES
 import CorrecaoEstoqueModal from '../../components/suprimentos/CorrecaoEstoqueModal';
@@ -62,12 +62,10 @@ function ControleSuprimentosPage() {
   useEffect(() => {
     if (user && hasAccess) {
       fetchData(false);
-
-      const lidarComAtualizacaoTempoReal = () => fetchData(true);
-      socket.on('atualizar_suprimentos', lidarComAtualizacaoTempoReal);
-      return () => { socket.off('atualizar_suprimentos', lidarComAtualizacaoTempoReal); };
     }
   }, [user, hasAccess, fetchData]);
+
+  useTempoReal(['suprimentos', 'impressoras'], () => fetchData(true), !!user && hasAccess);
 
   const handleFormSubmit = async (data: ControleSuprimentosCreateData) => {
     setIsSubmitting(true);

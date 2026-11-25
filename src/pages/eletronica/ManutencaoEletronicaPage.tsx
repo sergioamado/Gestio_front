@@ -11,7 +11,7 @@ import ManutencaoEletronicaForm from '../../components/manutencao/ManutencaoElet
 import ManutencaoCard from '../../components/manutencao/ManutencaoCard';
 import DetalhesManutencaoModal from '../../components/manutencao/DetalhesManutencaoModal';
 import { useAuth } from '../../hooks/useAuth';
-import { socket } from '../../services/socket'; // Antena de Rádio!
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function ManutencaoEletronicaPage() {
   const { user } = useAuth();
@@ -55,19 +55,10 @@ function ManutencaoEletronicaPage() {
   
   useEffect(() => {
     fetchData(false); // Carga inicial com Spinner
-
-    const lidarComAtualizacaoTempoReal = () => {
-      console.log("🔄 O Servidor avisou: Fila de Eletrônica atualizada! Recarregando silenciosamente...");
-      fetchData(true); 
-    };
-
-    // Fica à escuta do evento específico da Manutenção
-    socket.on('atualizar_manutencao', lidarComAtualizacaoTempoReal);
-
-    return () => {
-      socket.off('atualizar_manutencao', lidarComAtualizacaoTempoReal);
-    };
   }, [fetchData]);
+
+  // Tempo real: fila de manutenção mudou → recarrega sem spinner
+  useTempoReal(['manutencao'], () => fetchData(true));
   
 
 
@@ -217,7 +208,7 @@ function ManutencaoEletronicaPage() {
         <DetalhesManutencaoModal 
           show={showDetailsModal}
           onHide={() => setSelectedManutencao(null)}
-          manutencao={selectedManutencao}
+          manutencao={filaCompleta.find((m) => m.id === selectedManutencao.id) ?? selectedManutencao}
           onUpdate={fetchData}
         />
       )}

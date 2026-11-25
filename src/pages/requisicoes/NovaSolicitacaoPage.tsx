@@ -10,7 +10,7 @@ import type { Item } from '../../types';
 
 import * as itemService from '../../services/itemService';
 import * as solicitacaoService from '../../services/solicitacaoService';
-import { socket } from '../../services/socket'; //  Antena de Rádio!
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 interface ItemCarrinho extends Item {
   quantidadeSelecionada: number;
@@ -54,19 +54,10 @@ function NovaSolicitacaoPage() {
   
   useEffect(() => {
     fetchItens(true); // Carga inicial
-
-    const lidarComAtualizacaoEstoque = () => {
-      console.log("📦 O Servidor avisou: Estoque alterado! Recarregando catálogo de peças...");
-      fetchItens(false);
-    };
-
-    // Fica à escuta do evento do Estoque
-    socket.on('atualizar_estoque', lidarComAtualizacaoEstoque);
-
-    return () => {
-      socket.off('atualizar_estoque', lidarComAtualizacaoEstoque);
-    };
   }, [fetchItens]);
+
+  // Tempo real: saldo do estoque mudou → recarrega o catálogo de peças
+  useTempoReal(['estoque'], () => fetchItens(false));
   // ==========================================================================
 
 

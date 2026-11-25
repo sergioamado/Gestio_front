@@ -28,24 +28,13 @@ function GerenteDashboard({refreshTrigger}: DashboardProps) {
   useEffect(() => {
     const fetchDados = async () => {
       try {
-        setLoading(true);
+        // O spinner só aparece na primeira carga (loading começa true); recargas em tempo real são silenciosas.
         const response = await api.get('/estatisticas');
         setStats(response.data);
+        setError(null);
       } catch (err: any) {
         console.error("Erro ao carregar dados do Gerente", err);
         setError("Não foi possível carregar os indicadores da unidade.");
-        // Mock de dados para visualização durante falhas de rede
-        setStats({ 
-          os_pendentes: 5, 
-          baixo_estoque: 2, 
-          patrimonio_ativo: 340,
-          grafico_status: [
-            { name: 'PENDENTE', quantidade: 5 },
-            { name: 'EM ATENDIMENTO', quantidade: 2 },
-            { name: 'CONCLUIDA', quantidade: 15 },
-            { name: 'CANCELADA', quantidade: 1 }
-          ]
-        });
       } finally {
         setLoading(false);
       }

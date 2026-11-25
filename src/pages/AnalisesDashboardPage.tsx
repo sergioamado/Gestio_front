@@ -6,7 +6,7 @@ import MainLayout from '../layouts/MainLayout';
 import PrimaryButton from '../components/PrimaryButton';
 import WidgetContainer from '../components/dashboard/WidgetContainer';
 import { analiseService } from '../services/analiseService';
-import { socket } from '../services/socket'; // Antena de Rádio!
+import { useTempoReal, TODOS_OS_CANAIS } from '../hooks/useTempoReal';
 import { useToast } from '../contexts/ToastContext';
 
 export default function AnalisesDashboardPage() {
@@ -38,31 +38,8 @@ export default function AnalisesDashboardPage() {
   
   //  MOTOR DE BI EM TEMPO REAL (WebSockets Multicanal)
   
-  useEffect(() => {
-    //  O GRANDE ESCUTADOR: Ouve todas as frequências do sistema
-    const lidarComNovosDados = () => {
-      console.log("📊 BI Real-Time: O sistema foi alterado. Atualizando gráficos...");
-      setRefreshTrigger(prev => prev + 1); // Dispara a atualização dos filhos
-    };
-
-    // Sintoniza em tudo o que configurámos até agora
-    socket.on('atualizar_tabelas_os', lidarComNovosDados);
-    socket.on('atualizar_manutencao', lidarComNovosDados);
-    socket.on('atualizar_estoque', lidarComNovosDados);
-    socket.on('atualizar_atendimentos', lidarComNovosDados);
-    socket.on('atualizar_suprimentos', lidarComNovosDados);
-    socket.on('atualizar_producao', lidarComNovosDados); // (Preparando para a Produção)
-
-    // Desliga tudo ao sair
-    return () => {
-      socket.off('atualizar_tabelas_os', lidarComNovosDados);
-      socket.off('atualizar_manutencao', lidarComNovosDados);
-      socket.off('atualizar_estoque', lidarComNovosDados);
-      socket.off('atualizar_atendimentos', lidarComNovosDados);
-      socket.off('atualizar_suprimentos', lidarComNovosDados);
-      socket.off('atualizar_producao', lidarComNovosDados);
-    };
-  }, []);
+  // Tempo real: qualquer mudança no sistema atualiza os indicadores (sem piscar)
+  useTempoReal(TODOS_OS_CANAIS, () => setRefreshTrigger((prev) => prev + 1));
   // ==========================================================================
 
   // Força uma atualização manual se o usuário clicar no botão

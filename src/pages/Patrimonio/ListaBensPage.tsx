@@ -13,6 +13,7 @@ import * as patrimonioService from '../../services/patrimonioService';
 import * as unidadeService from '../../services/unidadeService';
 import { useAuth } from '../../hooks/useAuth';
 import type { BemPatrimonial, Unidade } from '../../types';
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 function ListaBensPage() {
   const { mostrarCard } = useToast();
@@ -44,11 +45,12 @@ function ListaBensPage() {
   //  CONTROLO DE ACESSO: Apenas Admin e Gerente têm acesso a esta página
   const hasAccess = user?.role === 'admin' || user?.role === 'gerente';
 
-  const fetchDados = useCallback(() => {
+  // silencioso = recarga em tempo real (sem spinner)
+  const fetchDados = useCallback((silencioso = false) => {
     //  Trava extra de segurança: não faz requisições se não tiver permissão
     if (!hasAccess) return;
 
-    setLoading(true);
+    if (!silencioso) setLoading(true);
     setError(null);
     const params: any = { status_atual: filtroStatus, search: busca, page: currentPage, limit: ITEMS_PER_PAGE };
     if (user?.role !== 'admin' && user?.unidade_id) params.unidade_id = user.unidade_id;
@@ -74,9 +76,13 @@ function ListaBensPage() {
         const arrayUnidades = Array.isArray(unidRes) ? unidRes : ((unidRes as any).data || []);
         setUnidades(arrayUnidades);
       })
-      .catch(() => setError('Falha ao carregar o inventário de bens patrimoniais.'))
-      .finally(() => setLoading(false));
+      .catch(() => { if (!silencioso) setError('Falha ao carregar o inventário de bens patrimoniais.'); })
+      .finally(() => { if (!silencioso) setLoading(false); });
   }, [filtroStatus, busca, currentPage, user, hasAccess]);
+
+  // Tempo real: bens criados, editados, transferidos, atribuídos, importados ou conferidos.
+  // Mantém a busca, o filtro e a página atuais.
+  useTempoReal(['patrimonio', 'unidades'], () => fetchDados(true), !!user && hasAccess);
 
   useEffect(() => { 
     if (user && hasAccess) {
@@ -247,7 +253,7 @@ function ListaBensPage() {
         </Card.Body>
       </Card>
 
-      <BemDetailsModal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} bem={selectedBem} onUpdate={fetchDados} />
+      <BemDetailsModal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} bem={selectedBem && (bens.find((b) => b.id === selectedBem.id) ?? selectedBem)} onUpdate={() => fetchDados()} />
       
       {hasAccess && (
         <>

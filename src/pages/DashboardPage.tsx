@@ -1,12 +1,12 @@
 // src/pages/DashboardPage.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import MainLayout from '../layouts/MainLayout';
 import AdminDashboard from '../components/dashboard/AdminDashboard';
 import GerenteDashboard from '../components/dashboard/GerenteDashboard';
 import TecnicoDashboard from '../components/dashboard/TecnicoDashboard';
 import { Card } from 'react-bootstrap';
-import { socket } from '../services/socket'; // Antena de Rádio!
+import { useTempoReal, TODOS_OS_CANAIS } from '../hooks/useTempoReal';
 
 //  Agora a função recebe o gatilho e passa para os painéis filhos
 const renderDashboardByRole = (role?: string, refreshTrigger: number = 0) => {
@@ -50,29 +50,8 @@ function DashboardPage() {
   // ==========================================================================
   //  MOTOR DE DASHBOARD EM TEMPO REAL
   // ==========================================================================
-  useEffect(() => {
-    // Escuta absolutamente TODAS as mudanças do sistema
-    const lidarComNovosDados = () => {
-      console.log("📊 Dashboard Real-Time: Sistema alterado. Atualizando estatísticas...");
-      setRefreshTrigger(prev => prev + 1); // Dispara a atualização dos filhos
-    };
-
-    socket.on('atualizar_tabelas_os', lidarComNovosDados);
-    socket.on('atualizar_manutencao', lidarComNovosDados);
-    socket.on('atualizar_estoque', lidarComNovosDados);
-    socket.on('atualizar_atendimentos', lidarComNovosDados);
-    socket.on('atualizar_suprimentos', lidarComNovosDados);
-    socket.on('atualizar_producao', lidarComNovosDados); 
-
-    return () => {
-      socket.off('atualizar_tabelas_os', lidarComNovosDados);
-      socket.off('atualizar_manutencao', lidarComNovosDados);
-      socket.off('atualizar_estoque', lidarComNovosDados);
-      socket.off('atualizar_atendimentos', lidarComNovosDados);
-      socket.off('atualizar_suprimentos', lidarComNovosDados);
-      socket.off('atualizar_producao', lidarComNovosDados);
-    };
-  }, []);
+  // Tempo real: qualquer mudança no sistema atualiza os indicadores (sem piscar)
+  useTempoReal(TODOS_OS_CANAIS, () => setRefreshTrigger((prev) => prev + 1));
   // ==========================================================================
 
 

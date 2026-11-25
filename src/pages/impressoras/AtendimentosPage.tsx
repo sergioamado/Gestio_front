@@ -12,7 +12,7 @@ import type { AtendimentoImpressora, AtendimentoCreateData, AtendimentoUpdateDat
 import AtendimentosTable from '../../components/atendimentos/AtendimentosTable';
 import AtendimentoForm from '../../components/atendimentos/AtendimentoForm';
 import AtendimentoDetailsModal from '../../components/atendimentos/AtendimentoDetailsModal';
-import { socket } from '../../services/socket';
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 const EmptyAtendimentosState = () => (
   <div className="text-center text-muted p-5 bg-white rounded shadow-sm border mt-3">
@@ -59,12 +59,10 @@ function AtendimentosPage() {
   useEffect(() => {
     if (user && hasAccess) {
       fetchData(false);
-
-      const lidarComAtualizacaoTempoReal = () => fetchData(true);
-      socket.on('atualizar_atendimentos', lidarComAtualizacaoTempoReal);
-      return () => { socket.off('atualizar_atendimentos', lidarComAtualizacaoTempoReal); };
     }
   }, [user, hasAccess, fetchData]);
+
+  useTempoReal(['atendimentos', 'impressoras'], () => fetchData(true), !!user && hasAccess);
 
   const handleFormSubmit = async (data: AtendimentoCreateData | AtendimentoUpdateData) => {
     setIsSubmitting(true);
@@ -127,7 +125,7 @@ function AtendimentosPage() {
         <AtendimentoForm atendimento={editingAtendimento} impressoras={impressoras} onSubmit={handleFormSubmit} isLoading={isSubmitting} />
       </ModalForm>
 
-      <AtendimentoDetailsModal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} atendimento={viewingAtendimento} />
+      <AtendimentoDetailsModal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} atendimento={viewingAtendimento && (atendimentos.find((a) => a.id === viewingAtendimento.id) ?? viewingAtendimento)} />
     </MainLayout>
   );
 }

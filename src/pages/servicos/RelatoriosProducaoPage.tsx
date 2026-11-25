@@ -10,6 +10,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import { relatoriosService } from '../../services/relatorioService';
 import { useToast } from '../../contexts/ToastContext';
 import MontarRelatorio from '../../components/relatorios/MontarRelatorio';
+import { useTempoReal } from '../../hooks/useTempoReal';
 
 export default function RelatoriosProducaoPage() {
   const [dados, setDados] = useState<any>(null);
@@ -35,14 +36,19 @@ export default function RelatoriosProducaoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const carregarDashboard = async () => {
-    setIsLoading(true);
+  // Tempo real: produção, catálogo de serviços e OS alteram os números do dashboard.
+  // O período escolhido na tela é mantido.
+  useTempoReal(['producao', 'servicos', 'os'], () => carregarDashboard(true));
+
+  // silencioso = recarga em tempo real (sem spinner e sem card de erro repetido)
+  const carregarDashboard = async (silencioso = false) => {
+    if (silencioso !== true) setIsLoading(true);
     try {
       //  CORREÇÃO: Chamando o serviço correto (relatoriosService)
       const resposta = await relatoriosService.getDashboardProducao(dataInicial, dataFinal);
       setDados(resposta);
     } catch {
-      mostrarCard('Erro no Relatório', 'Falha ao carregar os dados. Verifique a sua conexão.', 'erro');
+      if (silencioso !== true) mostrarCard('Erro no Relatório', 'Falha ao carregar os dados. Verifique a sua conexão.', 'erro');
     } finally {
       setIsLoading(false);
     }
