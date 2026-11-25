@@ -11,6 +11,10 @@ import { useToast } from '../../contexts/ToastContext';
 
 import type { User, Unidade, BemDetailsModalProps } from '../../types';
 
+// Mensagem de erro que o servidor mandou (ex.: "Registre a devolução antes de transferir")
+const mensagemDoServidor = (e: unknown): string | undefined =>
+  (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+
 function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) {
   const [tecnicos, setTecnicos] = useState<User[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
@@ -50,7 +54,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
       setLoadingDados(true);
       
       Promise.all([
-        usuarioService.getTecnicos(),
+        usuarioService.getTecnicosByUnidade(bem.unidade_id), // só técnicos da unidade do bem
         unidadeService.getAllUnidades(),
         patrimonioService.getHistoricoBem(bem.id)
       ]).then(([tecData, unidData, histData]) => {
@@ -106,15 +110,14 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
         destino_unidade_id: Number(unidadeDestinoId),
         observacao: observacaoTransferencia
       });
-      mostrarCard('Transferência Concluída', 'O bem foi transferido com sucesso!', 'sucesso');
-      onUpdate();
-      
-      const novoHistorico = await patrimonioService.getHistoricoBem(bem.id);
-      setHistorico(novoHistorico);
+      const destino = unidades.find((u) => u.id === Number(unidadeDestinoId))?.nome ?? 'a unidade de destino';
+      mostrarCard('Transferência Concluída', `O bem agora pertence a ${destino} e saiu da lista desta unidade.`, 'sucesso');
       setUnidadeDestinoId('');
       setObservacaoTransferencia('');
-    } catch {
-      mostrarCard('Erro', 'Não foi possível registrar a transferência.', 'erro');
+      onUpdate();
+      onHide(); // o bem não é mais desta unidade: não há mais o que fazer nele aqui
+    } catch (err) {
+      mostrarCard('Erro', mensagemDoServidor(err) || 'Não foi possível registrar a transferência.', 'erro');
     } finally {
       setLoadingAcao(false);
     }
@@ -147,8 +150,8 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
       onUpdate();
       setTecnicoAtribuicaoId('');
       setObservacaoAtribuicao('');
-    } catch {
-      mostrarCard('Erro', 'Falha ao atribuir o equipamento.', 'erro');
+    } catch (err) {
+      mostrarCard('Erro', mensagemDoServidor(err) || 'Falha ao atribuir o equipamento.', 'erro');
     } finally {
       setLoadingAcao(false);
     }
@@ -157,7 +160,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
   const handleDevolver = async () => {
     const confirmou = await confirmar({
       titulo: '↩️ Registrar Devolução',
-      mensagem: 'Confirma que este equipamento foi devolvido e deverá voltar ao inventário geral da unidade?',
+      mensagem: `Confirma que ${bem.tecnico_responsavel ?? 'o técnico'} devolveu este equipamento?`,
       textoConfirmar: 'Sim, Devolver',
       textoCancelar: 'Cancelar',
       varianteBotao: 'danger'
@@ -168,10 +171,10 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
     setLoadingAcao(true);
     try {
       await patrimonioService.devolverBem(bem.id);
-      mostrarCard('Devolução Concluída', 'O equipamento voltou para o inventário.', 'sucesso');
+      mostrarCard('Devolução Concluída', 'O equipamento não está mais com o técnico.', 'sucesso');
       onUpdate();
-    } catch {
-      mostrarCard('Erro', 'Falha ao registrar a devolução.', 'erro');
+    } catch (err) {
+      mostrarCard('Erro', mensagemDoServidor(err) || 'Falha ao registrar a devolução.', 'erro');
     } finally {
       setLoadingAcao(false);
     }
@@ -274,8 +277,8 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
                 {bem.tecnico_responsavel ? (
                   <div className="p-4 bg-light rounded border text-center shadow-sm">
                      <span className="fs-1 d-block mb-3">💼</span>
-                     <h5 className="fw-bold">Emprestado a {bem.tecnico_responsavel}</h5>
-                     <p className="text-muted small mb-4">Este equipamento não está no inventário geral da unidade. Ele está sob a responsabilidade direta deste usuário.</p>
+                     <h5 className="fw-bold">Com {bem.tecnico_responsavel}</h5>
+                     <p className="text-muted small mb-4">O equipamento continua sendo de {bem.unidade_nome || 'sua unidade'}, sob a responsabilidade deste técnico (termo de cautela).</p>
                      <PrimaryButton variant="danger" onClick={handleDevolver} isLoading={loadingAcao}>
                         ↩️ Registrar Devolução!
                      </PrimaryButton>
@@ -283,12 +286,12 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
                 ) : (
                   <Form onSubmit={handleAtribuir} className="p-4 bg-light rounded border shadow-sm">
                     <h6 className="fw-bold text-dark mb-1">Emitir Termo de Cautela</h6>
-                    <p className="small text-muted mb-3">Ao atribuir, o equipamento passa a ser responsabilidade direta da pessoa selecionada.</p>
+                    <p className="small text-muted mb-3">O equipamento continua na unidade e passa a ficar sob a responsabilidade do técnico escolhido.</p>
                     
                     <Form.Group className="mb-3">
                       <Form.Label className="small fw-bold text-secondary">Selecione o Responsável</Form.Label>
                       <Form.Select value={tecnicoAtribuicaoId} onChange={(e) => setTecnicoAtribuicaoId(e.target.value)} required className="shadow-sm border-0 bg-white py-2">
-                        <option value="">Escolha um usuário...</option>
+                        <option value="">{tecnicos.length ? 'Escolha um técnico da unidade...' : 'Nenhum técnico nesta unidade'}</option>
                         {tecnicos.map(t => <option key={t.id} value={t.id}>{t.nome_completo}</option>)}
                       </Form.Select>
                     </Form.Group>
@@ -309,7 +312,14 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
             </Tab>
 
             <Tab eventKey="movimentar" title="🔄 Transferir">
+              {bem.tecnico_responsavel ? (
+                <div className="mt-3 p-4 bg-light rounded border shadow-sm text-center">
+                  <span className="fs-1 d-block mb-2">💼</span>
+                  <p className="mb-0">Este bem está com <strong>{bem.tecnico_responsavel}</strong>. Registre a devolução (aba <strong>Atribuição</strong>) antes de transferir para outra unidade.</p>
+                </div>
+              ) : (
               <Form onSubmit={handleMovimentar} className="mt-3 p-4 bg-light rounded border shadow-sm">
+                <p className="small text-muted mb-3">Ao transferir, o bem passa a pertencer à unidade de destino e sai da lista desta unidade. Fica registrado no histórico.</p>
                 <Form.Group className="mb-3">
                   <Form.Label className="small fw-bold text-secondary">Unidade de Destino</Form.Label>
                   <Form.Select value={unidadeDestinoId} onChange={(e) => setUnidadeDestinoId(e.target.value)} required className="shadow-sm border-0 bg-white py-2">
@@ -327,6 +337,7 @@ function BemDetailsModal({ show, onHide, bem, onUpdate }: BemDetailsModalProps) 
                   </PrimaryButton>
                 </div>
               </Form>
+              )}
             </Tab>
 
             {/*  ABA DA FOTO (CORREÇÃO DA ISSUE) */}

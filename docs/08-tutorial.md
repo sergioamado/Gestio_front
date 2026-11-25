@@ -83,7 +83,7 @@ Na mesma janela, você escolhe:
 3. No catálogo ao lado, procure as peças e adicione-as ao **carrinho** com a quantidade.
 4. Confira o carrinho e envie a solicitação.
 
-O sistema **reserva as peças no estoque** na hora. Você recebe uma notificação confirmando a OS. Se faltar saldo, ele avisa qual peça faltou e nada é gravado. A OS nasce como **Pendente**.
+O sistema **reserva as peças no estoque** na hora. Você recebe uma notificação confirmando a OS, e os gerentes da unidade são avisados. Se faltar saldo, ele avisa qual peça faltou e nada é gravado. A OS nasce como **Pendente**.
 
 ### 4.2 Gerenciar OS
 
@@ -113,6 +113,8 @@ O sistema **reserva as peças no estoque** na hora. Você recebe uma notificaç�
 | Devolver peça de teste | Clique em **Devolver Peça de Teste**. |
 | Peça com defeito | Clique em **↩️ Devolver Peça com Defeito** e escreva o defeito, que é obrigatório. |
 | Terminar o serviço | Clique em **Pronta para Vistoria** e confirme em **Sim, Marcar como Pronta**. |
+
+**Quem age como técnico:** quem abriu a OS **e** o técnico responsável pela máquina. Os dois veem os botões e recebem as notificações da OS.
 
 **O admin** vê todas as OS de todas as unidades, mas os botões ficam desabilitados ("Modo de Consulta").
 
@@ -276,10 +278,12 @@ Use as abas **Ativas** (Pendente e Em manutenção) e **Concluído** para acompa
    - **editar** a descrição, a marca, a localização e a situação;
    - **anexar foto**;
    - ver o **histórico** (quem fez o quê e quando);
-   - **atribuir a um técnico**, **devolver** ou **transferir direto para outro técnico**.
+   - **atribuir a um técnico** da unidade e **registrar a devolução**.
 4. **Transferir para outra unidade:** selecione um ou mais bens, escolha a unidade de destino e escreva a observação.
 
-> O gerente vê e transfere bens de outras unidades. Isso é uma regra do negócio.
+> O gerente vê só os bens da própria unidade.
+> - **Transferir** (ex.: uma mesa do COSUP para o DCOMP): o bem passa a ser do DCOMP, **sai da lista do COSUP**, fica no histórico e o gerente do DCOMP é avisado. Um bem que está com um técnico precisa ter a devolução registrada antes.
+> - **Atribuir** (ex.: computador PAT 119171 para o Sergio): o bem **continua na lista do COSUP**, com "👤 Sergio" ao lado. Use o filtro **👤 Com técnico** para ver tudo o que está com técnicos.
 
 ### 9.2 Importar SIPAC
 
@@ -287,11 +291,12 @@ Use as abas **Ativas** (Pendente e Em manutenção) e **Concluído** para acompa
 2. Escolha a **unidade**.
 3. Envie o arquivo exportado do SIPAC: planilha **CSV** ou **XLSX**, ou o **PDF**. O limite é de 20 MB.
 4. O sistema cria os bens que ainda não existem e mostra quantos encontrou.
+5. Se um bem do arquivo estava cadastrado em **outra unidade**, ele passa para a unidade da importação. Isso fica no histórico do bem ("origem ➔ destino, Importação do SIPAC"), e o gerente da unidade de origem é avisado. Se o bem estava com um técnico da unidade antiga, a atribuição é encerrada.
 
 ### 9.3 Auditoria Física (levantamento)
 
 1. Menu **Auditoria Física** → **🚀 Iniciar Novo Levantamento Anual**.
-2. Escolha a unidade que está sendo conferida.
+2. O gerente confere a própria unidade. O admin escolhe no seletor **Todas as unidades** (para acompanhar o progresso geral) ou a unidade que está sendo conferida; para bipar, é preciso escolher uma unidade.
 3. Com o **leitor de código de barras**, ou digitando, informe cada tombamento encontrado.
    - **OK:** o bem é desta unidade.
    - **Inconsistente:** o bem está aqui, mas o sistema diz que é de outra unidade.
@@ -347,6 +352,9 @@ Anule-o (o número fica reservado) e use **Gerar novo**.
 
 **Não recebo nada no Telegram.**
 Confira se a conta está vinculada e se o canal Telegram está ligado nas preferências. Se o problema continuar, avise o administrador: o servidor precisa estar com o bot configurado, e só um servidor pode usar o bot.
+
+**Quero testar com dois usuários no mesmo computador.**
+Pode usar duas abas do mesmo navegador: cada aba guarda o próprio login. Uma aba **nova** abre com o último login feito; para trocar de usuário nela, clique em **Sair** e entre com o outro usuário. Sair numa aba não desconecta a outra.
 
 **No celular a tabela ficou diferente.**
 É de propósito: em telas pequenas, cada linha vira um card.

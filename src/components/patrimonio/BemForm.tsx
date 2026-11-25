@@ -5,6 +5,7 @@ import { UpcScan, PcDisplay, Tags, GeoAlt, Activity, Building } from 'react-boot
 import PrimaryButton from '../PrimaryButton';
 import type { BemPatrimonial, Unidade } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
 
 interface BemFormProps {
   bem?: BemPatrimonial | null;
@@ -15,13 +16,17 @@ interface BemFormProps {
 
 function BemForm({ bem, unidades, onSubmit, isLoading }: BemFormProps) {
   const { mostrarCard } = useToast();
+  const { user } = useAuth();
+  // Gerente: a unidade é sempre a dele. Mudar um bem de unidade é pela aba "Transferir"
+  // (fica no histórico e avisa o destino), não editando este campo.
+  const unidadeTravada = user?.role !== 'admin';
   const [formData, setFormData] = useState({
     tombamento: '',
     descricao: '',
     marca: '',
     localizacao_fisica: '',
     status_atual: 'Ativo',
-    unidade_id: ''
+    unidade_id: unidadeTravada && user?.unidade_id ? String(user.unidade_id) : ''
   });
 
   useEffect(() => {
@@ -160,11 +165,15 @@ function BemForm({ bem, unidades, onSubmit, isLoading }: BemFormProps) {
               value={formData.unidade_id} 
               onChange={handleChange} 
               required
+              disabled={unidadeTravada}
               className="bg-light border-0 shadow-none py-2 fw-medium"
             >
               <option value="">Selecione...</option>
               {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
             </Form.Select>
+            {unidadeTravada && (
+              <Form.Text className="text-muted">Para levar o bem a outra unidade, use a aba <strong>Transferir</strong> nos detalhes do bem.</Form.Text>
+            )}
           </Form.Group>
         </Col>
       </Row>

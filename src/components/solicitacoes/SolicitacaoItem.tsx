@@ -69,10 +69,11 @@ const SolicitacaoItem: React.FC<SolicitacaoItemProps> = ({ solicitacao, onUpdate
   const encerrada = osEncerrada(solicitacao.status);
   // Regras (validadas também no backend):
   // - gerente só gere OS da própria unidade; admin só visualiza;
-  // - técnico só age nas OS que ele abriu.
+  // - técnico age nas OS que abriu ou em que é o responsável.
   const isGerenteDaUnidade = currentUserRole === 'gerente' && user?.unidade_id === solicitacao.unidade_id && !encerrada;
   const isTecnico = currentUserRole?.startsWith('tecnico') ?? false;
-  const isTecnicoDono = isTecnico && user?.id === solicitacao.usuario_id && !encerrada;
+  // Técnico da OS: quem abriu OU o técnico responsável (os dois podem agir)
+  const isTecnicoDono = isTecnico && !!user && (user.id === solicitacao.usuario_id || user.id === solicitacao.responsavel_usuario_id) && !encerrada;
 
   // Valores que vieram do servidor (a tela edita uma cópia deles)
   const entregasDoServidor = () =>

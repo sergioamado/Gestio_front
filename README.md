@@ -40,9 +40,9 @@ O sistema tem dois repositórios:
 
 | Perfil | Quem é | O que faz |
 | --- | --- | --- |
-| `admin` | Administrador do sistema | Cadastra usuários e unidades e vê tudo de todas as unidades. Nas OS e nos Relatórios Analíticos **só visualiza**. |
+| `admin` | Administrador do sistema | Cadastra usuários e unidades e vê tudo de todas as unidades (por isso não tem unidade). Nas OS e nos Relatórios Analíticos **só visualiza**. |
 | `gerente` | Coordenador ou gerente de uma unidade | Gere as OS, o estoque e o patrimônio, assina Relatórios Analíticos e gera relatórios **da própria unidade**. |
-| `tecnico` | Técnico de suporte | Abre OS, retira e devolve peças, lança produção e emite Relatórios Analíticos. |
+| `tecnico` | Técnico de suporte | Abre OS, retira e devolve peças, lança produção e emite Relatórios Analíticos. Quem abriu a OS e o técnico responsável podem agir nela. |
 | `tecnico_impressora` | Técnico de impressoras | O mesmo do técnico, mais o módulo de impressoras e suprimentos. |
 | `tecnico_eletronica` | Técnico de eletrônica | O mesmo do técnico, mais a fila de manutenção eletrônica. |
 
@@ -145,7 +145,8 @@ prisma/
 
 - **OS:** o técnico abre a OS. O gerente coloca em atendimento, conclui depois da vistoria ou cancela. O técnico marca "Pronta para vistoria". O admin só visualiza.
 - **Peças da OS:** as peças são reservadas no estoque quando a OS é aberta. O gerente informa em cada peça o **nº do pedido SIPAC** e o **almoxarifado**, e a OS só é concluída com os dois preenchidos. Ao cancelar a OS, as peças voltam ao estoque correspondente (principal, de teste ou de defeito).
-- **Unidade:** o gerente só age sobre a própria unidade. No patrimônio, o gerente vê e transfere bens de outras unidades; isso é uma regra de negócio intencional.
+- **Unidade:** o gerente só vê e age sobre a própria unidade; o admin vê todas (por isso não tem unidade).
+- **Patrimônio:** o gerente **transfere** bens da unidade dele para outra (o bem passa a ser do destino e sai da lista da origem) e **atribui** bens aos técnicos da unidade (o bem continua na unidade, mostrando com quem está). Ex.: uma mesa transferida do COSUP para o DCOMP sai da lista do COSUP; o computador PAT 119171 atribuído ao Sergio continua na lista do COSUP com "👤 Sergio".
 - **Login:** a cada 3 senhas erradas seguidas o usuário espera 10 s, depois 20 s, 40 s e assim por diante, dobrando até 24 h.
 - **Relatório Analítico:** recebe um número sequencial por unidade e ano **na assinatura**. O documento assinado é guardado como "fotografia" e tem um código de verificação. Anular mantém o número reservado.
 

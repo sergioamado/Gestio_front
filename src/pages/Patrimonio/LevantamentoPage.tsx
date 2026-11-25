@@ -7,7 +7,8 @@ import MainLayout from '../../layouts/MainLayout';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useAuth } from '../../hooks/useAuth';
 import * as patrimonioService from '../../services/patrimonioService';
-import type { BemPatrimonial } from '../../types';
+import type { BemPatrimonial, Unidade } from '../../types';
+import * as unidadeService from '../../services/unidadeService';
 import { useTempoReal } from '../../hooks/useTempoReal';
 
 function LevantamentoPage() {
@@ -29,8 +30,21 @@ function LevantamentoPage() {
   // 🚀 CONTROLO DE ACESSO: Apenas Admin e Gerente
   const hasAccess = user?.role === 'admin' || user?.role === 'gerente';
 
-  // Forçamos a buscar o Levantamento usando o ID da Unidade do usuário atual (ou 1 se for Admin sem unidade)
-  const unidadeId = user?.unidade_id || 1;
+  // Gerente: sempre a própria unidade. Admin não tem unidade (vê tudo): escolhe qual acompanhar,
+  // ou "Todas as unidades". Antes o admin caía sempre na unidade 1.
+  const isAdmin = user?.role === 'admin';
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [unidadeEscolhida, setUnidadeEscolhida] = useState('');
+  const unidadeId: number | undefined = isAdmin
+    ? (unidadeEscolhida ? Number(unidadeEscolhida) : undefined)
+    : (user?.unidade_id ?? undefined);
+  const nomeUnidade = isAdmin
+    ? (unidades.find((u) => u.id === unidadeId)?.nome ?? 'Todas as unidades')
+    : 'sua unidade';
+
+  useEffect(() => {
+    if (isAdmin) unidadeService.getAllUnidades().then(setUnidades).catch(() => setUnidades([]));
+  }, [isAdmin]);
 
   // silencioso = recarga em tempo real (sem spinner e sem roubar o foco)
   const carregarLevantamento = async (silencioso = false) => {
@@ -107,6 +121,11 @@ function LevantamentoPage() {
   const handleBipar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tombamentoBip.trim()) return;
+    if (!unidadeId) {
+      // A unidade define se o bem está no lugar certo (OK) ou não (Inconsistente).
+      mostrarCard('Escolha a unidade', 'Selecione acima a unidade que está sendo conferida antes de bipar.', 'alerta');
+      return;
+    }
 
     setLoadingAcao(true);
     try {
@@ -174,7 +193,21 @@ function LevantamentoPage() {
             <Col md={8}>
               <Card className="border-0 shadow-sm h-100 bg-white border-start border-primary border-4">
                 <Card.Body className="p-4 d-flex flex-column justify-content-center">
-                  <h5 className="fw-bold mb-3">Progresso da Unidade</h5>
+                  <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h5 className="fw-bold mb-0">Progresso: {nomeUnidade}</h5>
+                    {isAdmin && (
+                      <Form.Select
+                        size="sm"
+                        style={{ maxWidth: 260 }}
+                        value={unidadeEscolhida}
+                        onChange={(e) => setUnidadeEscolhida(e.target.value)}
+                        aria-label="Unidade a acompanhar"
+                      >
+                        <option value="">Todas as unidades</option>
+                        {unidades.map((u) => <option key={u.id} value={u.id}>{u.sigla ? `${u.sigla} – ${u.nome}` : u.nome}</option>)}
+                      </Form.Select>
+                    )}
+                  </div>
                   <ProgressBar 
                     now={calcularProgresso()} 
                     label={`${calcularProgresso()}%`} 

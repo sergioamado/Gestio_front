@@ -240,7 +240,7 @@ Cada caso tem: atores, pré-condições, fluxo principal, fluxos alternativos (F
   2. O técnico informa o nº do GLPI, o patrimônio, o setor do equipamento, o responsável, a justificativa e o tipo da OS (consumo ou teste).
   3. O técnico adiciona as peças e as quantidades.
   4. O sistema reserva as peças, descontando do estoque principal (consumo) ou de teste, e cria a OS como **Pendente**, com as peças em **Pendente almoxarifado**.
-  5. O sistema confirma ao técnico por notificação e atualiza as telas de estoque.
+  5. O sistema notifica os gerentes da unidade e o técnico responsável (se for outro), confirma ao técnico e atualiza as telas de OS e de estoque.
 - **FE1 – Estoque insuficiente:** o sistema recusa e diz qual peça faltou. Nada é gravado.
 - **FE2 – Gerente ou admin:** a opção não aparece no menu, e a API recusa.
 
@@ -262,6 +262,7 @@ Cada caso tem: atores, pré-condições, fluxo principal, fluxos alternativos (F
 ### UC05 – Movimentar peças da OS
 
 - **Atores:** técnico e gerente.
+- **Observação:** "técnico" aqui é quem abriu a OS **ou** o técnico responsável; os dois podem agir e recebem as notificações.
 - **Fluxo principal:**
   1. O gerente marca a peça como **Disponível para retirada** (ou volta para Pendente almoxarifado).
   2. O técnico confirma **Recebi**. Uma peça de consumo fica "Em posse do técnico"; uma de teste fica **Aguardando devolução**.

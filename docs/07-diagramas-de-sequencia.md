@@ -66,8 +66,9 @@ sequenceDiagram
     A->>DB: cria a peça da OS (Pendente)
   end
   A->>DB: COMMIT
-  A->>N: notificar o técnico "OS gerada"
-  N->>S: nova_notificacao → sala user_ID do técnico
+  A->>N: confirmar ao técnico "OS gerada"
+  A->>N: notificar os gerentes da unidade (e o responsável, se for outro técnico)
+  N->>S: nova_notificacao → sala de cada destinatário
   A->>S: atualizar_estoque (todos)
   A-->>F: 201 OS criada
   F-->>T: toast de sucesso

@@ -52,7 +52,10 @@ function ListaBensPage() {
 
     if (!silencioso) setLoading(true);
     setError(null);
-    const params: any = { status_atual: filtroStatus, search: busca, page: currentPage, limit: ITEMS_PER_PAGE };
+    // "Com técnico" não é uma situação do bem: são os bens atribuídos (termo de cautela aberto)
+    const params: any = filtroStatus === 'com_tecnico'
+      ? { com_tecnico: 'sim', search: busca, page: currentPage, limit: ITEMS_PER_PAGE }
+      : { status_atual: filtroStatus, search: busca, page: currentPage, limit: ITEMS_PER_PAGE };
     if (user?.role !== 'admin' && user?.unidade_id) params.unidade_id = user.unidade_id;
 
     Promise.all([
@@ -185,7 +188,7 @@ function ListaBensPage() {
                 <Form.Select className="bg-light border-0 shadow-none" value={filtroStatus} onChange={(e) => { setFiltroStatus(e.target.value); setCurrentPage(1); }}>
                   <option value="">Todos os Status</option>
                   <option value="Ativo">✅ Ativos</option>
-                  <option value="Transferido">🔄 Transferidos</option>
+                  <option value="com_tecnico">👤 Com técnico</option>
                   <option value="Inservivel">❌ Inservíveis</option>
                 </Form.Select>
               </Form.Group>

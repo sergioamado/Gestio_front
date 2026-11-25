@@ -1,6 +1,7 @@
 // src/services/api.ts
 import axios from 'axios';
 import { API_URL } from '../config';
+import { getToken, limparSessao } from './sessao';
 
 // Cria a instância do Axios
 const api = axios.create({
@@ -11,7 +12,7 @@ const api = axios.create({
 // Antes de qualquer requisição sair injeta o token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = getToken(); // token DESTA aba
     
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -30,11 +31,13 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
+    // 401 nas rotas de login/troca de senha é "senha errada", não "sessão expirada":
+    // não pode deslogar (antes, errar a senha atual ao trocá-la expulsava o usuário).
+    const rotaDeAutenticacao = /\/auth\//.test(error.config?.url ?? '');
+    if (error.response && error.response.status === 401 && !rotaDeAutenticacao) {
       console.warn("🔒 Sessão expirada ou não autorizada. A redirecionar...");
       
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('authUser');
+      limparSessao();
       
       // Redireciona para a tela de login
       if (window.location.pathname !== '/login') {

@@ -60,7 +60,7 @@ function ImportarSipacPage() {
       mostrarCard(
         'Importação Concluída',
         d
-          ? `${response.data.message}\nEncontrados: ${d.total_bens_encontrados} · Novos: ${d.novos_registos} · Atualizados: ${d.atualizados} · Erros/Ignorados: ${d.erros}`
+          ? `${response.data.message}\nEncontrados: ${d.total_bens_encontrados} · Novos: ${d.novos_registos} · Atualizados: ${d.atualizados}${d.vindos_de_outra_unidade ? ` (${d.vindos_de_outra_unidade} vieram de outra unidade)` : ''} · Erros/Ignorados: ${d.erros}`
           : response.data.message,
         'sucesso',
         12000,

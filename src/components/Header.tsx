@@ -9,6 +9,7 @@ import * as notificacaoService from '../services/notificacaoService';
 import type { Notificacao } from '../types';
 import { socket } from '../services/socket'; 
 import { textoSemMarcacao } from '../utils/textoNotificacao';
+import { permissaoNotificacao, pedirPermissaoNotificacao, mostrarNotificacaoNativa } from '../utils/notificacaoNavegador';
 
 interface HeaderProps {
   title: string;
@@ -41,8 +42,9 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
     fetchNotificacoes();
     
     // Pede permissão ao navegador para notificações nativas, se ainda não tiver
-    if (Notification.permission === 'default') {
-      Notification.requestPermission();
+    // (protegido: no iPhone a API não existe e derrubava a tela inteira)
+    if (permissaoNotificacao() === 'default') {
+      void pedirPermissaoNotificacao();
     }
   }, [fetchNotificacoes]);
 
@@ -57,12 +59,7 @@ function Header({ title, onToggleSidebar }: HeaderProps) {
       fetchNotificacoes(true);
 
       // Dispara a notificação nativa do sistema (Windows/Mac) apenas no momento em que ela chega!
-      if (Notification.permission === 'granted') {
-        new Notification('COSUP+', { 
-            body: textoSemMarcacao(novaNotif.mensagem),
-            icon: '/favicon.ico' // Opcional: coloque o caminho do seu logo aqui
-        });
-      }
+      mostrarNotificacaoNativa('COSUP+', textoSemMarcacao(novaNotif.mensagem));
     };
 
     socket.on('nova_notificacao', lidarComNovaNotificacao);

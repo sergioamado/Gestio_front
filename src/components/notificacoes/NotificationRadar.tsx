@@ -33,7 +33,29 @@ export function NotificationRadar() {
       mostrarCard(textoSemMarcacao(notificacao.titulo), textoSemMarcacao(notificacao.mensagem), toTipo(notificacao.tipo));
     };
 
-    socket.on('connect', identificar);
+    // Conexão recusada pelo servidor (token vencido/ inválido, ou servidor reiniciando).
+    // O socket.io NÃO tenta de novo depois de uma recusa: sem isto, as notificações paravam
+    // em silêncio com a tela aberta. Aqui: confere a sessão pela API (se venceu, o interceptor
+    // do axios leva ao login com o aviso) e, se a sessão estiver boa, tenta reconectar.
+    let tentativa = 0;
+    let timerReconexao: ReturnType<typeof setTimeout> | undefined;
+    const onConnectError = (err: Error) => {
+      if (socket.active) return; // queda de rede comum: o próprio socket.io já está tentando
+      tentativa += 1;
+      const atraso = Math.min(30_000, 2_000 * 2 ** Math.min(tentativa - 1, 4)); // 2 s, 4 s ... 30 s
+      console.warn(`Radar: conexão recusada (${err.message}). Nova tentativa em ${atraso / 1000}s.`);
+      clearTimeout(timerReconexao);
+      timerReconexao = setTimeout(() => {
+        notificacaoService
+          .getNotificacoes() // 401 aqui = sessão vencida → interceptor redireciona para o login
+          .then(() => socket.connect())
+          .catch(() => { /* sem rede ou sessão vencida: o interceptor já cuidou */ });
+      }, atraso);
+    };
+    const onConnect = () => { tentativa = 0; identificar(); };
+
+    socket.on('connect', onConnect);
+    socket.on('connect_error', onConnectError);
     socket.on('nova_notificacao', onNovaNotificacao);
     if (socket.connected) identificar();
     else socket.connect();
@@ -77,7 +99,9 @@ export function NotificationRadar() {
 
     // Só roda no logout (userId muda) ou ao desmontar o App.
     return () => {
-      socket.off('connect', identificar);
+      clearTimeout(timerReconexao);
+      socket.off('connect', onConnect);
+      socket.off('connect_error', onConnectError);
       socket.off('nova_notificacao', onNovaNotificacao);
       socket.disconnect();
     };

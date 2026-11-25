@@ -136,7 +136,7 @@ function NovaSolicitacaoPage() {
 
       const payload = {
         responsavel_usuario_id: user?.id,
-        unidade_id: user?.unidade_id || 1,
+        unidade_id: user?.unidade_id ?? undefined, // o backend usa a unidade do token
         numero_glpi: Number(glpi),
         setor_equipamento: setorEquipamento,
         patrimonio: patrimonio,

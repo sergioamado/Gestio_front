@@ -46,6 +46,15 @@ function LoginPage() {
     }
   }, [isAuthenticated, navigate]);
 
+  // Veio redirecionado porque a sessão venceu (token de 8 h) ou foi encerrada.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('expired')) {
+      mostrarCard('Sessão encerrada', 'Sua sessão expirou. Entre novamente para continuar.', 'alerta', 8000);
+      window.history.replaceState(null, '', '/login');
+    }
+  }, [mostrarCard]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);

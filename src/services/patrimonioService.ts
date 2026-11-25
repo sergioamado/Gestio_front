@@ -93,7 +93,8 @@ export const iniciarLevantamento = async () => {
   return response.data;
 };
 
-export const getLevantamentoAtual = async (unidade_id: number) => {
+// unidade_id ausente = todas as unidades (admin)
+export const getLevantamentoAtual = async (unidade_id?: number) => {
   const response = await api.get('/patrimonio/levantamento/atual', { params: { unidade_id } });
   return response.data;
 };

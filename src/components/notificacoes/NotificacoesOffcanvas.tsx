@@ -35,7 +35,9 @@ function NotificacoesOffcanvas({ show, onHide, notificacoes, onUpdate, loading }
     try {
       const st = await notificacaoService.getStatusTelegram();
       setStatusTg(st);
+      // As duas chaves vêm do servidor (o usuário guardado no navegador pode estar desatualizado)
       setPrefsBot(st.notificacoes_bot);
+      setPrefsApp(st.notificacoes_app);
       return st;
     } catch {
       return null;

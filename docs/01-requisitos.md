@@ -31,6 +31,7 @@ Legenda de prioridade: **E** = essencial, **I** = importante, **D** = desejável
 | RF11 | O gerente deve poder mudar o status da OS: Pendente → Em atendimento; Pronta para vistoria → Concluída; qualquer status aberto → Cancelada. | Gerente | E |
 | RF12 | O técnico deve poder mudar a OS de Em atendimento para Pronta para vistoria. | Técnicos | E |
 | RF13 | O gerente deve poder marcar cada peça como Pendente almoxarifado ou Disponível para retirada, e aceitar a devolução. | Gerente | E |
+| RF14a | Os dois técnicos da OS, quem abriu e o técnico responsável pela máquina, podem agir nela e recebem as notificações dela. | Técnicos | E |
 | RF14 | O técnico deve poder confirmar que recebeu a peça e devolvê-la com defeito, informando o motivo. | Técnicos | E |
 | RF15 | Uma peça de teste que funcionou deve poder ser convertida em peça de consumo (definitiva). | Técnicos | I |
 | RF16 | Ao cancelar uma OS, as peças devem voltar ao estoque correspondente: principal, de teste ou de defeito. | Sistema | E |
@@ -69,12 +70,12 @@ Legenda de prioridade: **E** = essencial, **I** = importante, **D** = desejável
 | ID | Requisito | Perfil | Prioridade |
 | --- | --- | --- | --- |
 | RF31 | O sistema deve listar os bens patrimoniais com busca, filtro por unidade e por situação, e paginação. | Gerente, admin | E |
-| RF32 | O sistema deve importar bens do SIPAC a partir de planilha (CSV ou XLSX) ou PDF. | Gerente, admin | E |
-| RF33 | O sistema deve permitir transferir bens entre unidades, com origem, destino e observação. | Gerente, admin | E |
-| RF34 | O sistema deve permitir atribuir um bem a um técnico, devolver e transferir direto entre técnicos. | Gerente, admin | I |
+| RF32 | O sistema deve importar bens do SIPAC a partir de planilha (CSV ou XLSX) ou PDF, para a unidade do gerente (o admin escolhe). Um bem que estava em outra unidade passa para a unidade da importação, com registro no histórico e aviso ao gerente de origem. | Gerente, admin | E |
+| RF33 | O sistema deve permitir transferir bens da unidade do gerente para outra, com destino e observação. O bem passa a ser da unidade de destino, sai da lista da origem, fica no histórico e os gerentes do destino são avisados. | Gerente, admin | E |
+| RF34 | O sistema deve permitir atribuir um bem a um técnico da mesma unidade e registrar a devolução. O bem continua na unidade, e a lista mostra com quem ele está. | Gerente, admin | I |
 | RF35 | O sistema deve guardar o histórico de cada bem (quem fez, o quê, quando, de onde e para onde). | Sistema | E |
 | RF36 | O sistema deve permitir anexar uma foto ao bem. | Gerente, admin | D |
-| RF37 | O sistema deve permitir uma auditoria física (levantamento): iniciar, bipar os tombamentos, marcar inconsistências e finalizar. | Gerente, admin | I |
+| RF37 | O sistema deve permitir uma auditoria física (levantamento): iniciar, bipar os tombamentos, marcar inconsistências e finalizar. O gerente acompanha a própria unidade; o admin, que não tem unidade, acompanha todas ou escolhe uma. | Gerente, admin | I |
 
 ### 1.7 Produção de serviços
 
@@ -154,7 +155,8 @@ Legenda de prioridade: **E** = essencial, **I** = importante, **D** = desejável
 | ID | Requisito inverso |
 | --- | --- |
 | RI01 | O sistema não deve permitir que o admin altere OS, peças da OS ou Relatórios Analíticos; ele só visualiza. |
-| RI02 | O sistema não deve permitir que um gerente altere OS, estoque ou relatórios de outra unidade. (Exceção intencional: no patrimônio, o gerente vê e transfere bens de outras unidades.) |
+| RI02 | O sistema não deve permitir que um gerente veja ou altere OS, estoque, patrimônio ou relatórios de outra unidade. No patrimônio, ele só transfere bens **da unidade dele** para outra. |
+| RI02a | O sistema não deve mudar a situação de um bem ao atribuí-lo a um técnico (ele continua "Ativo" na unidade), nem transferir um bem que está com um técnico sem antes registrar a devolução. |
 | RI03 | O sistema não deve permitir que o gerente ou o admin abram OS; só técnicos abrem. |
 | RI04 | O sistema não deve permitir que o técnico conclua ou cancele uma OS. |
 | RI05 | O sistema não deve permitir pular etapas do status da OS ou da peça (ex.: de Pendente direto para Concluída). |

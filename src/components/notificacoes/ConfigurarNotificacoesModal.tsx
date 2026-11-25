@@ -6,6 +6,7 @@ import PrimaryButton from '../PrimaryButton';
 import * as notificacaoService from '../../services/notificacaoService';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../hooks/useAuth'; 
+import { navegadorSuportaNotificacao, permissaoNotificacao, pedirPermissaoNotificacao } from '../../utils/notificacaoNavegador';
 
 interface ConfigModalProps {
   show: boolean;
@@ -38,7 +39,8 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
 
   useEffect(() => {
     if (show) {
-      if ('Notification' in window) setPermissaoNavegador(Notification.permission);
+      const perm = permissaoNotificacao();
+      if (perm !== 'indisponivel') setPermissaoNavegador(perm);
       // Busca no servidor a vinculação real (pode ter sido feita pelo bot depois do login)
       notificacaoService.getStatusTelegram()
         .then((st) => {
@@ -47,6 +49,9 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
           setTelegramId(st.telegram_chat_id || '');
           const bot = st.notificacoes_bot;
           setPrefsTelegram({ os: bot, estoque: bot, sistema: bot, alertas: bot });
+          // Valor real do servidor para o sininho (o do navegador pode estar velho)
+          const app = st.notificacoes_app;
+          setPrefsNavegador({ os: app, estoque: app, sistema: app, alertas: app });
         })
         .catch(() => setTelegramId(user?.telegram_chat_id || ''));
       
@@ -60,11 +65,12 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
   }, [show]);
 
   const solicitarPermissaoNavegador = async () => {
-    if (!('Notification' in window)) {
-      mostrarCard('Erro', 'Seu navegador não suporta notificações.', 'erro');
+    if (!navegadorSuportaNotificacao()) {
+      mostrarCard('Atenção', 'Este navegador não mostra avisos do sistema operacional. Os avisos continuam aparecendo dentro do COSUP+ e no Telegram.', 'alerta');
       return;
     }
-    const permissao = await Notification.requestPermission();
+    const permissao = await pedirPermissaoNotificacao();
+    if (permissao === 'indisponivel') return;
     setPermissaoNavegador(permissao);
     if (permissao === 'granted') {
       mostrarCard('Sucesso', 'Permissão concedida no navegador!', 'sucesso');
@@ -72,8 +78,10 @@ function ConfigurarNotificacoesModal({ show, onHide }: ConfigModalProps) {
   };
 
   const checarPermissaoNovamente = () => {
-    setPermissaoNavegador(Notification.permission);
-    if (Notification.permission === 'granted') {
+    const perm = permissaoNotificacao();
+    if (perm === 'indisponivel') return;
+    setPermissaoNavegador(perm);
+    if (perm === 'granted') {
       mostrarCard('Sucesso', 'Permissão reconhecida com sucesso!', 'sucesso');
     }
   };

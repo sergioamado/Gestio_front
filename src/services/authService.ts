@@ -2,6 +2,7 @@
 import api from './api';
 import type { User } from '../types';
 import type {LoginResponse} from '../types';
+import { salvarSessao, limparSessao, getUsuarioSalvo } from './sessao';
 
 /**
  * Realiza o login do usuário, armazena o token e os dados do usuário.
@@ -18,9 +19,8 @@ export const login = async (username : string, password : string): Promise<User>
 
     const { token, user } = response.data;
 
-    // Armazena o token e as informações do usuário no localStorage
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('authUser', JSON.stringify(user));
+    // Sessão desta aba (e "último login" para abas novas): ver services/sessao.ts
+    salvarSessao(token, user);
 
     return user;
   } catch (error: any) {
@@ -36,24 +36,17 @@ export const login = async (username : string, password : string): Promise<User>
 };
 
 /**
- * Remove os dados de autenticação do localStorage.
+ * Encerra a sessão desta aba.
  */
 export const logout = (): void => {
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('authUser');
+  limparSessao();
 };
 
 /**
  * Retorna os dados do usuário armazenados, se existirem.
  * @returns Os dados do usuário ou null.
  */
-export const getCurrentUser = (): User | null => {
-  const userStr = localStorage.getItem('authUser');
-  if (userStr) {
-    return JSON.parse(userStr);
-  }
-  return null;
-};
+export const getCurrentUser = (): User | null => getUsuarioSalvo<User>();
 
 export const changeOwnPassword = async (currentPassword : string, newPassword : string): Promise<{ message: string }> => {
   const response = await api.put('/auth/change-password', {
