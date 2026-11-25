@@ -33,6 +33,7 @@ const CatalogoServicosPage = lazy(() => import('./pages/servicos/CatalogoServico
 const ProducaoServicosPage = lazy(() => import('./pages/servicos/ProducaoServicosPage'));
 const RelatoriosProducaoPage = lazy(() => import('./pages/servicos/RelatoriosProducaoPage'));
 const AnalisesDashboardPage = lazy(() => import('./pages/AnalisesDashboardPage'));
+const RelatoriosAnaliticosPage = lazy(() => import('./pages/relatorioAnalitico/RelatoriosAnaliticosPage'));
 
 const PageLoader = () => (
   <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
@@ -60,6 +61,8 @@ function App() {
                     <Route path="/itens" element={<ItensPage />} />
                     <Route path="/gerenciar-solicitacoes" element={<GerenciarSolicitacoesPage />} />
                     <Route path="/producao-servicos" element={<ProducaoServicosPage />} />
+                    {/* Técnico emite, gerente assina, admin visualiza (regras no backend) */}
+                    <Route path="/relatorios-analiticos" element={<RelatoriosAnaliticosPage />} />
                     {/* A própria página restringe a admin, gerente e técnicos */}
                     <Route path="/fila-manutencao-eletronica" element={<ManutencaoEletronicaPage />} />
                   </Route>

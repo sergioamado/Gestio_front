@@ -9,7 +9,7 @@ import {
   HouseDoorFill, PeopleFill, BoxSeamFill, BuildingFill, KeyFill, 
   BoxArrowRight, PencilSquare, ListCheck, Tools, PrinterFill, 
   InboxesFill, ArchiveFill, ClipboardCheckFill, CloudUploadFill,
-  MotherboardFill, JournalText, FileEarmarkBarGraphFill, BarChartLineFill, Boxes, XLg, ChevronDown
+  MotherboardFill, JournalText, FileEarmarkBarGraphFill, BarChartLineFill, Boxes, XLg, ChevronDown, FileEarmarkTextFill
 } from 'react-bootstrap-icons';
 import { useSidebar } from '../contexts/SidebarContext';
 
@@ -109,6 +109,10 @@ function Sidebar() {
           <Nav.Link as={NavLink} to="/producao-servicos" className="sidebar-nav-link text-white rounded" title="Minha Produção">
             <Tools size={22} className="me-3" />
             <span>Minha Produção</span>
+          </Nav.Link>
+          <Nav.Link as={NavLink} to="/relatorios-analiticos" className="sidebar-nav-link text-white rounded" title="Relatório Analítico">
+            <FileEarmarkTextFill size={22} className="me-3" />
+            <span>Relatório Analítico</span>
           </Nav.Link>
 
 

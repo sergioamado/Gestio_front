@@ -456,6 +456,15 @@ a { color: var(--cor-azul-ufs); text-decoration: none; }
     border-bottom: 0 !important;
     padding-top: 0.6rem !important;
   }
+  /* Conteúdo de várias linhas: rótulo em cima, conteúdo embaixo ocupando a largura toda */
+  .tabela-cards td.bloco {
+    display: block;
+    text-align: left !important;
+  }
+  .tabela-cards td.bloco::before {
+    display: block;
+    margin-bottom: 0.15rem;
+  }
   .tabela-cards td.acoes::before,
   .tabela-cards td.vazio::before,
   .tabela-cards td:not([data-label])::before {
