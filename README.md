@@ -33,6 +33,7 @@ O sistema tem dois repositórios:
 | [Diagramas de fluxo](docs/06-diagramas-de-fluxo.md) | Ciclo da OS, das peças, do Relatório Analítico, do login e mais |
 | [Diagramas de sequência](docs/07-diagramas-de-sequencia.md) | Login, OS, assinatura, Telegram, Montar Relatório |
 | [Tutorial do sistema](docs/08-tutorial.md) | Passo a passo de todas as telas, por perfil |
+| [Implantação em produção](docs/09-implantacao.md) | Passo a passo para instalar no Ubuntu Server em cosupmais.ufs.br |
 
 ---
 
